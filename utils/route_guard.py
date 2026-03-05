@@ -352,18 +352,56 @@ class RouteGuard:
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → messages_hub (active trade chat session)")
                 return 'messages_hub'
             
-            # SECOND PRIORITY: Active support chat sessions
-            # Check this BEFORE other handlers to prevent support messages from being misrouted
+            # SECOND PRIORITY: Crypto address detection - MUST come before support chat check
+            # BUG FIX: Stale support sessions were hijacking crypto address submissions for cashout
+            # If user sends a crypto address, it should ALWAYS route to wallet regardless of support session
+            if text and RouteGuard._looks_like_crypto_address(text):
+                # Auto-clear stale support session if present
+                if RouteGuard.is_support_chat_active(user_id):
+                    logger.warning(f"⚠️ SUPPORT_OVERRIDE: user {user_id} sent crypto address while support session active - routing to wallet, clearing stale support session")
+                    try:
+                        from handlers.support_chat import active_support_sessions
+                        if user_id in active_support_sessions:
+                            del active_support_sessions[user_id]
+                    except Exception:
+                        pass
+                logger.info(f"🎯 SMART ROUTE: user {user_id} sent crypto address → wallet (for cashout)")
+                return 'wallet'
+            
+            # SECOND-B PRIORITY: Active wallet input session (check before support chat)
+            # CRITICAL FIX: Wallet input states must not be hijacked by stale support sessions
+            if db_state == "wallet_input":
+                logger.info(f"🎯 ROUTE DECISION: user {user_id} → wallet (active wallet_input session: {db_state})")
+                return 'wallet'
+            
+            # SECOND-C PRIORITY: Active cashout/wallet operations (MUST CHECK BEFORE SUPPORT)
+            # CRITICAL FIX: OTP verification and cashout flows must take priority over support sessions
+            # to prevent OTP codes and addresses from being swallowed by stale support chat
+            if await RouteGuard.has_active_cashout(user_id, context):
+                # Auto-clear stale support session if present
+                if RouteGuard.is_support_chat_active(user_id):
+                    logger.warning(f"⚠️ SUPPORT_OVERRIDE: user {user_id} has active cashout while support session active - routing to wallet, clearing stale support session")
+                    try:
+                        from handlers.support_chat import active_support_sessions
+                        if user_id in active_support_sessions:
+                            del active_support_sessions[user_id]
+                    except Exception:
+                        pass
+                logger.info(f"🎯 ROUTE DECISION: user {user_id} → wallet (active cashout/OTP verification)")
+                return 'wallet'
+            
+            # THIRD PRIORITY: Active support chat sessions
+            # Now checked AFTER wallet/cashout operations to prevent stale sessions from hijacking critical flows
             if RouteGuard.is_support_chat_active(user_id):
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → support (active support chat session)")
                 return 'support'
             
-            # THIRD PRIORITY: Smart UX - Trade review mode + numeric input
+            # FOURTH PRIORITY: Smart UX - Trade review mode + numeric input
             if db_state == "trade_review" and text and RouteGuard._is_numeric_amount(text):
                 logger.info(f"🎯 SMART ROUTE: user {user_id} in trade_review typing amount '{text}' → escrow")
                 return 'escrow'
             
-            # THIRD PRIORITY: Active rating session (check before escrow/onboarding)
+            # FOURTH-B PRIORITY: Active rating session (check before escrow/onboarding)
             # CRITICAL FIX: Detect rating states to prevent misrouting to onboarding
             # DEFENSIVE: Only route if there's a meaningful step after "rating_" prefix
             if db_state and db_state.startswith("rating_"):
@@ -374,7 +412,7 @@ class RouteGuard:
                 else:
                     logger.debug(f"⏭️ SKIP RATING ROUTE: user {user_id} has empty rating state '{db_state}' - routing to next priority")
             
-            # FOURTH PRIORITY: Active escrow conversation (ConversationHandler states)
+            # FIFTH PRIORITY: Active escrow conversation (ConversationHandler states)
             # PERFORMANCE: Pass db_state to avoid duplicate DB query
             escrow_active = await RouteGuard.has_active_escrow_conversation(user_id, context, db_state=db_state)
             
@@ -382,33 +420,13 @@ class RouteGuard:
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → escrow (active conversation)")
                 return 'escrow'
             
-            # FOURTH-B PRIORITY: Active dispute session (check before onboarding)
+            # FIFTH-B PRIORITY: Active dispute session (check before onboarding)
             # CRITICAL FIX: Dispute states must be checked before onboarding
             # to prevent dispute messages from being routed to onboarding
             dispute_states = ['dispute_chat', 'dispute_messaging', 'multi_dispute_selected']
             if db_state in dispute_states:
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → dispute (active dispute session: {db_state})")
                 return 'dispute'
-            
-            # FOURTH-C PRIORITY: Active wallet input session (check before onboarding)
-            # CRITICAL FIX: Wallet input states must be checked before onboarding
-            # to prevent NGN funding messages from being routed to onboarding
-            if db_state == "wallet_input":
-                logger.info(f"🎯 ROUTE DECISION: user {user_id} → wallet (active wallet_input session: {db_state})")
-                return 'wallet'
-            
-            # FOURTH-D PRIORITY: Crypto address detection (check before onboarding)
-            # BUG FIX: Route crypto addresses to wallet flow instead of onboarding
-            if text and RouteGuard._looks_like_crypto_address(text):
-                logger.info(f"🎯 SMART ROUTE: user {user_id} sent crypto address → wallet (for cashout)")
-                return 'wallet'
-            
-            # FIFTH PRIORITY: Active cashout/wallet operations (MUST CHECK BEFORE ONBOARDING)
-            # CRITICAL FIX: OTP verification and cashout flows must take priority over onboarding
-            # to prevent OTP codes from being routed to onboarding instead of wallet verification
-            if await RouteGuard.has_active_cashout(user_id, context):
-                logger.info(f"🎯 ROUTE DECISION: user {user_id} → wallet (active cashout/OTP verification)")
-                return 'wallet'
             
             # FIFTH-B PRIORITY: Admin states (MUST CHECK BEFORE ONBOARDING)
             # CRITICAL FIX: Admin broadcast and other admin flows must not be routed to onboarding

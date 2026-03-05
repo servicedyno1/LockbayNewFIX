@@ -1,62 +1,46 @@
-# Lockbay Telegram Escrow Bot - PRD
+# Lockbay - Telegram Escrow Bot PRD
 
-## Original Problem Statement
-1. Set up: Analyze code and setup the environment, update .env with all required environment variables and use current pod URL for webhooks.
-2. Bug Fix: ETH escrow creation failing on Railway production - investigate deployment logs and fix.
+## Overview
+Lockbay is a Telegram-based cryptocurrency escrow platform enabling secure peer-to-peer trades. It supports USDT (TRC20), BTC, ETH, LTC cashouts, NGN bank transfers, and integrates with Kraken, BlockBee, Fincra, DynoPay, and Flutterwave.
 
 ## Architecture
-- **App Type**: Telegram Escrow Bot (Python, FastAPI webhook server)
-- **Tech Stack**: Python 3.11, FastAPI, python-telegram-bot, SQLAlchemy, PostgreSQL (Railway + Neon)
-- **Payment Integrations**: DynoPay, Fincra, BlockBee, Kraken, Flutterwave
-- **Email**: Brevo (Sendinblue)
-- **SMS**: Twilio
-- **Entry Point**: `/app/backend/server.py` -> imports `/app/webhook_server.py` and initializes the Telegram bot
-- **Database**: PostgreSQL (Railway: `yamabiko.proxy.rlwy.net:44505/railway`)
+- **Runtime**: Python (Telegram Bot via python-telegram-bot)
+- **Database**: PostgreSQL (Railway + Neon)
+- **Deployment**: Railway
+- **Key Components**: Route guard, wallet handlers, support chat, escrow system, dispute resolution
 
-## What's Been Implemented
+## Bug Fix: Stale Support Session Hijacking Cashout Flow (March 5, 2026)
 
-### Feb 24, 2026 - Initial Setup
-1. **Environment Setup Complete**:
-   - All 80+ environment variables configured in `/app/backend/.env`
-   - Webhook URLs updated to current pod URL
-   - Python dependencies installed
-   - Frontend dependencies installed (yarn)
-   - Services running (backend + frontend)
+### Problem
+User @technine1738 (ID: 5336660667) could not submit USDT TRC20 address for cashout. Address was silently swallowed by a stale support chat session from 4 days earlier. User @onarrival1 (ID: 5590563715) had no such issue because they had no active support session.
 
-### Feb 24, 2026 - Critical Bug Fix (ETH Escrow Payment)
-2. **Root Cause Analysis**:
-   - Investigated Railway deployment logs for ID `08d36808-c6b0-490b-a6c2-3e25562c0b98`
-   - Found: `column escrows.refund_processed does not exist` - continuous failure every 10-15 min
-   - The SQLAlchemy model includes `refund_processed` and `expiry_notified` columns but they were never migrated to the production database
-   - This caused ALL escrow-related operations to fail: creation, auto-release, expiry, financial reports
-   
-3. **Fix Applied - Database Migration**:
-   - Added `refund_processed BOOLEAN DEFAULT FALSE NOT NULL` to `escrows` table
-   - Added `expiry_notified BOOLEAN DEFAULT FALSE NOT NULL` to `escrows` table
-   - All 50 existing escrows updated with correct defaults
-   - Also updated local SQLAlchemy model in `/app/models.py` for consistency
-   - Verified: No more `UndefinedColumnError` in Railway logs post-migration
+### Root Cause
+In `utils/route_guard.py`, support chat session check had **SECOND priority** in the routing chain, while crypto address detection was at **FOURTH-D priority**. A stale support session (from March 1) persisted in the in-memory `active_support_sessions` dict and intercepted all text messages for 4+ days.
 
-## Known Issues
-- Fincra authentication fails: `'Invalid authentication credentials'` - keys may need rotation
-- Brevo API: 401 Unauthorized - API key may need updating
-- Railway service deployment ended - needs new deployment to pick up the DB fix
-- Admin email notifications failing
+### Fix Applied (3 files modified)
+1. **`utils/route_guard.py`**: Reordered routing priorities - crypto address detection, wallet_input state, and active cashout checks now come BEFORE support chat check. Also auto-clears stale support sessions when wallet/cashout takes priority.
+2. **`handlers/text_router.py`**: Added exclusive wallet state bypass - when user is in an exclusive wallet state (entering_crypto_address, verifying_otp, etc.), routes directly to wallet handler without going through RouteGuard.
+3. **`handlers/wallet_direct.py`**: Added proactive support session cleanup in `start_cashout()` - clears any stale support session when user enters cashout flow.
 
-## Prioritized Backlog
-### P0 (Critical)
-- Trigger new Railway deployment so service picks up the DB migration
-- Verify escrow creation flow works end-to-end with ETH
+### New Routing Priority Order
+1. Messages hub (trade chat)
+2. Crypto address detection → wallet (NEW - was #8)
+3. Wallet input state → wallet (NEW - was #7)
+4. Active cashout/OTP → wallet (NEW - was #9)
+5. Support chat sessions (DEMOTED - was #2)
+6. Trade review + amount
+7. Rating session
+8. Escrow conversation
+9. Dispute session
+10. Admin states
+11. Onboarding
+12. Fallback
 
-### P1 (Important)
-- Investigate/rotate Fincra API credentials
-- Fix Brevo email API authentication (401 errors)
+### Testing Status
+- Fix has been applied to codebase on `main` branch
+- Needs deployment to Railway to take effect on production bot
 
-### P2 (Nice to have)
-- Add database migration tooling (Alembic) to prevent future schema drift
-- Set up monitoring for column schema validation on deploy
-
-## Next Tasks
-- New Railway deployment needed
-- Test ETH escrow payment end-to-end
-- Fix email services (Brevo 401)
+## Backlog
+- P0: Deploy fix to Railway production
+- P1: Add TTL/auto-expiry for support sessions (prevent 4-day stale sessions)
+- P2: Fincra API key authentication failure (recurring every 30min)

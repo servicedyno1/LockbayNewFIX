@@ -1268,6 +1268,16 @@ async def start_cashout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     try:
         if not update.effective_user:
             return
+        
+        # BUGFIX: Auto-clear stale support sessions when user enters cashout flow
+        # This prevents support sessions from hijacking crypto address input later
+        try:
+            from handlers.support_chat import active_support_sessions
+            if update.effective_user.id in active_support_sessions:
+                del active_support_sessions[update.effective_user.id]
+                logger.info(f"🧹 SUPPORT_CLEANUP: Cleared stale support session for user {update.effective_user.id} entering cashout flow")
+        except Exception:
+            pass
 
         async with async_managed_session() as session:
             user_id = update.effective_user.id

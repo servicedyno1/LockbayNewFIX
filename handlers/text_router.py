@@ -102,6 +102,13 @@ class UnifiedTextRouter:
             else:
                 logger.info(f"🔒 EXCLUSIVE_STATE: User {user_id} in state '{wallet_state}' - skipping admin routing")
             
+            # CRITICAL FIX: If user is in exclusive wallet state, route DIRECTLY to wallet
+            # This prevents stale support sessions from intercepting cashout address/OTP inputs
+            if is_in_exclusive_state:
+                logger.info(f"🔒 EXCLUSIVE_WALLET_ROUTE: User {user_id} in wallet state '{wallet_state}' - routing directly to wallet, bypassing RouteGuard")
+                await UnifiedTextRouter._route_to_wallet(update, context, text)
+                return
+            
             # Get routing decision based on user state
             logger.info(f"🔍 TEXT ROUTER: About to call RouteGuard.get_routing_decision for user {user_id}")
             route_decision = await RouteGuard.get_routing_decision(user_id, context, text)
