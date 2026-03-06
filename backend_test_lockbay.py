@@ -27,8 +27,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Public backend URL from frontend .env
-BACKEND_URL = "https://6611b7f7-b9c8-43c3-8628-a5ce0a4c273b.preview.emergentagent.com"
-FRONTEND_URL = "https://6611b7f7-b9c8-43c3-8628-a5ce0a4c273b.preview.emergentagent.com" # Same domain, port 3000
+BACKEND_URL = "https://telegram-bot-compare.preview.emergentagent.com"
+FRONTEND_URL = "https://telegram-bot-compare.preview.emergentagent.com" # Same domain, port 3000
 
 class LockBaySetupTester:
     def __init__(self):
