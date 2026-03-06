@@ -424,7 +424,8 @@ async def run_webhook_optimized(monitor):
     
     # CRITICAL FIX: Register missing handlers directly here
     from handlers.messages_hub import show_active_trades
-    from handlers.start import handle_start_email_input, handle_invitation_decide_later, onboarding_conversation
+    # Dead imports removed: handle_start_email_input, handle_invitation_decide_later, onboarding_conversation
+    # Email onboarding flow is no longer active
     from handlers.support_chat import create_support_conversation_handler, view_support_tickets
     from handlers.admin_support import (
         admin_support_dashboard, admin_assign_ticket, admin_support_chat,
@@ -451,10 +452,6 @@ async def run_webhook_optimized(monitor):
     application.add_handler(CallbackQueryHandler(blocked_dashboard, pattern='^continue_to_dashboard$'), group=0)
     logger.info("✅ GLOBAL_FIX: continue_to_dashboard handler registered for all users (blocking-aware)")
     
-    # CRITICAL FIX: Register cancel_email_setup with blocking
-    blocked_cancel = create_blocking_aware_handler(start_handler)
-    application.add_handler(CallbackQueryHandler(blocked_cancel, pattern='^cancel_email_setup$'), group=0)
-    
     # CRITICAL FIX: Register view_pending_invitations with blocking
     from handlers.start import handle_view_pending_invitations, handle_view_individual_invitation
     blocked_invites = create_blocking_aware_handler(handle_view_pending_invitations)
@@ -470,9 +467,6 @@ async def run_webhook_optimized(monitor):
     application.add_handler(CallbackQueryHandler(blocked_payment, pattern='^pay_escrow_'), group=-10)
     application.add_handler(CallbackQueryHandler(blocked_payment, pattern='^pay_escrow:'), group=-10)
     logger.info("✅ CRITICAL FIX: ALL Pay now button patterns registered (blocking-aware)")
-    
-    # DISABLED: Old onboarding conversation handler replaced by stateless onboarding router
-    # application.add_handler(onboarding_conversation, group=0)
     
     # Register support chat conversation handler
     support_conversation = create_support_conversation_handler()
