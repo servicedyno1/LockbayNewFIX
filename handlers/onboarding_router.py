@@ -746,7 +746,21 @@ async def onboarding_router(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
             # Handle new user creation
             if is_new:
-                # Send admin notification for new user onboarding started
+                # Auto-complete onboarding for new users - skip onboarding flow
+                logger.info(f"🚀 Auto-completing onboarding for new user {user.id}")
+                try:
+                    from database import SessionLocal as SyncSessionLocal
+                    from models import User as UserModel
+                    with SyncSessionLocal() as sync_sess:
+                        sync_sess.query(UserModel).filter(UserModel.id == user.id).update(
+                            {"onboarding_completed": True}
+                        )
+                        sync_sess.commit()
+                    logger.info(f"✅ Onboarding auto-completed for new user {user.id}")
+                except Exception as auto_err:
+                    logger.error(f"Error auto-completing onboarding for new user {user.id}: {auto_err}")
+
+                # Send admin notification for new user
                 asyncio.create_task(
                     admin_trade_notifications.notify_user_onboarding_started({
                         'user_id': user_data['id'],
@@ -757,9 +771,22 @@ async def onboarding_router(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                         'started_at': datetime.utcnow()
                     })
                 )
+
+                # Broadcast new user joined to groups
+                try:
+                    from services.group_event_service import group_event_service
+                    asyncio.create_task(group_event_service.broadcast_new_user_onboarded({
+                        'first_name': user_data.get('first_name', 'New User'),
+                        'username': user_data.get('username')
+                    }))
+                except Exception as grp_err:
+                    logger.error(f"Failed to broadcast new user event: {grp_err}")
+
                 # Clean async cache invalidation - properly awaited
                 await run_background_task(invalidate_user_cache_async(str(user.id)))
-                await _handle_new_user_start(update, context, user_data)
+                # Show main menu directly instead of onboarding
+                user_data['onboarding_completed'] = True
+                await _show_main_menu(update, context, user_data)
                 return
 
             # Check if already completed onboarding
@@ -767,74 +794,23 @@ async def onboarding_router(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 await _show_main_menu(update, context, user_data)
                 return
 
-            # Ensure existing user has active onboarding session
-            user_id = user_data["id"]
-            
-            # PERFORMANCE: Parallel DB queries (reduced from ~400ms to ~150ms)
-            t4 = time.time()
-            current_step, session_info = await asyncio.gather(
-                OnboardingService.get_current_step(user_id),
-                OnboardingService.get_session_info(user_id)
-            )
-            t5 = time.time()
-            logger.info(f"⏱️ PERF [onboarding_router]: Parallel queries took {(t5-t4)*1000:.1f}ms")
-            
-            if current_step is None:
-                # No active session found - show welcome page like new users
-                logger.info(f"No session found for existing user {user_id} - showing welcome page")
-                await _handle_new_user_start(update, context, user_data)
-                return
+            # Auto-complete onboarding for existing users who haven't completed it
+            logger.info(f"🚀 Auto-completing onboarding for existing user {user_data['id']}")
+            try:
+                from database import SessionLocal as SyncSessionLocal
+                from models import User as UserModel
+                with SyncSessionLocal() as sync_sess:
+                    sync_sess.query(UserModel).filter(UserModel.id == user_data['id']).update(
+                        {"onboarding_completed": True}
+                    )
+                    sync_sess.commit()
+                user_data['onboarding_completed'] = True
+                logger.info(f"✅ Onboarding auto-completed for existing user {user_data['id']}")
+            except Exception as auto_err:
+                logger.error(f"Error auto-completing onboarding: {auto_err}")
 
-            # Check for duplicate step rendering before handling actions
-            t6 = time.time()
-            email = session_info.get('email') if session_info else None
-            step_signature = _get_step_signature(current_step, email)
-            should_suppress, existing_message_id = _should_suppress_duplicate(user_id, step_signature)
-            t7 = time.time()
-            logger.info(f"⏱️ PERF [onboarding_router]: Duplicate check took {(t7-t6)*1000:.1f}ms")
-            
-            # IDEMPOTENCY: Check for duplicate rendering FIRST
-            if should_suppress:
-                    # This is a duplicate action - show gentle message instead
-                    logger.info(f"🔄 DUPLICATE SUPPRESSED: User {user_id} duplicate onboarding for step {current_step}")
-                    if existing_message_id:
-                        try:
-                            await update.get_bot().edit_message_text(
-                                chat_id=update.effective_chat.id,
-                                message_id=existing_message_id,
-                                text="👋 Onboarding already in progress above. Please continue with the step shown."
-                            )
-                        except Exception:
-                            # If edit fails, send a gentle message
-                            if update.message:
-                                await safe_reply_text(
-                                    update,
-                                    "👋 Welcome back! Your onboarding is already in progress.\n\n"
-                                    "Please continue with the verification step above.",
-                                    reply_markup=None
-                                )
-                    else:
-                        # No existing message to edit, send gentle new message
-                        if update.message:
-                            await safe_reply_text(
-                                update,
-                                "👋 Welcome back! Your onboarding is already in progress.\n\n"
-                                "Please continue with the verification step above.",
-                                reply_markup=None
-                            )
-                    return
-                
-            # Route based on update type with clean handlers
-            t8 = time.time()
-            logger.info(f"⏱️ PERF [onboarding_router]: Total overhead before handler: {(t8-t0)*1000:.1f}ms")
-            
-            if update.callback_query:
-                await _handle_callback(update, context, user_data, current_step)
-            elif update.message and update.message.text:
-                await _handle_text_input(update, context, user_data, current_step)
-            else:
-                # Render current step idempotently 
-                await render_step_idempotent(update, current_step, user_id, email)
+            await _show_main_menu(update, context, user_data)
+            return
 
     except Exception as e:
         user_id = user_data.get("id", "unknown") if user_data else "unknown"

@@ -99,7 +99,7 @@ async def process_existing_user_async(
     - User lookup
     - User info update
     - Pending invitations check  
-    - Email verification check
+    - Auto-complete onboarding (email verification removed)
     - Main menu display
     
     All operations use a single shared session to eliminate Neon cold start penalties.
@@ -116,7 +116,6 @@ async def process_existing_user_async(
     """
     from utils.helpers import async_update_user_from_telegram
     from utils.fast_user_lookup import async_fast_user_lookup
-    from models import EmailVerification
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from database import async_managed_session
     import time
@@ -164,47 +163,41 @@ async def process_existing_user_async(
             
             logger.info(f"👤 EXISTING USER: {db_user.first_name} (ID: {db_user.id})")
             
-            # Check if user needs onboarding
+            # Check if user needs onboarding - EMAIL VERIFICATION REMOVED
+            # Auto-complete onboarding instead of routing to onboarding flow
             needs_onboarding = (
                 not hasattr(db_user, 'onboarding_completed') or 
                 not bool(db_user.onboarding_completed)
             )
             
             if needs_onboarding:
-                # Duplicate start prevention (SKIP for referral links - they're intentional)
-                is_referral_link = start_param and start_param.startswith("ref_")
-                
-                if not is_referral_link:
+                # Auto-complete onboarding instead of routing to onboarding flow
+                logger.info(f"🚀 Auto-completing onboarding for user {user.id} - skipping onboarding flow")
+                try:
+                    from sqlalchemy import update as sql_update
+                    from models import User
+                    await shared_session.execute(
+                        sql_update(User).where(User.id == db_user.id).values(onboarding_completed=True)
+                    )
+                    await shared_session.commit()
+                    db_user.onboarding_completed = True
+
+                    # Broadcast new user event to registered groups
                     try:
-                        current_time = time.time()
-                        
-                        if context.user_data is None:
-                            context.user_data = {}
-                        
-                        if '_last_start_time' not in context.user_data:
-                            context.user_data['_last_start_time'] = {}
-                        
-                        last_start_time = context.user_data['_last_start_time'].get(user.id, 0)
-                        time_since_last_start = current_time - last_start_time
-                        
-                        if time_since_last_start < 10:
-                            logger.info(f"🔄 DUPLICATE START PREVENTED: User {user.id} made request {time_since_last_start:.1f}s ago")
-                            await update.message.reply_text(
-                                "👋 Welcome back! Your onboarding is already in progress.\n\n"
-                                "Please continue with the email verification step above, or use /cancel if you need to restart.",
-                                reply_markup=None
-                            )
-                            return ConversationHandler.END
-                        
-                        context.user_data['_last_start_time'][user.id] = current_time
-                    except Exception as e:
-                        logger.error(f"Error checking duplicate start: {e}")
-                else:
-                    logger.info(f"🔗 REFERRAL LINK DETECTED: Skipping duplicate prevention for user {user.id}")
-                
-                logger.info(f"🚀 Routing existing user {user.id} to onboarding router (incomplete)")
-                from handlers.onboarding_router import onboarding_router
-                await onboarding_router(update, context)
+                        from services.group_event_service import group_event_service
+                        asyncio.create_task(group_event_service.broadcast_new_user_onboarded({
+                            'first_name': db_user.first_name or 'New User',
+                            'username': db_user.username
+                        }))
+                    except Exception as grp_err:
+                        logger.error(f"Failed to broadcast new user event: {grp_err}")
+
+                    logger.info(f"✅ Auto-completed onboarding for user {user.id}")
+                except Exception as e:
+                    logger.error(f"Error auto-completing onboarding for user {user.id}: {e}")
+
+                # Show main menu directly
+                await show_main_menu_optimized_async(update, context, db_user, shared_session)
                 return ConversationHandler.END
             
             # Extract user data BEFORE operations (needed for parallel execution)
@@ -271,54 +264,9 @@ async def process_existing_user_async(
                     context.user_data["pending_invitations"] = pending_invitation
                     logger.info(f"📬 Stored pending invitations for main menu badge")
             
-            # STEP 4: Check email verification status using shared session
-            # Skip verification check for users with temporary skip-email addresses
-            is_temp_email = user_email and user_email.startswith('temp_') and user_email.endswith('@onboarding.temp')
-            
-            if not user_email_verified and not is_temp_email:
-                logger.warning(f"🔒 SECURITY: User {user_id_db} attempting access without email verification")
-                
-                if user_email:
-                    logger.info(f"🔒 User {user_id_db} has email {user_email} but not verified")
-                    
-                    # Check for existing verification record with shared session
-                    verify_start = time.time()
-                    result = await shared_session.execute(
-                        select(EmailVerification).filter(
-                            EmailVerification.user_id == user_id_db,
-                            EmailVerification.purpose == "registration",  # FIX: Align with OnboardingService
-                            EmailVerification.expires_at > datetime.now(timezone.utc)
-                        )
-                    )
-                    existing_verification = result.scalar_one_or_none()
-                    verify_time = time.time() - verify_start
-                    logger.info(f"⚡ SHARED_SESSION: Email verification check completed in {verify_time*1000:.1f}ms")
-                    
-                    if existing_verification:
-                        await update.message.reply_text(
-                            f"🔐 Email Verification Required\n\n"
-                            f"Please enter the 6-digit code sent to:\n"
-                            f"📧 {user_email}\n\n"
-                            f"💡 Check your inbox and spam folder",
-                            parse_mode="Markdown",
-                            reply_markup=InlineKeyboardMarkup([
-                                [InlineKeyboardButton("🔄 Resend Code", callback_data="resend_otp_onboarding")],
-                                [InlineKeyboardButton("✏️ Change Email", callback_data="change_email_onboarding")]
-                            ])
-                        )
-                        logger.info(f"🔒 Redirected unverified user {user_id_db} to complete email verification")
-                        return OnboardingStates.VERIFYING_EMAIL_OTP
-                    else:
-                        logger.info(f"🔒 No valid verification record for user {user_id_db} - restarting onboarding")
-                        await update.message.reply_text(
-                            "🔐 Email Verification Expired\n\n"
-                            "Your verification code has expired. Let's restart the verification process.",
-                            parse_mode="Markdown"
-                        )
-                        return await start_onboarding(update, context)
-                else:
-                    logger.info(f"🔒 User {user_id_db} has no email - starting fresh onboarding")
-                    return await start_onboarding(update, context)
+            # EMAIL VERIFICATION REMOVED: OTP was removed from onboarding flow.
+            # Users go directly to main menu regardless of email_verified status.
+            logger.info(f"✅ Skipping email verification check (OTP removed from onboarding) for user {user_id_db}")
             
             # STEP 5: Show main menu using shared session
             menu_start = time.time()
@@ -590,61 +538,53 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             else:
                 logger.info(f"👤 EXISTING USER (from prefetch cache) - User ID: {cached_onboarding.get('user_id')}")
                 
-                # Check if user needs onboarding
+                # Check if user needs onboarding - auto-complete instead of routing to flow
                 if not cached_onboarding.get('onboarding_complete'):
-                    # Duplicate start prevention (SKIP for referral links - they're intentional)
-                    is_referral_link = start_param and start_param.startswith("ref_")
-                    
-                    if not is_referral_link:
+                    # Auto-complete onboarding - EMAIL VERIFICATION REMOVED
+                    logger.info(f"🚀 Auto-completing onboarding for user {user.id} from cached path - skipping onboarding flow")
+                    try:
+                        from sqlalchemy import update as sql_update
+                        from models import User as UserModel
+                        async with async_managed_session() as auto_session:
+                            await auto_session.execute(
+                                sql_update(UserModel).where(UserModel.id == cached_onboarding.get('user_id')).values(onboarding_completed=True)
+                            )
+                            await auto_session.commit()
+
+                        # Broadcast new user event to registered groups
                         try:
-                            current_time = time.time()
-                            if context.user_data is None:
-                                context.user_data = {}
-                            if '_last_start_time' not in context.user_data:
-                                context.user_data['_last_start_time'] = {}
-                            
-                            last_start_time = context.user_data['_last_start_time'].get(user.id, 0)
-                            time_since_last_start = current_time - last_start_time
-                            
-                            if time_since_last_start < 10:
-                                logger.info(f"🔄 DUPLICATE START PREVENTED: User {user.id} made request {time_since_last_start:.1f}s ago")
-                                await update.message.reply_text(
-                                    "👋 Welcome back! Your onboarding is already in progress.\n\n"
-                                    "Please continue with the email verification step above, or use /cancel if you need to restart.",
-                                    reply_markup=None
-                                )
-                                return ConversationHandler.END
-                            
-                            context.user_data['_last_start_time'][user.id] = current_time
-                        except Exception as e:
-                            logger.error(f"Error checking duplicate start: {e}")
-                    else:
-                        logger.info(f"🔗 REFERRAL LINK DETECTED: Skipping duplicate prevention for user {user.id}")
-                    
-                    # CRITICAL FIX: Check for referral code BEFORE routing to onboarding
-                    # This allows existing users who haven't onboarded to use referral links
+                            from services.group_event_service import group_event_service
+                            import asyncio
+                            asyncio.create_task(group_event_service.broadcast_new_user_onboarded({
+                                'first_name': user.first_name or 'New User',
+                                'username': cached_onboarding.get('username')
+                            }))
+                        except Exception as grp_err:
+                            logger.error(f"Failed to broadcast new user event: {grp_err}")
+
+                        logger.info(f"✅ Auto-completed onboarding for user {user.id} from cached path")
+                    except Exception as e:
+                        logger.error(f"Error auto-completing onboarding for user {user.id}: {e}")
+
+                    # Handle referral code if present
                     if start_param and start_param.startswith("ref_"):
                         referral_code = start_param[4:]
                         logger.info(f"🔗 Incomplete user {user.id} using referral link: {referral_code}")
-                        
-                        # Validate referral code before storing
-                        if cached_onboarding.get('referral_code') == referral_code:
-                            logger.info(f"🚫 User tried to use their own referral code")
-                            # Don't block onboarding, just don't store invalid code
-                        elif cached_onboarding.get('referred_by_id'):
-                            logger.info(f"🚫 User already has a referrer")
-                            # Don't block onboarding, just don't override existing referrer
-                        else:
-                            # Valid referral code - store it for onboarding_router to process
-                            if context.user_data is None:
-                                context.user_data = {}
-                            context.user_data["pending_referral_code"] = referral_code
-                            logger.info(f"✅ Stored referral code {referral_code} for incomplete user {user.id}")
+                        if context.user_data is None:
+                            context.user_data = {}
+                        context.user_data["pending_referral_code"] = referral_code
                     
-                    logger.info(f"🚀 Routing existing user to onboarding router (incomplete)")
-                    from handlers.onboarding_router import onboarding_router
-                    await onboarding_router(update, context)
-                    return ConversationHandler.END
+                    # Show main menu directly after auto-complete
+                    from types import SimpleNamespace
+                    db_user = SimpleNamespace(
+                        id=cached_onboarding.get('user_id'),
+                        telegram_id=user.id,
+                        first_name=user.first_name,
+                        username=cached_onboarding.get('username'),
+                        email=cached_onboarding.get('email'),
+                        email_verified=cached_onboarding.get('email_verified'),
+                    )
+                    return await show_main_menu(update, context, db_user)
                 
                 # Handle deep link if present
                 if start_param:
@@ -673,57 +613,9 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                         )
                         return await show_main_menu(update, context, db_user)
                 
-                # Check email verification using cached data
-                # Skip verification check for users with temporary skip-email addresses
-                user_email = cached_onboarding.get('email')
-                is_temp_email = user_email and user_email.startswith('temp_') and user_email.endswith('@onboarding.temp')
-                
-                if not cached_onboarding.get('email_verified') and not is_temp_email:
-                    logger.warning(f"🔒 SECURITY: User {cached_onboarding.get('user_id')} attempting access without email verification")
-                    
-                    if user_email:
-                        logger.info(f"🔒 User has email but not verified - redirecting to verification")
-                        
-                        # Check for existing verification record
-                        from models import EmailVerification
-                        from datetime import datetime, timezone
-                        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-                        
-                        async with async_managed_session() as session:
-                            result = await session.execute(
-                                select(EmailVerification).filter(
-                                    EmailVerification.user_id == cached_onboarding.get('user_id'),
-                                    EmailVerification.purpose == "registration",  # FIX: Align with OnboardingService
-                                    EmailVerification.expires_at > datetime.now(timezone.utc)
-                                )
-                            )
-                            existing_verification = result.scalar_one_or_none()
-                        
-                        if existing_verification:
-                            await update.message.reply_text(
-                                f"🔐 Email Verification Required\n\n"
-                                f"Please enter the 6-digit code sent to:\n"
-                                f"📧 {user_email}\n\n"
-                                f"💡 Check your inbox and spam folder",
-                                parse_mode="Markdown",
-                                reply_markup=InlineKeyboardMarkup([
-                                    [InlineKeyboardButton("🔄 Resend Code", callback_data="resend_otp_onboarding")],
-                                    [InlineKeyboardButton("✏️ Change Email", callback_data="change_email_onboarding")]
-                                ])
-                            )
-                            logger.info(f"🔒 Redirected unverified user to complete email verification")
-                            return OnboardingStates.VERIFYING_EMAIL_OTP
-                        else:
-                            logger.info(f"🔒 No valid verification record - restarting onboarding")
-                            await update.message.reply_text(
-                                "🔐 Email Verification Expired\n\n"
-                                "Your verification code has expired. Let's restart the verification process.",
-                                parse_mode="Markdown"
-                            )
-                            return await start_onboarding(update, context)
-                    else:
-                        logger.info(f"🔒 User has no email - starting fresh onboarding")
-                        return await start_onboarding(update, context)
+                # EMAIL VERIFICATION REMOVED: OTP was removed from onboarding flow.
+                # Users go directly to main menu regardless of email_verified status.
+                logger.info(f"✅ Skipping email verification check (OTP removed from onboarding) for user {cached_onboarding.get('user_id')}")
                 
                 # Show main menu using cached data
                 from types import SimpleNamespace
@@ -763,11 +655,34 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             needs_onboarding = not cached_user_data.get('onboarding_completed', True)
             
             if needs_onboarding:
-                logger.info(f"🚀 Routing cached user to onboarding (incomplete)")
-                from handlers.onboarding_router import onboarding_router
-                await onboarding_router(update, context)
+                # Auto-complete onboarding - EMAIL VERIFICATION REMOVED
+                logger.info(f"🚀 Auto-completing onboarding for cached user - skipping onboarding flow")
+                try:
+                    from sqlalchemy import update as sql_update
+                    from models import User as UserModel
+                    async with async_managed_session() as auto_session:
+                        await auto_session.execute(
+                            sql_update(UserModel).where(UserModel.id == cached_user_data.get('id')).values(onboarding_completed=True)
+                        )
+                        await auto_session.commit()
+                    logger.info(f"✅ Auto-completed onboarding for cached user")
+                except Exception as e:
+                    logger.error(f"Error auto-completing onboarding: {e}")
+                
+                # Show main menu directly
+                from types import SimpleNamespace
+                db_user = SimpleNamespace(
+                    id=cached_user_data.get('id'),
+                    telegram_id=cached_user_data.get('telegram_id'),
+                    first_name=cached_user_data.get('first_name'),
+                    username=cached_user_data.get('username'),
+                    email=cached_user_data.get('email'),
+                    email_verified=cached_user_data.get('email_verified', False),
+                )
+                async with get_async_session() as session:
+                    await show_main_menu_optimized_async(update, context, db_user, session)
                 cache_time = time.time() - cache_start
-                logger.info(f"⚡ CACHE_COMPLETE: Onboarding route in {cache_time*1000:.1f}ms")
+                logger.info(f"⚡ CACHE_COMPLETE: Auto-complete + menu in {cache_time*1000:.1f}ms")
                 return ConversationHandler.END
             
             # Reconstruct db_user from cached data
@@ -927,63 +842,43 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
         logger.info(f"👤 EXISTING USER: {db_user.first_name} (ID: {db_user.id})")
 
-        # PHASE 2A: Check if existing user needs onboarding and route to new stateless system
-        # CRITICAL FIX: Check onboarding_completed field (the correct field for full onboarding)
+        # PHASE 2A: Check if existing user needs onboarding - auto-complete instead of routing to flow
+        # EMAIL VERIFICATION REMOVED: OTP was removed from onboarding flow.
         needs_onboarding = (
             not hasattr(db_user, 'onboarding_completed') or 
             not bool(db_user.onboarding_completed)
         )
         if needs_onboarding:
-            # Duplicate start prevention (SKIP for referral links - they're intentional)
-            is_referral_link = start_param and start_param.startswith("ref_")
-            
-            if not is_referral_link:
-                try:
-                    # Simple time-based duplicate prevention instead of complex session checking
-                    import time
-                    current_time = time.time()
-                    
-                    # Initialize user_data if None
-                    if context.user_data is None:
-                        context.user_data = {}
-                    
-                    # Check if this user has made a recent start request (within last 10 seconds)
-                    if '_last_start_time' not in context.user_data:
-                        context.user_data['_last_start_time'] = {}
-                    
-                    last_start_time = context.user_data['_last_start_time'].get(user.id, 0)
-                    time_since_last_start = current_time - last_start_time
-                    
-                    if time_since_last_start < 10:  # 10 seconds cooldown
-                        logger.info(f"🔄 DUPLICATE START PREVENTED: User {user.id} made request {time_since_last_start:.1f}s ago (cooldown: 10s)")
-                        # Send a gentle message instead of starting onboarding again
-                        await update.message.reply_text(
-                            "👋 Welcome back! Your onboarding is already in progress.\n\n"
-                            "Please continue with the email verification step above, or use /cancel if you need to restart.",
-                            reply_markup=None
-                        )
-                        return ConversationHandler.END
-                    
-                    # Update the last start time
-                    context.user_data['_last_start_time'][user.id] = current_time
-                        
-                except Exception as e:
-                    logger.error(f"Error checking duplicate start for user {db_user.id}: {e}")
-                    # If duplicate check fails, allow onboarding to proceed normally
-            else:
-                logger.info(f"🔗 REFERRAL LINK DETECTED: Skipping duplicate prevention for user {user.id}")
-            
-            logger.info(f"🚀 PHASE 2A: Routing existing user {user.id} to stateless onboarding router (incomplete)")
-            # Route to new onboarding router system
+            # Auto-complete onboarding instead of routing to onboarding flow
+            logger.info(f"🚀 Auto-completing onboarding for user {user.id} - skipping onboarding flow")
             try:
-                from handlers.onboarding_router import onboarding_router
-                logger.info(f"📍 DEBUG: About to call onboarding_router for user {user.id}")
-                await onboarding_router(update, context)
-                logger.info(f"✅ DEBUG: onboarding_router completed for user {user.id}")
+                from database import async_managed_session as _async_managed_session
+                from sqlalchemy import update as sql_update
+                from models import User as UserModel
+                async with _async_managed_session() as auto_session:
+                    await auto_session.execute(
+                        sql_update(UserModel).where(UserModel.id == db_user.id).values(onboarding_completed=True)
+                    )
+                    await auto_session.commit()
+
+                # Broadcast new user event to registered groups
+                try:
+                    from services.group_event_service import group_event_service
+                    import asyncio
+                    asyncio.create_task(group_event_service.broadcast_new_user_onboarded({
+                        'first_name': db_user.first_name or 'New User',
+                        'username': db_user.username
+                    }))
+                except Exception as grp_err:
+                    logger.error(f"Failed to broadcast new user event: {grp_err}")
+
+                logger.info(f"✅ Auto-completed onboarding for user {user.id}")
             except Exception as e:
-                logger.error(f"❌ DEBUG: Error in onboarding_router for user {user.id}: {e}", exc_info=True)
-                # Fall back to sending an error message
-                await update.message.reply_text("❌ System error. Please try again later.")
+                logger.error(f"Error auto-completing onboarding for user {user.id}: {e}")
+
+            # Show main menu directly
+            async with async_managed_session() as menu_session:
+                await show_main_menu_optimized_async(update, context, db_user, menu_session)
             return ConversationHandler.END
 
         # RESILIENCE GUARD: Re-apply full commands for onboarded users as safety measure
@@ -1147,64 +1042,9 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                     if context.user_data is not None:
                         context.user_data["pending_invitations"] = pending_invitation
 
-        # SECURITY: Check email verification status before allowing access
-        # Skip verification check for users with temporary skip-email addresses
-        is_temp_email = user_email and user_email.startswith('temp_') and user_email.endswith('@onboarding.temp')
-        
-        if not user_email_verified and not is_temp_email:
-            logger.warning(f"🔒 SECURITY: User {user_id_db} attempting access without email verification")
-            
-            # Check if user has email set but not verified
-            if user_email:
-                logger.info(f"🔒 User {user_id_db} has email {user_email} but not verified - redirecting to verification")
-                
-                # ASYNC FIX: Check for existing verification record with async session
-                from models import EmailVerification
-                from datetime import datetime, timezone
-                from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-                
-                existing_verification = None
-                async with async_managed_session() as session:
-                    result = await session.execute(
-                        select(EmailVerification).filter(
-                            EmailVerification.user_id == user_id_db,
-                            EmailVerification.purpose == "registration",  # FIX: Align with OnboardingService
-                            EmailVerification.expires_at > datetime.now(timezone.utc)
-                        )
-                    )
-                    existing_verification = result.scalar_one_or_none()
-                
-                if existing_verification:
-                    # Resume verification process
-                    await update.message.reply_text(
-                        f"🔐 Email Verification Required\n\n"
-                        f"Please enter the 6-digit code sent to:\n"
-                        f"📧 {user_email}\n\n"
-                        f"💡 Check your inbox and spam folder",
-                        parse_mode="Markdown",
-                        reply_markup=InlineKeyboardMarkup([
-                            [InlineKeyboardButton("🔄 Resend Code", callback_data="resend_otp_onboarding")],
-                            [InlineKeyboardButton("✏️ Change Email", callback_data="change_email_onboarding")]
-                        ])
-                    )
-                    logger.info(f"🔒 Redirected unverified user {user_id_db} to complete email verification")
-                    return OnboardingStates.VERIFYING_EMAIL_OTP
-                else:
-                    # No valid verification record - restart onboarding
-                    logger.info(f"🔒 No valid verification record for user {user_id_db} - restarting onboarding")
-                    await update.message.reply_text(
-                        "🔐 Email Verification Expired\n\n"
-                        "Your verification code has expired. Let's restart the verification process.",
-                        parse_mode="Markdown"
-                    )
-                    total_elapsed = time.time() - handler_start_time
-                    logger.info(f"⏱️ PERF: START HANDLER completed in {total_elapsed*1000:.2f}ms - starting onboarding")
-                    return await start_onboarding(update, context)
-            else:
-                # No email set - start fresh onboarding
-                total_elapsed = time.time() - handler_start_time
-                logger.info(f"⏱️ PERF: START HANDLER completed in {total_elapsed*1000:.2f}ms - User {user_id_db} has no email - starting fresh onboarding")
-                return await start_onboarding(update, context)
+        # EMAIL VERIFICATION REMOVED: OTP was removed from onboarding flow.
+        # Users go directly to main menu regardless of email_verified status.
+        logger.info(f"✅ Skipping email verification check (OTP removed from onboarding) for user {user_id_db}")
         
         # Typing indicator already sent at the beginning - no need to send again
         total_elapsed = time.time() - handler_start_time
