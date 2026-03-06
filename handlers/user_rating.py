@@ -573,6 +573,9 @@ async def handle_rating_submit(update: Update, context: ContextTypes.DEFAULT_TYP
                     import asyncio
                     admin_notif_service = AdminTradeNotificationService()
                     asyncio.create_task(admin_notif_service.send_group_notification_rating_submitted(rating_data))
+                    # Broadcast to all registered groups
+                    from services.group_event_service import group_event_service
+                    asyncio.create_task(group_event_service.broadcast_rating_submitted(rating_data))
                     logger.info(f"📤 Queued group notification for rating submitted: {trade.escrow_id}")
                 except Exception as notif_err:
                     logger.error(f"❌ Failed to queue rating submitted group notification: {notif_err}")

@@ -4212,6 +4212,11 @@ Payment Address:
                 asyncio.create_task(
                     admin_trade_notifications.send_group_notification_escrow_created(escrow_notification_data)
                 )
+                # Broadcast to all registered groups
+                from services.group_event_service import group_event_service
+                asyncio.create_task(
+                    group_event_service.broadcast_trade_created(escrow_notification_data)
+                )
                 logger.info(f"Admin notification queued for escrow creation: {saved_escrow_id}")
                 
             except Exception as e:
@@ -6036,6 +6041,9 @@ async def process_immediate_wallet_payment(query, context, user, total_amount, s
                     }
                     admin_notif_service = AdminTradeNotificationService()
                     asyncio.create_task(admin_notif_service.send_group_notification_payment_confirmed(payment_data))
+                    # Broadcast to all registered groups
+                    from services.group_event_service import group_event_service
+                    asyncio.create_task(group_event_service.broadcast_trade_funded(payment_data))
                     logger.info(f"📤 Queued group notification for payment confirmed: {escrow_public_id}")
                 except Exception as notif_err:
                     logger.error(f"❌ Failed to queue payment confirmed group notification: {notif_err}")
@@ -7760,6 +7768,9 @@ async def handle_seller_invitation_response(
                     }
                     admin_notif_service = AdminTradeNotificationService()
                     asyncio.create_task(admin_notif_service.send_group_notification_seller_accepted(acceptance_data))
+                    # Broadcast to all registered groups
+                    from services.group_event_service import group_event_service
+                    asyncio.create_task(group_event_service.broadcast_seller_accepted(acceptance_data))
                     logger.info(f"📤 Queued group notification for seller accepted: {escrow.escrow_id}")
                 except Exception as notif_err:
                     logger.error(f"❌ Failed to queue seller accepted group notification: {notif_err}")
@@ -9578,6 +9589,9 @@ async def handle_confirm_release_funds(update: TelegramUpdate, context: ContextT
                             }
                             admin_notif_service = AdminTradeNotificationService()
                             asyncio.create_task(admin_notif_service.send_group_notification_funds_released(release_data))
+                            # Broadcast to all registered groups
+                            from services.group_event_service import group_event_service
+                            asyncio.create_task(group_event_service.broadcast_escrow_completed(release_data))
                             logger.info(f"📤 Queued group notification for funds released: {escrow_id_str}")
                         except Exception as notif_err:
                             logger.error(f"❌ Failed to queue funds released group notification: {notif_err}")

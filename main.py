@@ -905,6 +905,15 @@ async def run_webhook_optimized(monitor):
             logger.error(f"❌ Failed to register onboarding router: {e}")
             # Don't raise - fallback to existing system
         
+        # Register group management handlers (bot added/removed from groups)
+        logger.info("🚀 Registering group management handlers...")
+        try:
+            from handlers.group_handler import register_group_handlers
+            register_group_handlers(application)
+            logger.info("✅ Group management handlers registered successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to register group handlers: {e}")
+        
         # CRITICAL FIX: Register refund command handlers directly to ensure they're available
         logger.info("🔄 Registering refund command handlers directly...")
         try:

@@ -2961,3 +2961,50 @@ class PartnerApplication(Base):
         Index('idx_partner_app_status', 'status', 'created_at'),
         Index('idx_partner_app_email', 'email'),
     )
+
+
+class BotGroup(Base):
+    """Tracks Telegram groups the bot has been added to for event broadcasting"""
+    __tablename__ = 'bot_groups'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, index=True)
+    chat_title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    chat_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    events_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    removed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index('ix_bot_groups_active', 'is_active'),
+    )
+
+
+class PromoMessageLog(Base):
+    """Tracks promotional messages sent to users to prevent duplicates"""
+    __tablename__ = 'promo_message_logs'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    promo_key: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    
+    __table_args__ = (
+        Index('ix_promo_user_key', 'user_id', 'promo_key', unique=True),
+    )
+
+
+class PromoOptOut(Base):
+    """Users who have opted out of promotional messages"""
+    __tablename__ = 'promo_opt_outs'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    opted_out_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    
+    __table_args__ = (
+        Index('ix_promo_optout_user', 'user_id', unique=True),
+    )
