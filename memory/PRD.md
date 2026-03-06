@@ -9,14 +9,14 @@ Analyze and set up an existing Lockbay Telegram bot project. Compare the local c
 - **Entrypoint**: `/app/__main__.py`
 - **Config**: `/app/config.py` reads from `/app/.env`
 - **Webhooks**: FastAPI at `/app/webhook_server.py`
-- **Database**: PostgreSQL via `DATABASE_URL`
+- **Database**: PostgreSQL (Railway) via `DATABASE_URL`
 - **Bot Framework**: python-telegram-bot
 
 ## What's Been Implemented (March 6, 2026)
 
 ### 1. Email Onboarding Flow Removed
 - `handlers/onboarding_router.py`: Auto-completes onboarding for ALL users (new + existing)
-- `handlers/start.py`: All email verification code paths removed; existing users auto-complete
+- `handlers/start.py`: All email verification code paths removed
 
 ### 2. Group Chat Guard
 - `main.py`: `_group_chat_guard` at group `-99` ignores messages in groups/supergroups
@@ -26,24 +26,31 @@ Analyze and set up an existing Lockbay Telegram bot project. Compare the local c
 
 ### 4. Group Message Broadcasting
 - `handlers/group_handler.py`: NEW - handles bot add/remove from groups
-- `models.py`: Added `BotGroup`, `PromoMessageLog`, `PromoOptOut` models
-- `handlers/escrow.py`: 4 group event broadcasts (trade created/funded/seller accepted/completed)
+- `models.py`: Added `BotGroup`, `PromoMessageLog`, `PromoOptOut` models (aligned to existing DB schema)
+- `handlers/escrow.py`: 4 group event broadcasts
 - `handlers/user_rating.py`: Rating broadcast
-- `main.py`: Registered `register_group_handlers(application)`
+- `main.py`: Registered group handlers
 - `services/group_event_service.py`: NEW - group broadcast service
 
 ### 5. Dead Code Cleanup
-- `handlers/start.py`: Removed 1,902 lines of dead email/OTP/TOS code (5132 -> 3202 lines)
-  - Removed: `start_onboarding`, `collect_email`, `verify_email_otp_onboarding`, `show_terms_of_service`, `accept_terms`, `complete_onboarding`, `finalize_trade_acceptance`, `onboarding_conversation` ConversationHandler, and 10+ other dead functions
-  - Cleaned `OnboardingStates`: removed 25 dead states, kept `ONBOARDING_SHOWCASE` (still used by demo handlers)
-- `main.py`: Removed dead imports (`handle_start_email_input`, `handle_invitation_decide_later`, `onboarding_conversation`), removed commented-out conversation handler registration, removed `cancel_email_setup` callback
+- `handlers/start.py`: 1,902 lines removed (5,132 → 3,202)
+- `main.py`: Dead imports and commented-out handlers removed
 
 ### 6. DB Migration
-- `migrations/add_group_broadcast_tables.sql`: SQL migration for `bot_groups`, `promo_message_logs`, `promo_opt_outs` tables
-- Note: `Base.metadata.create_all(checkfirst=True)` in `database.py` will auto-create tables on startup
+- `migrations/add_group_broadcast_tables.sql`: Indexes added to existing tables
+- 839 duplicate rows cleaned from `promo_message_logs`
+- All tables verified: `bot_groups`, `promo_message_logs`, `promo_opt_outs`
 
-## Blocker
-- `.env` file missing (gitignored, lost during fork). Backend cannot start without credentials.
+### 7. Environment
+- `.env` created with all credentials
+- `WEBHOOK_URL` pointed to current pod
+- Backend running and healthy
+
+## Status
+- Backend: Running, health check passing
+- All files compile without errors
+- DB migration complete
+- No broken imports or references
 
 ## Backlog
 - P2: Neon DB sync, configure Redis for production

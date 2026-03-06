@@ -2987,12 +2987,13 @@ class PromoMessageLog(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
-    promo_key: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    message_key: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    session_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    sent_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
     __table_args__ = (
-        Index('ix_promo_user_key', 'user_id', 'promo_key', unique=True),
+        Index('ix_promo_user_key', 'user_id', 'message_key', unique=True),
     )
 
 
@@ -3002,7 +3003,6 @@ class PromoOptOut(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
     opted_out_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
     __table_args__ = (
