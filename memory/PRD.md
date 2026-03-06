@@ -1,41 +1,35 @@
 # Lockbay Telegram Escrow Bot - PRD
 
 ## Original Problem Statement
-Analyze and setup the Lockbay Telegram escrow bot codebase. Update `.env` with all required environment variables and ensure webhook URLs use the current pod URL.
+Analyze and set up an existing Lockbay Telegram bot project. Compare the local codebase's onboarding flow with the `Groupmessage` branch of `Moxxcompany/LockbayPaymentFixing` GitHub repository, identify differences, and align the local code.
 
 ## Architecture
-- **Runtime**: Python 3.11 + FastAPI (webhook server on port 8001)
-- **Bot Framework**: python-telegram-bot v22.x (webhook mode)
-- **Database**: PostgreSQL (Railway primary, Neon backup)
-- **Payment Integrations**: DynoPay, BlockBee, Fincra, Kraken
-- **Email**: Brevo (SendinBlue)
-- **SMS**: Twilio
-- **Scheduler**: APScheduler (consolidated scheduler)
-- **Entry Point**: `/app/backend/server.py` → loads `/app/webhook_server.py` → initializes bot from `/app/main.py`
+- **Type**: Monolithic Python Telegram bot
+- **Root**: `/app`
+- **Entrypoint**: `/app/__main__.py`
+- **Config**: `/app/config.py` reads from `/app/.env`
+- **Webhooks**: FastAPI at `/app/webhook_server.py`
+- **Database**: PostgreSQL via `DATABASE_URL`
+- **Bot Framework**: python-telegram-bot
 
-## Core Requirements
-- Telegram bot for escrow/P2P trading
-- Multi-currency crypto support (BTC, ETH, LTC, USDT-ERC20, USDT-TRC20)
-- NGN (Naira) support via Fincra
-- Admin dashboard, dispute resolution, rating system
-- Webhook-based payment processing
+## What's Been Implemented (March 6, 2026)
 
-## What's Been Implemented (2026-03-06)
-- Created `/app/.env` with all 80+ environment variables
-- Updated `WEBHOOK_URL` to pod URL: `https://6611b7f7-b9c8-43c3-8628-a5ce0a4c273b.preview.emergentagent.com/api/webhook`
-- Updated `DYNOPAY_WEBHOOK_URL` to pod URL: `https://6611b7f7-b9c8-43c3-8628-a5ce0a4c273b.preview.emergentagent.com/api/webhook/dynopay`
-- Installed all Python dependencies from requirements.txt
-- Bot fully initialized and running: webhook registered with Telegram, all handlers loaded, scheduler running
+### 1. Email Onboarding Flow Removed
+- **`handlers/onboarding_router.py`**: Auto-completes onboarding for ALL users (new + existing), skipping email/OTP/TOS steps entirely
+- **`handlers/start.py`**: All 7 email verification code paths removed; existing users auto-complete instead of routing to onboarding flow
+- **`services/group_event_service.py`**: Created new service matching remote repo for group event broadcasting
 
-## Verified Configuration
-- Telegram webhook: Registered ✅ (pending=0)
-- DynoPay webhook: Configured ✅
-- Database: Connected to Railway PostgreSQL ✅
-- Crypto rates: Pre-warmed 19/19 ✅
-- All handlers: Registered ✅
-- Scheduler: Running ✅
+### 2. Group Chat Guard
+- **`main.py`**: Added `_group_chat_guard` at handler group `-99` to ignore all messages/commands in groups/supergroups (allows `my_chat_member` / `chat_member` events through)
 
-## Prioritized Backlog
-- P0: None (core setup complete)
-- P1: Monitor webhook delivery, test actual Telegram bot interaction
+### 3. Cashout OTP Removed
+- **`handlers/wallet_direct.py`**: NGN cashout - OTP removed for ALL users, shows direct confirmation screen
+- **`handlers/wallet_direct.py`**: Crypto cashout - OTP and email verification requirement removed, all users proceed directly to confirmation
+
+## Blocker
+- `.env` file missing (gitignored, lost during fork). Backend cannot start without `DATABASE_URL` and other credentials.
+
+## Backlog
+- P2: Clean up dead OnboardingStates email/OTP state definitions in `start.py`
+- P2: Clean up commented-out `onboarding_conversation` handler in `main.py`
 - P2: Set up Neon DB sync, configure Redis for production
