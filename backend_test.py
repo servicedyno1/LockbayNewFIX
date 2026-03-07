@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Get the backend URL from environment
-BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://telegram-bot-compare.preview.emergentagent.com')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://pod-url-update.preview.emergentagent.com')
 
 class BackendTester:
     def __init__(self, base_url=BACKEND_URL):
