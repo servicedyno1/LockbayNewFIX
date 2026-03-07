@@ -748,8 +748,20 @@ BalanceGuard Monitoring System - {Config.PLATFORM_NAME}
         """
         Send admin notification when operation proceeds despite low balance.
         This provides truthful status information to administrators.
+        Cooldown: 12 hours per provider to limit to twice-daily max.
         """
         try:
+            # --- 12-hour cooldown check (DB-backed, survives restarts) ---
+            cooldown_key = f"op_low_balance_{operation_type}_{currency}"
+            should_send = await self.should_send_alert(
+                provider=operation_type,
+                currency=currency,
+                alert_level=AlertLevel.WARNING  # reuse WARNING cooldown (12h)
+            )
+            if not should_send:
+                logger.debug(f"Skipping low-balance operation alert - cooldown active for {cooldown_key}")
+                return
+
             from services.admin_funding_notifications import admin_funding_notifications
             import asyncio
             
@@ -785,6 +797,13 @@ BalanceGuard Monitoring System - {Config.PLATFORM_NAME}
                 }
             ))
             
+            # Record cooldown
+            await self.record_alert_sent(
+                provider=operation_type,
+                currency=currency,
+                alert_level=AlertLevel.WARNING
+            )
+            
             logger.warning(
                 f"⚠️ ADMIN_ALERT_SENT: {operation_type} proceeding with low balance - {service_provider} "
                 f"balance {service_balance} for {amount} {currency}"
@@ -803,8 +822,19 @@ BalanceGuard Monitoring System - {Config.PLATFORM_NAME}
     ) -> None:
         """
         Send admin notification when operation is actually blocked by admin override.
+        Cooldown: 12 hours per provider to limit to twice-daily max.
         """
         try:
+            # --- 12-hour cooldown check (DB-backed, survives restarts) ---
+            should_send = await self.should_send_alert(
+                provider=f"blocked_{operation_type}",
+                currency=currency,
+                alert_level=AlertLevel.WARNING  # reuse WARNING cooldown (12h)
+            )
+            if not should_send:
+                logger.debug(f"Skipping operation-blocked alert - cooldown active for blocked_{operation_type}_{currency}")
+                return
+
             from services.admin_funding_notifications import admin_funding_notifications
             import asyncio
             
@@ -833,6 +863,13 @@ BalanceGuard Monitoring System - {Config.PLATFORM_NAME}
                     'blocking_reason': blocking_reason
                 }
             ))
+            
+            # Record cooldown
+            await self.record_alert_sent(
+                provider=f"blocked_{operation_type}",
+                currency=currency,
+                alert_level=AlertLevel.WARNING
+            )
             
             logger.error(
                 f"🚫 ADMIN_ALERT_SENT: {operation_type} BLOCKED by admin override - "

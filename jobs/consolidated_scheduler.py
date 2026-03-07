@@ -148,22 +148,21 @@ class ConsolidatedScheduler:
         )
         logger.info("✅ Core Cleanup & Expiry scheduled every 15 minutes")
 
-        # ===== CORE JOB 5: REPORTING (FREQUENT) =====
+        # ===== CORE JOB 5: REPORTING (DAILY) =====
         # Handles: Admin dashboard updates, user communications, analytics
-        # Frequency: Every hour (frequent reporting tasks)
-        # NOTE: Calls run_admin_dashboards() to avoid duplicate financial reports
+        # Frequency: Once daily at 6:00 AM UTC (reduced from hourly to cut email volume)
         from jobs.core.reporting import run_admin_dashboards
         self.scheduler.add_job(
             run_admin_dashboards,
-            trigger=IntervalTrigger(hours=1, start_date=datetime.now().replace(minute=0, second=0, microsecond=0)),
-            id="core_reporting_hourly",
-            name="📈 Core Reporting - Admin Dashboards & Communications",
+            trigger=CronTrigger(hour=6, minute=0),
+            id="core_reporting_daily_dashboards",
+            name="📈 Core Reporting - Admin Dashboards & Communications (Daily 6 AM UTC)",
             max_instances=1,
             coalesce=True,
             misfire_grace_time=300,  # 5-minute grace for reports
             replace_existing=True
         )
-        logger.info("✅ Core Reporting (hourly) scheduled - dashboards only")
+        logger.info("✅ Core Reporting scheduled daily at 6 AM UTC - dashboards only")
 
         # ===== CORE JOB 5: REPORTING (DAILY SCHEDULES) =====
         # Daily financial reports at 8:00 AM and 8:00 PM UTC (twice daily)

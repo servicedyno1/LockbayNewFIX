@@ -1,56 +1,36 @@
-# Lockbay Telegram Escrow Bot - PRD
+# LockBay Telegram Escrow Bot - PRD
 
 ## Original Problem Statement
-Analyze and set up an existing Lockbay Telegram bot project. Compare the local codebase's onboarding flow with the `Groupmessage` branch of `Moxxcompany/LockbayPaymentFixing` GitHub repository, identify differences, and align the local code.
+1. Update backend .env with full production environment variables and ensure WEBHOOK_URL uses the current pod URL for the Telegram webhook.
+2. Audit all Brevo emails being sent and reduce frequency of balance guard and hourly report emails.
 
 ## Architecture
-- **Type**: Monolithic Python Telegram bot
-- **Root**: `/app`
-- **Entrypoint**: `/app/__main__.py`
-- **Config**: `/app/config.py` reads from `/app/.env`
-- **Webhooks**: FastAPI at `/app/webhook_server.py`
-- **Database**: PostgreSQL (Railway) via `DATABASE_URL`
-- **Bot Framework**: python-telegram-bot
+- Python Telegram Bot (python-telegram-bot) running as FastAPI webhook server
+- PostgreSQL (Railway + Neon) for database
+- SQLite for webhook queue
+- Supervisor-managed uvicorn process on port 8001
 
-## What's Been Implemented (March 6, 2026)
+## What's Been Implemented
 
-### 1. Email Onboarding Flow Removed
-- `handlers/onboarding_router.py`: Auto-completes onboarding for ALL users (new + existing)
-- `handlers/start.py`: All email verification code paths removed
+### 2026-03-07 — Session 1: Env Setup
+- Updated `/app/backend/.env` with 80 environment variables
+- Set `WEBHOOK_URL` to pod URL for Telegram webhook
+- Set `DYNOPAY_WEBHOOK_URL` to pod URL
+- Installed missing dependencies
 
-### 2. Group Chat Guard
-- `main.py`: `_group_chat_guard` at group `-99` ignores messages in groups/supergroups
+### 2026-03-07 — Session 2: Email Frequency Fixes
+- **Balance Guard cooldowns**: Changed all 4 alert levels (Warning, Critical, Emergency, Operational) from graduated (1h–12h) to flat **12 hours** — max 2 emails/day per provider per level
+- **Per-operation balance alerts**: Added 12h DB-backed cooldown to `_send_operation_proceeding_with_low_balance_alert()` and `_send_operation_blocked_admin_alert()` — previously had NO cooldown
+- **Hourly report → daily**: Changed `run_admin_dashboards` scheduler from `IntervalTrigger(hours=1)` to `CronTrigger(hour=6)` — runs once daily at 6 AM UTC
 
-### 3. Cashout OTP Removed
-- `handlers/wallet_direct.py`: NGN + Crypto cashout proceed directly without OTP
-
-### 4. Group Message Broadcasting
-- `handlers/group_handler.py`: NEW - handles bot add/remove from groups
-- `models.py`: Added `BotGroup`, `PromoMessageLog`, `PromoOptOut` models (aligned to existing DB schema)
-- `handlers/escrow.py`: 4 group event broadcasts
-- `handlers/user_rating.py`: Rating broadcast
-- `main.py`: Registered group handlers
-- `services/group_event_service.py`: NEW - group broadcast service
-
-### 5. Dead Code Cleanup
-- `handlers/start.py`: 1,902 lines removed (5,132 → 3,202)
-- `main.py`: Dead imports and commented-out handlers removed
-
-### 6. DB Migration
-- `migrations/add_group_broadcast_tables.sql`: Indexes added to existing tables
-- 839 duplicate rows cleaned from `promo_message_logs`
-- All tables verified: `bot_groups`, `promo_message_logs`, `promo_opt_outs`
-
-### 7. Environment
-- `.env` created with all credentials
-- `WEBHOOK_URL` pointed to current pod
-- Backend running and healthy
-
-## Status
-- Backend: Running, health check passing
-- All files compile without errors
-- DB migration complete
-- No broken imports or references
+### Files Modified
+- `/app/config.py` — cooldown defaults all set to 12h
+- `/app/services/balance_guard.py` — per-operation alert cooldown added
+- `/app/jobs/consolidated_scheduler.py` — hourly → daily schedule
 
 ## Backlog
-- P2: Neon DB sync, configure Redis for production
+- P0: None
+- P1: Add digest mode to admin trade notifications (batch per-event emails into hourly/daily summary)
+- P1: Add cooldown to admin funding notifications (per cashout ID)
+- P2: Persist alert_manager cooldowns to DB (currently in-memory, resets on restart)
+- P2: Fix retention email potential duplicate sends (overlapping time window)
