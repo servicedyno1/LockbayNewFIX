@@ -165,12 +165,12 @@ class ConsolidatedScheduler:
         logger.info("✅ Core Reporting scheduled daily at 6 AM UTC - dashboards only")
 
         # ===== CORE JOB 5: REPORTING (DAILY SCHEDULES) =====
-        # Daily financial reports at 8:00 AM and 8:00 PM UTC (twice daily)
+        # Daily financial reports at 8:00 AM UTC only (once daily)
         self.scheduler.add_job(
             run_reporting,
-            trigger=CronTrigger(hour="8,20", minute=0),
+            trigger=CronTrigger(hour=8, minute=0),
             id="core_reporting_daily",
-            name="📈 Core Reporting - Daily Financial Reports (8 AM & 8 PM UTC)",
+            name="📈 Core Reporting - Daily Financial Reports (8 AM UTC)",
             max_instances=1,
             replace_existing=True
         )

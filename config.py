@@ -918,10 +918,10 @@ Available tokens:
     
     # Per-Alert-Level Cooldown Periods (hours)
     # All levels set to 12 hours so each alert fires at most twice per day
-    BALANCE_ALERT_COOLDOWN_WARNING_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_WARNING_HOURS", "12"))        # Warning: 12 hours
-    BALANCE_ALERT_COOLDOWN_CRITICAL_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_CRITICAL_HOURS", "12"))      # Critical: 12 hours  
-    BALANCE_ALERT_COOLDOWN_EMERGENCY_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_EMERGENCY_HOURS", "12"))    # Emergency: 12 hours
-    BALANCE_ALERT_COOLDOWN_OPERATIONAL_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_OPERATIONAL_HOURS", "12")) # Operational: 12 hours
+    BALANCE_ALERT_COOLDOWN_WARNING_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_WARNING_HOURS", "24"))        # Warning: 24 hours (once daily)
+    BALANCE_ALERT_COOLDOWN_CRITICAL_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_CRITICAL_HOURS", "24"))      # Critical: 24 hours (once daily)
+    BALANCE_ALERT_COOLDOWN_EMERGENCY_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_EMERGENCY_HOURS", "24"))    # Emergency: 24 hours (once daily)
+    BALANCE_ALERT_COOLDOWN_OPERATIONAL_HOURS = int(os.getenv("BALANCE_ALERT_COOLDOWN_OPERATIONAL_HOURS", "24")) # Operational: 24 hours (once daily)
     
     # Balance Check Intervals (minutes) - How often to check balances
     FINCRA_BALANCE_CHECK_INTERVAL = int(

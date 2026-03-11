@@ -22,6 +22,18 @@ Analyze and set up the LockBay Telegram bot, updating `.env` files and ensuring 
 - Verified Telegram webhook registration with Telegram API
 - Confirmed health endpoint accessible externally
 
+### Bug Fix: Persistent Email Flood (2026-03-11)
+**Root cause**: Three compounding issues:
+1. `balance_guard.py` `should_send_alert()` defaulted to `return True` on DB errors → every 5-min reconciliation cycle sent emails when DB was unreachable
+2. Balance alert cooldowns were set to 12 hours → 2 alerts/day per provider
+3. Daily financial reports ran at 8 AM + 8 PM UTC → 2 report emails/day
+
+**Fixes applied**:
+- `services/balance_guard.py`: Changed fallback from `True` to `False` — suppresses alerts during DB outages
+- `services/balance_guard.py`: Added in-memory cooldown dict as backup even if DB write fails
+- `config.py`: All balance alert cooldowns changed from 12h to **24h** (once daily)
+- `jobs/consolidated_scheduler.py`: Financial reports changed from `hour="8,20"` to `hour=8` (once daily at 8 AM UTC)
+
 ## Webhook URLs Configured
 - Telegram: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/webhook`
 - DynoPay: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/webhook/dynopay`

@@ -518,6 +518,9 @@ class BalanceGuardPolicy:
 class BalanceGuardNotifier:
     """Consolidated notification system with cooldown logic and deduplication"""
     
+    # In-memory cooldown fallback to prevent email floods when DB is unavailable
+    _memory_cooldowns: Dict[str, datetime] = {}
+    
     def __init__(self, policy: BalanceGuardPolicy):
         self.policy = policy
         self.email_service = EmailService()
@@ -529,9 +532,15 @@ class BalanceGuardNotifier:
         alert_level: AlertLevel
     ) -> bool:
         """Check if alert should be sent based on cooldown rules"""
+        cooldown_hours = self.policy.get_cooldown_hours(alert_level)
+        cooldown_key = f"{provider}_{currency}_{alert_level.name}"
+        
+        # In-memory fallback check first (prevents floods even if DB is down)
+        mem_last = self._memory_cooldowns.get(cooldown_key)
+        if mem_last and datetime.now(timezone.utc) < mem_last + timedelta(hours=cooldown_hours):
+            return False
+        
         try:
-            cooldown_hours = self.policy.get_cooldown_hours(alert_level)
-            cooldown_key = f"{provider}_{currency}_{alert_level.name}"
             
             with sync_managed_session() as session:
                 # Check last alert time for this specific provider+currency+level
@@ -567,7 +576,7 @@ class BalanceGuardNotifier:
                 
         except Exception as e:
             logger.error(f"Error checking alert cooldown: {e}")
-            return True  # Default to sending alert if check fails
+            return False  # Default to NOT sending alert if cooldown check fails (prevents email floods during DB outages)
     
     async def record_alert_sent(
         self, 
@@ -576,8 +585,12 @@ class BalanceGuardNotifier:
         alert_level: AlertLevel
     ):
         """Record that an alert was sent for cooldown tracking"""
+        cooldown_key = f"{provider}_{currency}_{alert_level.name}"
+        
+        # Always update in-memory cooldown (works even if DB write fails)
+        self._memory_cooldowns[cooldown_key] = datetime.now(timezone.utc)
+        
         try:
-            cooldown_key = f"{provider}_{currency}_{alert_level.name}"
             
             with sync_managed_session() as session:
                 # Upsert alert timestamp
