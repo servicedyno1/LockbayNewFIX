@@ -33,22 +33,29 @@ except Exception as validator_error:
 if not Config.DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is required")
 
-# OPTIMIZED: Reduced sync pool — async is the primary path for this bot.
-# Sync pool: 3 base + 5 overflow = 8 max (down from 7+15=22)
-# Async pool: 7 base + 15 overflow = 22 max
-# Total: 30 connections max (down from 44, frees 14 connections for admin/monitoring)
+# OPTIMIZED: Reduced connection pools to prevent exhaustion (Railway max: 100)
+# Sync pool: 3 base + 5 overflow = 8 max
+# Async pool: 5 base + 10 overflow = 15 max
+# Pool manager: 5 base + 10 overflow = 15 max
+# Total: 38 connections max (reduced from 70, safely under 100 limit)
 engine = create_engine(
     Config.DATABASE_URL,
     poolclass=QueuePool,
     pool_size=3,           # Reduced sync base pool (async is primary)
     max_overflow=5,        # Reduced sync burst capacity
     pool_pre_ping=True,    # Validate connections before use
-    pool_recycle=3600,     # Recycle connections every hour
+    pool_recycle=1800,     # Recycle connections every 30 min to prevent stale connections
     pool_timeout=30,       # Wait max 30 seconds for connection during bursts
+    pool_reset_on_return='rollback',  # Ensure clean state when returned to pool
     echo=False,            # Set to True for SQL logging in development
     connect_args={
         "connect_timeout": 10,
         "application_name": "lockbay_telegram_bot",
+        "options": "-c idle_in_transaction_session_timeout=300000 -c statement_timeout=60000",
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 5,
+        "keepalives_count": 3,
     }
 )
 
@@ -65,17 +72,19 @@ async_database_url = async_database_url.replace('sslmode=disable', 'ssl=disable'
 # Combined with 4-minute keep-alive job to maintain database warmth
 async_engine = create_async_engine(
     async_database_url,
-    pool_size=7,           # Async base pool for cloud database
-    max_overflow=15,       # Async burst capacity for cloud database
+    pool_size=5,           # Async base pool (reduced from 7 to save connections)
+    max_overflow=10,       # Async burst capacity (reduced from 15)
     pool_pre_ping=True,    # Validate connections before use
-    pool_recycle=3600,     # Recycle connections every hour
+    pool_recycle=1800,     # Recycle connections every 30 min
     pool_timeout=30,       # Wait max 30 seconds for connection during bursts
+    pool_reset_on_return='rollback',  # Ensure clean state when returned to pool
     echo=False,            # Disable SQL logging (set DEBUG=true to enable)
     echo_pool=False,       # Disable connection pool logging
-    # OPTIMIZED: Added connection monitoring and timeouts
     connect_args={
         "server_settings": {
-            "application_name": "lockbay_telegram_bot_async",  # For monitoring in pg_stat_activity
+            "application_name": "lockbay_telegram_bot_async",
+            "idle_in_transaction_session_timeout": "300000",   # 5 min - kill leaked transactions
+            "statement_timeout": "60000",                       # 60s - kill runaway queries
         },
         "timeout": 10,  # Connection timeout
         "command_timeout": 30,  # Command execution timeout

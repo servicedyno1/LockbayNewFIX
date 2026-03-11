@@ -249,6 +249,56 @@ class ConsolidatedScheduler:
         )
         logger.info("✅ Webhook queue cleanup scheduled daily at 3 AM UTC")
 
+        # ===== CONNECTION LEAK KILLER JOB =====
+        # Terminates idle-in-transaction connections that are older than 5 minutes
+        # Prevents connection exhaustion that can crash the Railway database
+        async def kill_leaked_connections():
+            """Kill idle-in-transaction connections to prevent connection exhaustion"""
+            try:
+                from database import engine
+                from sqlalchemy import text
+                with engine.connect() as conn:
+                    result = conn.execute(text("""
+                        SELECT pid, application_name, state, 
+                               extract(epoch from now() - state_change) as idle_seconds
+                        FROM pg_stat_activity 
+                        WHERE datname = current_database()
+                          AND state = 'idle in transaction'
+                          AND now() - state_change > interval '5 minutes'
+                    """))
+                    leaked = result.fetchall()
+                    if leaked:
+                        for row in leaked:
+                            conn.execute(text(f"SELECT pg_terminate_backend({row[0]})"))
+                            logger.warning(f"🔪 CONNECTION_LEAK_KILLER: Terminated PID={row[0]} app={row[1]} idle_for={row[3]:.0f}s")
+                        conn.commit()
+                        logger.info(f"🔪 CONNECTION_LEAK_KILLER: Killed {len(leaked)} leaked connections")
+                    
+                    # Log connection pool health
+                    result = conn.execute(text("""
+                        SELECT state, count(*) 
+                        FROM pg_stat_activity 
+                        WHERE datname = current_database() 
+                        GROUP BY state
+                    """))
+                    stats = {row[0]: row[1] for row in result.fetchall()}
+                    total = sum(stats.values())
+                    logger.info(f"📊 CONNECTION_HEALTH: {total}/100 connections - {stats}")
+            except Exception as e:
+                logger.error(f"❌ CONNECTION_LEAK_KILLER error: {e}")
+        
+        self.scheduler.add_job(
+            kill_leaked_connections,
+            trigger=IntervalTrigger(minutes=10, start_date=datetime.now().replace(second=50, microsecond=0)),
+            id="connection_leak_killer",
+            name="🔪 Connection Leak Killer - Terminate Idle Transactions",
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=60,
+            replace_existing=True
+        )
+        logger.info("✅ Connection Leak Killer scheduled every 10 minutes")
+
         # ===== DATABASE KEEP-ALIVE JOB (DISABLED — OPTIMIZATION) =====
         # DISABLED: Only needed for Neon serverless (5min idle suspension).
         # If using Railway PostgreSQL or any always-on database, this is unnecessary.

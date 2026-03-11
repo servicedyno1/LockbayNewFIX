@@ -40,9 +40,20 @@ Analyze and set up the LockBay Telegram bot, updating `.env` files and ensuring 
 - BlockBee: `https://setup-analyze-pod.preview.emergentagent.com/api/blockbee/callback`
 - Fincra: `https://setup-analyze-pod.preview.emergentagent.com/api/webhook/api/fincra/webhook`
 
-## Known Issues
-- Railway PostgreSQL connection intermittently drops (expected for remote DB from this pod)
-- Database connection pool recovers automatically via circuit breaker
+### Connection Exhaustion Fix (2026-03-11)
+**Root cause of DB failure**: Connection pool exhaustion → PostgreSQL crash → Railway suspension
+1. **3 separate pools totaled 70 max connections** (Railway limit: 100). Any leak or burst would exhaust the limit.
+2. **`idle_in_transaction_session_timeout` was disabled (0)** — leaked transactions sat open forever
+3. **No leak detection/cleanup** — once connections leaked, they accumulated until DB crash
+
+**Fixes applied**:
+- `database.py`: Set DB-level `idle_in_transaction_session_timeout=5min`, `statement_timeout=60s` via ALTER DATABASE
+- `database.py`: Added `pool_reset_on_return='rollback'` to both sync and async pools
+- `database.py`: Reduced async pool from 7+15=22 to 5+10=15 connections
+- `database.py`: Reduced `pool_recycle` from 3600→1800 (30 min) to prevent stale connections
+- `utils/database_pool_manager.py`: Reduced from 15+25=40 to 5+10=15 connections
+- `jobs/consolidated_scheduler.py`: Added Connection Leak Killer job (every 10 min) — terminates idle-in-transaction connections older than 5 min
+- **Total max connections reduced from 70 to 38** (62% reduction, safely under 100 limit)
 
 ## Backlog
 - P0: Monitor database connectivity stability

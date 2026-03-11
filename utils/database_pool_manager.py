@@ -99,8 +99,8 @@ class OptimizedDatabasePool:
         engine = create_engine(
             self.database_url,
             poolclass=QueuePool,
-            pool_size=15,  # MEMORY OPTIMIZATION: Reduced from 30 to 15 - saves memory
-            max_overflow=25,  # MEMORY OPTIMIZATION: Reduced from 50 to 25 - prevents memory bloat
+            pool_size=5,   # CONNECTION FIX: Reduced from 15 to 5 - prevents connection exhaustion (combined pools were hitting 70/100)
+            max_overflow=10,  # CONNECTION FIX: Reduced from 25 to 10 - total max now 15 per pool
             pool_timeout=pool_timeout,  # WEBHOOK HARDENING: Dynamic timeout based on context
             pool_recycle=1800,  # SSL FIX: Increased from 300 to 1800s (30 min) - reduce SSL handshake frequency
             pool_pre_ping=True,  # SSL FIX: Enable pre-ping to detect stale SSL connections
