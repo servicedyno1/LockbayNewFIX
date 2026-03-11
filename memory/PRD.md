@@ -15,8 +15,8 @@ Analyze and set up the LockBay Telegram bot, updating `.env` files and ensuring 
 
 ## What's Been Implemented (2026-03-11)
 - Set up all environment variables in `/app/.env` and `/app/backend/.env`
-- Updated WEBHOOK_URL to use current pod URL: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/webhook`
-- Updated DYNOPAY_WEBHOOK_URL to: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/webhook/dynopay`
+- Updated WEBHOOK_URL to use current pod URL: `https://setup-analyze-pod.preview.emergentagent.com/api/webhook`
+- Updated DYNOPAY_WEBHOOK_URL to: `https://setup-analyze-pod.preview.emergentagent.com/api/webhook/dynopay`
 - Installed all Python dependencies from requirements.txt
 - Started backend (FastAPI webhook server on port 8001) and frontend services
 - Verified Telegram webhook registration with Telegram API
@@ -35,10 +35,10 @@ Analyze and set up the LockBay Telegram bot, updating `.env` files and ensuring 
 - `jobs/consolidated_scheduler.py`: Financial reports changed from `hour="8,20"` to `hour=8` (once daily at 8 AM UTC)
 
 ## Webhook URLs Configured
-- Telegram: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/webhook`
-- DynoPay: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/webhook/dynopay`
-- BlockBee: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/blockbee/callback`
-- Fincra: `https://ceba0ef3-e714-478f-a7c0-5e95b357de30.preview.emergentagent.com/api/webhook/api/fincra/webhook`
+- Telegram: `https://setup-analyze-pod.preview.emergentagent.com/api/webhook`
+- DynoPay: `https://setup-analyze-pod.preview.emergentagent.com/api/webhook/dynopay`
+- BlockBee: `https://setup-analyze-pod.preview.emergentagent.com/api/blockbee/callback`
+- Fincra: `https://setup-analyze-pod.preview.emergentagent.com/api/webhook/api/fincra/webhook`
 
 ## Known Issues
 - Railway PostgreSQL connection intermittently drops (expected for remote DB from this pod)
