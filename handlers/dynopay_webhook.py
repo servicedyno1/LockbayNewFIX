@@ -143,22 +143,47 @@ class DynoPayWebhookHandler:
                 return {"status": "success", "message": "Pending event acknowledged"}
             
             # Extract webhook data with field mapping (DynoPay actual format → expected format)
-            meta_data = webhook_data.get('meta_data', {})
-            reference_id = meta_data.get('refId') or webhook_data.get('customer_reference')
+            # BUGFIX: Handle None meta_data (DynoPay may send null) and check transaction_reference
+            meta_data = webhook_data.get('meta_data') or {}
+            reference_id = (
+                meta_data.get('refId') or 
+                webhook_data.get('customer_reference') or
+                webhook_data.get('transaction_reference')
+            )
+            
+            # BUGFIX: If reference_id still missing, try to resolve via payment address lookup
+            if not reference_id and webhook_data.get('address'):
+                try:
+                    from models import PaymentAddress, Escrow as EscrowModel
+                    from database import async_managed_session
+                    async with async_managed_session() as addr_session:
+                        addr_stmt = select(PaymentAddress, EscrowModel.escrow_id).join(
+                            EscrowModel, PaymentAddress.escrow_id == EscrowModel.id
+                        ).where(
+                            PaymentAddress.address == webhook_data['address']
+                        )
+                        addr_result = await addr_session.execute(addr_stmt)
+                        addr_row = addr_result.first()
+                        if addr_row:
+                            reference_id = addr_row[1]  # String escrow_id like "ES031126HXF8"
+                            logger.info(f"🔍 DYNOPAY_ADDR_LOOKUP: Resolved reference_id={reference_id} from address={webhook_data['address']}")
+                except Exception as addr_err:
+                    logger.warning(f"⚠️ DYNOPAY_ADDR_LOOKUP: Failed to resolve via address: {addr_err}")
             
             # DynoPay field mapping:
             # - 'amount' = crypto amount (e.g., 0.01331 ETH) 
             # - 'base_amount' = USD value (e.g., 30) - authoritative payment value
             # - 'currency' = crypto currency (ETH, BTC, etc.)
             # - 'base_currency' = fiat currency (USD)
-            crypto_amount = webhook_data.get('amount') or webhook_data.get('paid_amount')
+            # BUGFIX: Also check 'amount_received' for underpaid events
+            crypto_amount = webhook_data.get('amount') or webhook_data.get('paid_amount') or webhook_data.get('amount_received')
             paid_currency = webhook_data.get('paid_currency') or webhook_data.get('currency')
             transaction_id = webhook_data.get('id') or webhook_data.get('payment_id') or webhook_data.get('txId')
             
             # Use base_amount (USD) from DynoPay when available - this is the authoritative value
             dynopay_base_amount = webhook_data.get('base_amount')
             dynopay_base_currency = webhook_data.get('base_currency', 'USD')
-            dynopay_overpayment = webhook_data.get('overpayment', {})
+            dynopay_overpayment = webhook_data.get('overpayment') or {}
             
             if dynopay_base_amount and dynopay_base_currency == 'USD':
                 paid_amount = dynopay_base_amount
@@ -709,19 +734,121 @@ class DynoPayWebhookHandler:
                         
                         # 🔒 CRITICAL SECURITY CHECK: Validate escrow status before processing payment
                         if escrow_status == EscrowStatus.CANCELLED.value:  # type: ignore[arg-type]
-                            logger.warning(f"🚨 CANCELLED_ESCROW: Payment received for CANCELLED escrow {reference_id}. Rejecting webhook to stop retries.")
-                            logger.error(
-                                f"🚨 SECURITY ALERT: Payment {transaction_id} received for CANCELLED escrow {reference_id}! "
-                                f"Amount: {paid_amount} {paid_currency}. Escrow was cancelled by user - webhook will not be retried."
-                            )
+                            logger.warning(f"🚨 CANCELLED_ESCROW: Payment received for CANCELLED escrow {reference_id}. Will credit buyer wallet.")
                             
-                            # CRITICAL: Return success status to stop webhook retries
-                            # User cancelled the escrow - we should NOT keep retrying this payment
+                            # BUGFIX: Credit the received payment to buyer's wallet (without platform fee)
+                            # The buyer sent crypto but the escrow was cancelled - refund to wallet
+                            try:
+                                # Calculate USD amount from the webhook data
+                                dynopay_base_amt_cancel = webhook_data.get('base_amount')
+                                dynopay_base_curr_cancel = webhook_data.get('base_currency', 'USD')
+                                
+                                if dynopay_base_amt_cancel and dynopay_base_curr_cancel == 'USD':
+                                    refund_usd_amount = Decimal(str(dynopay_base_amt_cancel))
+                                elif crypto_amount and paid_currency:
+                                    # Fallback: convert crypto to USD
+                                    rate = await DynoPayWebhookHandler._get_cached_exchange_rate(paid_currency)
+                                    if rate:
+                                        refund_usd_amount = Decimal(str(crypto_amount)) * rate
+                                    else:
+                                        refund_usd_amount = Decimal("0")
+                                        logger.error(f"❌ CANCELLED_REFUND: Cannot determine USD value for {crypto_amount} {paid_currency}")
+                                else:
+                                    refund_usd_amount = Decimal("0")
+                                
+                                if refund_usd_amount > 0:
+                                    # Deduct platform fee from refund (refund escrow amount, not fee)
+                                    escrow_amount = Decimal(str(escrow.amount))
+                                    escrow_fee = Decimal(str(escrow.fee_amount or 0))
+                                    
+                                    # Refund the escrow base amount (without platform fee) 
+                                    # Cap at the actual received amount
+                                    refund_amount = min(escrow_amount, refund_usd_amount)
+                                    
+                                    refund_success = await CryptoServiceAtomic.credit_user_wallet_atomic(
+                                        user_id=int(escrow_buyer_id),
+                                        amount=refund_amount,
+                                        currency="USD",
+                                        escrow_id=int(escrow_id_value),
+                                        transaction_type="escrow_refund",
+                                        description=f"Auto-refund for cancelled trade #{escrow_escrow_id}: crypto payment received after cancellation (fee excluded)",
+                                        session=session
+                                    )
+                                    
+                                    if refund_success:
+                                        # Update escrow status to refunded
+                                        escrow.status = EscrowStatus.REFUNDED.value
+                                        await session.commit()
+                                        
+                                        logger.info(
+                                            f"✅ CANCELLED_REFUND: Credited ${refund_amount:.2f} to buyer {escrow_buyer_id} wallet "
+                                            f"for cancelled escrow {reference_id} (received ${refund_usd_amount:.2f}, fee ${escrow_fee:.2f} excluded)"
+                                        )
+                                        
+                                        # Notify buyer about the refund via Telegram
+                                        try:
+                                            from services.consolidated_notification_service import (
+                                                consolidated_notification_service,
+                                                NotificationRequest,
+                                                NotificationChannel,
+                                                NotificationPriority,
+                                                NotificationCategory
+                                            )
+                                            buyer = escrow.buyer
+                                            if buyer:
+                                                buyer_telegram_id = getattr(buyer, 'telegram_id', None)
+                                                if buyer_telegram_id:
+                                                    notification = NotificationRequest(
+                                                        user_id=int(buyer_telegram_id),
+                                                        category=NotificationCategory.PAYMENT_UPDATES,
+                                                        priority=NotificationPriority.HIGH,
+                                                        title=f"Refund processed for trade #{escrow_escrow_id}",
+                                                        message=(
+                                                            f"💰 <b>Refund Processed</b>\n\n"
+                                                            f"Your crypto payment for cancelled trade <b>#{escrow_escrow_id}</b> has been refunded.\n\n"
+                                                            f"<b>Refund Amount:</b> ${refund_amount:.2f} USD\n"
+                                                            f"<b>Platform Fee:</b> ${escrow_fee:.2f} USD (retained)\n\n"
+                                                            f"The refund has been added to your LockBay wallet balance.\n"
+                                                            f"Use /start to check your wallet."
+                                                        ),
+                                                        channels=[NotificationChannel.TELEGRAM],
+                                                        idempotency_key=f"cancelled_refund_{escrow_escrow_id}_{transaction_id}"
+                                                    )
+                                                    asyncio.create_task(
+                                                        consolidated_notification_service.send_notification(notification)
+                                                    )
+                                        except Exception as notif_err:
+                                            logger.warning(f"⚠️ CANCELLED_REFUND: Notification failed: {notif_err}")
+                                        
+                                        # Notify admin about the auto-refund
+                                        try:
+                                            asyncio.create_task(
+                                                admin_trade_notifications.notify_escrow_cancelled({
+                                                    'escrow_id': escrow_escrow_id,
+                                                    'amount': Decimal(str(refund_amount)),
+                                                    'currency': 'USD',
+                                                    'buyer_info': f"User_{escrow_buyer_id}",
+                                                    'seller_info': 'N/A',
+                                                    'cancelled_by': 'System (auto-refund)',
+                                                    'reason': f'Crypto payment ${float(refund_amount):.2f} received after cancellation - auto-refunded to buyer wallet (tx: {transaction_id})',
+                                                    'cancelled_at': datetime.now(timezone.utc)
+                                                })
+                                            )
+                                        except Exception as admin_err:
+                                            logger.warning(f"⚠️ CANCELLED_REFUND: Admin notification failed: {admin_err}")
+                                    else:
+                                        logger.error(f"❌ CANCELLED_REFUND: Failed to credit buyer wallet for escrow {reference_id}")
+                                else:
+                                    logger.error(f"❌ CANCELLED_REFUND: Cannot determine USD amount for refund (escrow {reference_id})")
+                            except Exception as refund_err:
+                                logger.error(f"❌ CANCELLED_REFUND: Error processing refund for cancelled escrow {reference_id}: {refund_err}")
+                            
+                            # Return success to stop webhook retries
                             result_to_return = {
-                                "status": "rejected",
-                                "message": f"Escrow {reference_id} was cancelled. Payment not processed.",
+                                "status": "refunded",
+                                "message": f"Escrow {reference_id} was cancelled. Payment refunded to buyer wallet.",
                                 "escrow_id": escrow_escrow_id,
-                                "reason": "escrow_cancelled_by_user"
+                                "reason": "escrow_cancelled_payment_refunded"
                             }
                         
                         # Also check for other invalid states that shouldn't receive payments
