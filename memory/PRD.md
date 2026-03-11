@@ -3,6 +3,7 @@
 ## Problem Statement
 1. Update .env with all required environment variables and ensure Telegram webhook uses the current pod URL
 2. Bug fix: User @ilovemoney34 canceled escrow ES031126HXF8 but refund didn't go back into wallet
+3. Manual admin refund: Add $350 to user wallet and update escrow status
 
 ## Architecture
 - **Backend**: FastAPI (Python) running on port 8001 via supervisor
@@ -14,38 +15,25 @@
 ## What's Been Implemented
 
 ### Session 1 (2026-03-11) - Environment Setup
-1. Created `/app/.env` with all 75+ environment variables
-2. Updated `WEBHOOK_URL` to use current pod URL
-3. Updated `DYNOPAY_WEBHOOK_URL` to use current pod URL
-4. Installed all missing Python dependencies
-5. Verified backend starts successfully with webhook registered
+- Created `/app/.env` with all 75+ environment variables
+- Updated WEBHOOK_URL and DYNOPAY_WEBHOOK_URL to current pod URL
+- Installed missing Python dependencies, verified backend startup
 
-### Session 2 (2026-03-11) - Escrow Refund Bug Fix
-**Root Cause Analysis:**
-- User @ilovemoney34 created escrow ES031126HXF8 ($350 + $35 fee) with BTC payment
-- DynoPay received BTC (~$387) but webhook failed due to missing reference_id
-- User cancelled escrow while it was still in `payment_pending`
-- Cancel handler didn't process refunds, DynoPay retries were rejected
+### Session 2 (2026-03-11) - Escrow Refund Bug Fix (Code)
+- **Bug 1**: DynoPay webhook reference_id extraction - added `transaction_reference` field + address-based fallback
+- **Bug 2**: Cancelled escrow webhook rejection - now auto-refunds to buyer wallet (without platform fee)
 
-**Bug 1 - DynoPay Webhook Reference ID (dynopay_webhook.py ~line 147):**
-- DynoPay `payment.underpaid` events send `transaction_reference` but code only checked `meta_data.refId` and `customer_reference`
-- Also `meta_data` could be `null` causing NoneType AttributeError
-- Fix: Added `transaction_reference` to extraction chain, used `or {}` for None meta_data, added address-based fallback lookup
+### Session 3 (2026-03-11) - Manual Admin Refund (Database)
+Atomic transaction executed:
+1. Credited $350.00 to @ilovemoney34 (user_id: 6241814365) USD wallet available_balance
+2. Updated escrow ES031126HXF8 status: cancelled -> refunded
+3. Created transaction record: REFUND-FFEB8BE08EBA (type: escrow_refund, $350, completed)
 
-**Bug 2 - Cancelled Escrow Webhook Rejection (dynopay_webhook.py ~line 734):**
-- When payment received for cancelled escrow, handler just rejected it (lost funds)
-- Fix: Added auto-refund logic that credits buyer wallet with escrow base amount (without platform fee) using CryptoServiceAtomic.credit_user_wallet_atomic
-- Sends Telegram notification to buyer and admin notification about the auto-refund
-- Updates escrow status to `refunded`
-
-**Testing**: All 6 backend tests passed (100%)
-
-## Webhook URLs (Current Pod)
-- Telegram: `https://ee7ea911-f525-4def-949e-8758f2117e9c.preview.emergentagent.com/api/webhook`
-- DynoPay: `https://ee7ea911-f525-4def-949e-8758f2117e9c.preview.emergentagent.com/api/webhook/dynopay`
+Final state verified:
+- Wallet balance: $350.00 (available for cashout)
+- Escrow status: refunded
+- Platform fee ($35) excluded from refund as specified
 
 ## Backlog
-- P0: None
-- P1: Monitor if DynoPay retries the webhook for ES031126HXF8 and auto-refund triggers
-- P2: Consider adding `amount_received` field mapping for DynoPay `payment.underpaid` events in more places
+- P1: Monitor DynoPay webhook retries for future cancelled escrows
 - P2: Review MANUAL_REFUNDS_ONLY config flag interaction with new auto-refund logic
