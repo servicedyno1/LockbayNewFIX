@@ -1,61 +1,51 @@
 # LockBay Telegram Escrow Bot - PRD
 
-## Original Problem Statement
-Analyze and set up the LockBay Telegram bot, updating `.env` files and ensuring the current pod URL is used for the Telegram webhook.
+## Problem Statement
+1. Update .env with all required environment variables and ensure Telegram webhook uses the current pod URL
+2. Bug fix: User @ilovemoney34 canceled escrow ES031126HXF8 but refund didn't go back into wallet
 
 ## Architecture
-- **Platform**: Python Telegram Bot with FastAPI webhook server
-- **Database**: PostgreSQL (Railway + Neon)
-- **Bot Framework**: python-telegram-bot v22
-- **Webhook Server**: FastAPI with uvicorn
-- **Caching**: SQLite-backed webhook queue (Redis optional)
-- **Email**: Brevo (Sendinblue)
-- **Payments**: DynoPay, Fincra, BlockBee, Kraken
-- **SMS**: Twilio
+- **Backend**: FastAPI (Python) running on port 8001 via supervisor
+- **Bot Framework**: python-telegram-bot v22+
+- **Database**: PostgreSQL (Railway-hosted)
+- **Webhook Mode**: FastAPI receives Telegram updates via POST /webhook
+- **Kubernetes Ingress**: Routes /api/* to backend port 8001
 
-## What's Been Implemented (2026-03-11)
-- Set up all environment variables in `/app/.env` and `/app/backend/.env`
-- Updated WEBHOOK_URL to use current pod URL: `https://env-webhook-sync-1.preview.emergentagent.com/api/webhook`
-- Updated DYNOPAY_WEBHOOK_URL to: `https://env-webhook-sync-1.preview.emergentagent.com/api/webhook/dynopay`
-- Installed all Python dependencies from requirements.txt
-- Started backend (FastAPI webhook server on port 8001) and frontend services
-- Verified Telegram webhook registration with Telegram API
-- Confirmed health endpoint accessible externally
+## What's Been Implemented
 
-### Bug Fix: Persistent Email Flood (2026-03-11)
-**Root cause**: Three compounding issues:
-1. `balance_guard.py` `should_send_alert()` defaulted to `return True` on DB errors → every 5-min reconciliation cycle sent emails when DB was unreachable
-2. Balance alert cooldowns were set to 12 hours → 2 alerts/day per provider
-3. Daily financial reports ran at 8 AM + 8 PM UTC → 2 report emails/day
+### Session 1 (2026-03-11) - Environment Setup
+1. Created `/app/.env` with all 75+ environment variables
+2. Updated `WEBHOOK_URL` to use current pod URL
+3. Updated `DYNOPAY_WEBHOOK_URL` to use current pod URL
+4. Installed all missing Python dependencies
+5. Verified backend starts successfully with webhook registered
 
-**Fixes applied**:
-- `services/balance_guard.py`: Changed fallback from `True` to `False` — suppresses alerts during DB outages
-- `services/balance_guard.py`: Added in-memory cooldown dict as backup even if DB write fails
-- `config.py`: All balance alert cooldowns changed from 12h to **24h** (once daily)
-- `jobs/consolidated_scheduler.py`: Financial reports changed from `hour="8,20"` to `hour=8` (once daily at 8 AM UTC)
+### Session 2 (2026-03-11) - Escrow Refund Bug Fix
+**Root Cause Analysis:**
+- User @ilovemoney34 created escrow ES031126HXF8 ($350 + $35 fee) with BTC payment
+- DynoPay received BTC (~$387) but webhook failed due to missing reference_id
+- User cancelled escrow while it was still in `payment_pending`
+- Cancel handler didn't process refunds, DynoPay retries were rejected
 
-## Webhook URLs Configured
-- Telegram: `https://env-webhook-sync-1.preview.emergentagent.com/api/webhook`
-- DynoPay: `https://env-webhook-sync-1.preview.emergentagent.com/api/webhook/dynopay`
-- BlockBee: `https://env-webhook-sync-1.preview.emergentagent.com/api/blockbee/callback`
-- Fincra: `https://env-webhook-sync-1.preview.emergentagent.com/api/webhook/api/fincra/webhook`
+**Bug 1 - DynoPay Webhook Reference ID (dynopay_webhook.py ~line 147):**
+- DynoPay `payment.underpaid` events send `transaction_reference` but code only checked `meta_data.refId` and `customer_reference`
+- Also `meta_data` could be `null` causing NoneType AttributeError
+- Fix: Added `transaction_reference` to extraction chain, used `or {}` for None meta_data, added address-based fallback lookup
 
-### Connection Exhaustion Fix (2026-03-11)
-**Root cause of DB failure**: Connection pool exhaustion → PostgreSQL crash → Railway suspension
-1. **3 separate pools totaled 70 max connections** (Railway limit: 100). Any leak or burst would exhaust the limit.
-2. **`idle_in_transaction_session_timeout` was disabled (0)** — leaked transactions sat open forever
-3. **No leak detection/cleanup** — once connections leaked, they accumulated until DB crash
+**Bug 2 - Cancelled Escrow Webhook Rejection (dynopay_webhook.py ~line 734):**
+- When payment received for cancelled escrow, handler just rejected it (lost funds)
+- Fix: Added auto-refund logic that credits buyer wallet with escrow base amount (without platform fee) using CryptoServiceAtomic.credit_user_wallet_atomic
+- Sends Telegram notification to buyer and admin notification about the auto-refund
+- Updates escrow status to `refunded`
 
-**Fixes applied**:
-- `database.py`: Set DB-level `idle_in_transaction_session_timeout=5min`, `statement_timeout=60s` via ALTER DATABASE
-- `database.py`: Added `pool_reset_on_return='rollback'` to both sync and async pools
-- `database.py`: Reduced async pool from 7+15=22 to 5+10=15 connections
-- `database.py`: Reduced `pool_recycle` from 3600→1800 (30 min) to prevent stale connections
-- `utils/database_pool_manager.py`: Reduced from 15+25=40 to 5+10=15 connections
-- `jobs/consolidated_scheduler.py`: Added Connection Leak Killer job (every 10 min) — terminates idle-in-transaction connections older than 5 min
-- **Total max connections reduced from 70 to 38** (62% reduction, safely under 100 limit)
+**Testing**: All 6 backend tests passed (100%)
+
+## Webhook URLs (Current Pod)
+- Telegram: `https://ee7ea911-f525-4def-949e-8758f2117e9c.preview.emergentagent.com/api/webhook`
+- DynoPay: `https://ee7ea911-f525-4def-949e-8758f2117e9c.preview.emergentagent.com/api/webhook/dynopay`
 
 ## Backlog
-- P0: Monitor database connectivity stability
-- P1: Consider using Neon PostgreSQL as primary DB for lower latency
-- P2: Enable REDIS for production caching instead of DB_BACKED fallback
+- P0: None
+- P1: Monitor if DynoPay retries the webhook for ES031126HXF8 and auto-refund triggers
+- P2: Consider adding `amount_received` field mapping for DynoPay `payment.underpaid` events in more places
+- P2: Review MANUAL_REFUNDS_ONLY config flag interaction with new auto-refund logic
