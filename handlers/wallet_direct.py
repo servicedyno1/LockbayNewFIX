@@ -9118,13 +9118,51 @@ async def handle_wallet_cashout(update: Update, context: ContextTypes.DEFAULT_TY
                 )
                 return
             
-            # Simulate the quick_cashout_all callback by directly calling the handler
-            # Update callback data to match quick_cashout_all format
-            if query and query.data:
-                query.data = f"quick_cashout_all:{balance}"
+            # Call quick cashout flow directly with the balance amount
+            # (Cannot set query.data - it's read-only in python-telegram-bot v20+)
+            amount = balance
+            telegram_user_id = update.effective_user.id
+            last_method = await get_last_used_cashout_method(telegram_user_id)
             
-            # Call the cashout all handler directly
-            await handle_quick_cashout_all(update, context)
+            if not context.user_data:
+                context.user_data = {}
+            
+            if not last_method or not last_method.get("method"):
+                # No history - show method selection
+                context.user_data["cashout_data"] = {"amount": str(amount)}
+                await show_cashout_method_selection(query, context, amount)
+            elif last_method.get("method") == "CRYPTO":
+                # Has crypto history - use crypto flow
+                context.user_data["cashout_data"] = {
+                    "amount": str(amount),
+                    "method": "crypto",
+                    "currency": last_method.get("currency"),
+                    "network": get_network_from_currency(last_method.get("currency", ""))
+                }
+                await show_crypto_address_selection(query, context, amount, last_method.get("currency", "USDT"))
+            elif last_method.get("method") == "NGN_BANK":
+                # Has NGN history - use NGN flow
+                context.user_data["cashout_data"] = {
+                    "amount": str(amount),
+                    "method": "ngn_bank"
+                }
+                async with async_managed_session() as ngn_session:
+                    stmt2 = select(User).where(User.telegram_id == telegram_user_id)
+                    result2 = await ngn_session.execute(stmt2)
+                    ngn_user = result2.scalar_one_or_none()
+                    if ngn_user:
+                        from models import SavedBankAccount
+                        stmt3 = select(SavedBankAccount).where(
+                            SavedBankAccount.user_id == ngn_user.id,
+                            SavedBankAccount.is_active == True
+                        )
+                        result3 = await ngn_session.execute(stmt3)
+                        saved_accounts = result3.scalars().all()
+                        await show_saved_bank_accounts(query, context, amount, saved_accounts)
+            else:
+                # Unknown method - show method selection
+                context.user_data["cashout_data"] = {"amount": str(amount)}
+                await show_cashout_method_selection(query, context, amount)
             
     except Exception as e:
         logger.error(f"Error in handle_wallet_cashout: {e}")
