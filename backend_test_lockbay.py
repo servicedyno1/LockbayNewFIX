@@ -27,8 +27,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Public backend URL from frontend .env
-BACKEND_URL = "https://env-webhook-sync-1.preview.emergentagent.com"
-FRONTEND_URL = "https://env-webhook-sync-1.preview.emergentagent.com" # Same domain, port 3000
+BACKEND_URL = "https://lockbay-setup.preview.emergentagent.com"
+FRONTEND_URL = "https://lockbay-setup.preview.emergentagent.com" # Same domain, port 3000
 
 class LockBaySetupTester:
     def __init__(self):

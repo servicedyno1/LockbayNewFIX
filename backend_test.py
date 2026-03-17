@@ -32,7 +32,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Get the backend URL from environment
-BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://bd18717d-2672-4ffb-8e87-ec6d275ab90f.preview.emergentagent.com')
+BACKEND_URL = os.getenv('REACT_APP_BACKEND_URL', 'https://lockbay-setup.preview.emergentagent.com')
 
 class BackendTester:
     def __init__(self, base_url=BACKEND_URL):
@@ -417,7 +417,7 @@ class DynoPayWebhookTester:
     """Test class specifically for DynoPay webhook bug fixes"""
     
     def __init__(self):
-        self.base_url = "https://bd18717d-2672-4ffb-8e87-ec6d275ab90f.preview.emergentagent.com"
+        self.base_url = "https://lockbay-setup.preview.emergentagent.com"
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []

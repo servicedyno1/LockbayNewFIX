@@ -24,7 +24,7 @@
 
 ### Session 1 (2026-03-17): Environment Setup
 - Created `/app/.env` with 78 environment variables
-- Updated `WEBHOOK_URL` to pod URL: `https://bd18717d-2672-4ffb-8e87-ec6d275ab90f.preview.emergentagent.com/api/webhook`
+- Updated `WEBHOOK_URL` to pod URL: `https://lockbay-setup.preview.emergentagent.com/api/webhook`
 - Updated `DYNOPAY_WEBHOOK_URL` to pod URL
 - Installed all Python dependencies, backend fully running
 
