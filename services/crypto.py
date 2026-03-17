@@ -154,10 +154,11 @@ class CryptoServiceAtomic:
                 # Use primary callback URL (payment manager will handle provider-specific routing)
                 primary_callback_url = f"{base_webhook_url}/dynopay/wallet"
                 
-                # DynoPay requires minimum amount of 1, use $10 for wallet deposits
+                # DynoPay requires an amount parameter - use minimum $1 as a signal for open-ended deposits
+                # The actual credited amount is computed from crypto_amount × exchange_rate in the webhook handler
                 result, provider_used = await payment_manager.create_payment_address(
                     currency=currency,
-                    amount=10.0,  # Minimum $10 USD wallet deposit
+                    amount=1.0,  # Minimum signal amount - actual deposit amount is open-ended
                     callback_url=primary_callback_url,
                     reference_id=wallet_txn_id,
                     metadata=metadata
@@ -176,7 +177,7 @@ class CryptoServiceAtomic:
                 # Log financial event for address generation
                 financial_context = FinancialContext(
                     currency=currency,
-                    amount=Decimal("10.0")  # Minimum $10 USD wallet deposit
+                    amount=Decimal("1.0")  # Signal amount - actual deposit is open-ended
                 )
                 
                 # Use async financial audit logger with session if provided
