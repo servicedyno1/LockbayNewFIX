@@ -71,7 +71,12 @@ async def safe_reply_text(update: Update, text: str, **kwargs) -> bool:
         
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"❌ safe_reply_text EXCEPTION for user {user_id}: {error_msg}", exc_info=True)
+        logger.error(f"safe_reply_text EXCEPTION for user {user_id}: {error_msg}", exc_info=True)
+        
+        # Handle Telegram TimedOut - don't retry, the message is lost
+        if "Timed out" in error_msg or "TimedOut" in error_msg:
+            logger.warning(f"Telegram TimedOut for user {user_id} - message not delivered (bot may be under DB stress)")
+            return False
         
         # Handle specific telegram errors gracefully
         if "Chat not found" in error_msg:
@@ -132,6 +137,24 @@ def _get_user_lock(user_id: int) -> asyncio.Lock:
     if user_id not in _user_locks:
         _user_locks[user_id] = asyncio.Lock()
     return _user_locks[user_id]
+
+
+async def _send_service_busy_message(update: Update) -> None:
+    """Send a graceful 'service busy' message when DB is exhausted instead of hanging silently"""
+    try:
+        msg = (
+            "The service is experiencing high load right now. "
+            "Please try again in a few seconds.\n\n"
+            "Tap /start to retry."
+        )
+        if update.message:
+            await update.message.reply_text(msg)
+        elif update.callback_query and update.callback_query.message:
+            from telegram import Message
+            if isinstance(update.callback_query.message, Message):
+                await update.callback_query.message.reply_text(msg)
+    except Exception as e:
+        logger.error(f"Failed to send service busy message: {e}")
 
 def _get_step_signature(current_step: str, email: Optional[str] = None, state: Optional[str] = None) -> str:
     """Generate enhanced step signature for deduplication with state awareness"""
@@ -715,6 +738,7 @@ async def onboarding_router(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     """
     Main onboarding router with idempotent duplicate prevention
     Handles all onboarding flow logic with proper session management and per-user locking
+    FIX: Added timeout handling and graceful degradation when DB is exhausted
     """
     import time
     t0 = time.time()
@@ -729,16 +753,32 @@ async def onboarding_router(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     
     try:
         t1 = time.time()
-        logger.info(f"⏱️ PERF [onboarding_router]: Entry to lock acquisition: {(t1-t0)*1000:.1f}ms")
+        logger.info(f"PERF [onboarding_router]: Entry to lock acquisition: {(t1-t0)*1000:.1f}ms")
         
         async with user_lock:
             t2 = time.time()
-            logger.info(f"⏱️ PERF [onboarding_router]: Lock acquired in {(t2-t1)*1000:.1f}ms")
+            logger.info(f"PERF [onboarding_router]: Lock acquired in {(t2-t1)*1000:.1f}ms")
             
-            # Get or create user with sync utility via run_io_task
-            user_data, is_new = await get_or_create_user_async(user)
+            # FIX: Wrap get_or_create_user_async with timeout to prevent hanging on DB exhaustion
+            try:
+                user_data, is_new = await asyncio.wait_for(
+                    get_or_create_user_async(user),
+                    timeout=15.0  # 15s max - fail fast if DB is exhausted
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"DB_TIMEOUT: get_or_create_user_async timed out for user {user.id} after 15s")
+                await _send_service_busy_message(update)
+                return
+            except Exception as db_err:
+                err_str = str(db_err).lower()
+                if "queuepool" in err_str or "connection" in err_str or "timeout" in err_str:
+                    logger.error(f"DB_EXHAUSTION: get_or_create_user failed for {user.id}: {db_err}")
+                    await _send_service_busy_message(update)
+                    return
+                raise  # Re-raise non-DB errors
+            
             t3 = time.time()
-            logger.info(f"⏱️ PERF [onboarding_router]: get_or_create_user_async took {(t3-t2)*1000:.1f}ms")
+            logger.info(f"PERF [onboarding_router]: get_or_create_user_async took {(t3-t2)*1000:.1f}ms")
             
             if not user_data:
                 await _send_error(update, "system_error")

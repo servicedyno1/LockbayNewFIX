@@ -25,6 +25,14 @@ logger = logging.getLogger(__name__)
 TATUM_API_URL = "https://api.tatum.io/v4/data/rate/symbol"
 TATUM_API_KEY = os.environ.get("TATUM_API_KEY", "")
 
+# FastForex Legacy API Circuit Breaker
+# Stops calling expired/broken FastForex API after consecutive failures
+_fastforex_circuit_open = False
+_fastforex_failure_count = 0
+_fastforex_circuit_opened_at = 0.0
+_FASTFOREX_FAILURE_THRESHOLD = 3        # Open circuit after 3 consecutive failures
+_FASTFOREX_CIRCUIT_COOLDOWN = 1800      # 30 minutes before retrying
+
 # Symbol mapping: internal/Kraken symbols → standard Tatum symbols
 TATUM_SYMBOL_MAP = {
     "BTC": "BTC", "ETH": "ETH", "LTC": "LTC", "DOGE": "DOGE",
@@ -299,21 +307,25 @@ class FastForexService(APIAdapterRetry):
                 set_cached(f"fallback_crypto_rate_{mapped_symbol}_USD", tatum_rate, ttl=self.fallback_cache_ttl)
                 return tatum_rate
 
-            # === SOURCE 2: FastForex (legacy fallback) ===
-            if self.api_key:
-                async with optimized_http_session() as session:
-                    url = f"{self.base_url}/fetch-one"
-                    params = {"from": mapped_symbol, "to": "USD", "api_key": self.api_key}
-                    async with session.get(url, params=params) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            if "result" in data and "USD" in data["result"]:
-                                rate = Decimal(str(data["result"]["USD"]))
-                                set_cached(cache_key, rate, ttl=self.cache_ttl)
-                                set_cached(rapid_cache_key, rate, ttl=self.rapid_cache_ttl)
-                                set_cached(f"fallback_crypto_rate_{mapped_symbol}_USD", rate, ttl=self.fallback_cache_ttl)
-                                logger.info(f"FastForex fallback {crypto_symbol}: ${float(rate):.4f} USD")
-                                return rate
+            # === SOURCE 2: FastForex (legacy fallback with circuit breaker) ===
+            if self.api_key and not _fastforex_circuit_open:
+                try:
+                    timeout = aiohttp.ClientTimeout(total=5)
+                    async with aiohttp.ClientSession() as session:
+                        url = f"{self.base_url}/fetch-one"
+                        params = {"from": mapped_symbol, "to": "USD", "api_key": self.api_key}
+                        async with session.get(url, params=params, timeout=timeout) as response:
+                            if response.status == 200:
+                                data = await response.json()
+                                if "result" in data and "USD" in data["result"]:
+                                    rate = Decimal(str(data["result"]["USD"]))
+                                    set_cached(cache_key, rate, ttl=self.cache_ttl)
+                                    set_cached(rapid_cache_key, rate, ttl=self.rapid_cache_ttl)
+                                    set_cached(f"fallback_crypto_rate_{mapped_symbol}_USD", rate, ttl=self.fallback_cache_ttl)
+                                    logger.info(f"FastForex fallback {crypto_symbol}: ${float(rate):.4f} USD")
+                                    return rate
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    logger.warning(f"FastForex fallback timeout/error for {crypto_symbol}: {e}")
 
             raise FastForexAPIError(f"All rate sources failed for {crypto_symbol}")
 
@@ -328,25 +340,51 @@ class FastForexService(APIAdapterRetry):
             raise FastForexAPIError("Unexpected error occurred")
 
     async def _fetch_fastforex_single_rate(self, mapped_symbol: str) -> Optional[Decimal]:
-        """Fetch a single rate — tries Tatum first, then FastForex."""
+        """Fetch a single rate - tries Tatum first, then FastForex with circuit breaker."""
+        global _fastforex_circuit_open, _fastforex_failure_count, _fastforex_circuit_opened_at
+        
         # Tatum primary
         rate = await self._fetch_tatum_rate(mapped_symbol, "USD")
         if rate is not None:
             return rate
-        # FastForex fallback
+        # FastForex fallback with circuit breaker
         if not self.api_key:
             return None
+        
+        # Circuit breaker check
+        if _fastforex_circuit_open:
+            elapsed = time.time() - _fastforex_circuit_opened_at
+            if elapsed < _FASTFOREX_CIRCUIT_COOLDOWN:
+                return None
+            else:
+                _fastforex_circuit_open = False
+                _fastforex_failure_count = 0
+        
         try:
-            async with optimized_http_session() as session:
+            timeout = aiohttp.ClientTimeout(total=5)  # 5s aggressive timeout
+            async with aiohttp.ClientSession() as session:
                 url = f"{self.base_url}/fetch-one"
                 params = {"from": mapped_symbol, "to": "USD", "api_key": self.api_key}
-                async with session.get(url, params=params) as response:
+                async with session.get(url, params=params, timeout=timeout) as response:
                     if response.status == 200:
                         data = await response.json()
                         if "result" in data and "USD" in data["result"]:
                             rate = Decimal(str(data["result"]["USD"]))
+                            _fastforex_failure_count = 0
                             logger.info(f"FastForex fallback {mapped_symbol}: ${float(rate):.4f} USD")
                             return rate
+                    else:
+                        _fastforex_failure_count += 1
+                        if _fastforex_failure_count >= _FASTFOREX_FAILURE_THRESHOLD:
+                            _fastforex_circuit_open = True
+                            _fastforex_circuit_opened_at = time.time()
+                            logger.warning(f"FastForex circuit OPENED in single_rate after {_fastforex_failure_count} failures")
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            logger.warning(f"FastForex single rate timeout/error for {mapped_symbol}: {e}")
+            _fastforex_failure_count += 1
+            if _fastforex_failure_count >= _FASTFOREX_FAILURE_THRESHOLD:
+                _fastforex_circuit_open = True
+                _fastforex_circuit_opened_at = time.time()
         except Exception as e:
             logger.warning(f"FastForex single rate error for {mapped_symbol}: {e}")
         return None
@@ -431,7 +469,9 @@ class FastForexService(APIAdapterRetry):
         return usd_amount / rate
 
     async def _make_request(self, endpoint: str, params: dict) -> Optional[dict]:
-        """Make request — tries Tatum first, then FastForex."""
+        """Make request - tries Tatum first, then FastForex with circuit breaker."""
+        global _fastforex_circuit_open, _fastforex_failure_count, _fastforex_circuit_opened_at
+        
         # For fiat rate requests, use Tatum
         if self.tatum_api_key and endpoint == "fetch-one":
             from_currency = params.get("from", "")
@@ -440,20 +480,51 @@ class FastForexService(APIAdapterRetry):
             if rate is not None:
                 return {"result": {to_currency: str(rate)}}
         
-        # FastForex fallback
+        # FastForex fallback with circuit breaker
         if not self.api_key:
             return None
+        
+        # Circuit breaker check for FastForex
+        if _fastforex_circuit_open:
+            elapsed = time.time() - _fastforex_circuit_opened_at
+            if elapsed < _FASTFOREX_CIRCUIT_COOLDOWN:
+                logger.debug(f"FastForex circuit OPEN - skipping call ({elapsed:.0f}s / {_FASTFOREX_CIRCUIT_COOLDOWN}s cooldown)")
+                return None
+            else:
+                logger.info("FastForex circuit half-open - attempting recovery probe")
+                _fastforex_circuit_open = False
+                _fastforex_failure_count = 0
+        
         try:
-            async with optimized_http_session() as session:
+            timeout = aiohttp.ClientTimeout(total=5)  # 5s aggressive timeout (was unlimited)
+            async with aiohttp.ClientSession() as session:
                 url = f"{self.base_url}/{endpoint}"
                 params["api_key"] = self.api_key
-                async with session.get(url, params=params) as response:
+                async with session.get(url, params=params, timeout=timeout) as response:
                     if response.status == 200:
+                        _fastforex_failure_count = 0  # Reset on success
                         return await response.json()
                     else:
                         error_text = await response.text()
                         logger.error(f"FastForex API error: {response.status} - {error_text}")
+                        # Track failures for circuit breaker
+                        _fastforex_failure_count += 1
+                        if _fastforex_failure_count >= _FASTFOREX_FAILURE_THRESHOLD:
+                            _fastforex_circuit_open = True
+                            _fastforex_circuit_opened_at = time.time()
+                            logger.warning(
+                                f"FastForex circuit OPENED after {_fastforex_failure_count} consecutive failures "
+                                f"(status {response.status}) - will retry in {_FASTFOREX_CIRCUIT_COOLDOWN}s"
+                            )
                         return None
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            logger.warning(f"FastForex network/timeout error: {e}")
+            _fastforex_failure_count += 1
+            if _fastforex_failure_count >= _FASTFOREX_FAILURE_THRESHOLD:
+                _fastforex_circuit_open = True
+                _fastforex_circuit_opened_at = time.time()
+                logger.warning(f"FastForex circuit OPENED after {_fastforex_failure_count} consecutive failures (timeout/network)")
+            return None
         except Exception as e:
             logger.error(f"Error making FastForex request: {e}")
             return None

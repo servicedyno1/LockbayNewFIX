@@ -19,6 +19,14 @@ from services.financial_operation_protection import require_balance_protection
 
 logger = logging.getLogger(__name__)
 
+# Kraken API Circuit Breaker
+# Prevents cascading failures when Kraken API is unreachable
+_kraken_circuit_open = False
+_kraken_failure_count = 0
+_kraken_circuit_opened_at = 0.0
+_KRAKEN_FAILURE_THRESHOLD = 5          # Open after 5 consecutive failures
+_KRAKEN_CIRCUIT_COOLDOWN = 300         # 5 minutes cooldown
+
 
 class KrakenService(APIAdapterRetry):
     """Kraken API client for crypto withdrawals with unified retry system"""
@@ -146,7 +154,19 @@ class KrakenService(APIAdapterRetry):
             return str(final_nonce)
     
     async def _make_request(self, endpoint: str, params: Dict = None) -> Dict:
-        """Make authenticated request to Kraken API"""
+        """Make authenticated request to Kraken API with circuit breaker"""
+        global _kraken_circuit_open, _kraken_failure_count, _kraken_circuit_opened_at
+        
+        # Circuit breaker check
+        if _kraken_circuit_open:
+            elapsed = time.time() - _kraken_circuit_opened_at
+            if elapsed < _KRAKEN_CIRCUIT_COOLDOWN:
+                raise Exception(f"Kraken circuit OPEN - skipping call ({elapsed:.0f}s / {_KRAKEN_CIRCUIT_COOLDOWN}s cooldown)")
+            else:
+                logger.info("Kraken circuit half-open - attempting recovery probe")
+                _kraken_circuit_open = False
+                _kraken_failure_count = 0
+        
         if params is None:
             params = {}
         
@@ -190,13 +210,24 @@ class KrakenService(APIAdapterRetry):
                     # Check for Kraken API errors
                     if result and result.get('error'):
                         error_msgs = result.get('error', [])
-                        logger.error(f"❌ Kraken API error: {error_msgs}")
+                        logger.error(f"Kraken API error: {error_msgs}")
+                        _kraken_failure_count += 1
+                        if _kraken_failure_count >= _KRAKEN_FAILURE_THRESHOLD:
+                            _kraken_circuit_open = True
+                            _kraken_circuit_opened_at = time.time()
+                            logger.warning(f"Kraken circuit OPENED after {_kraken_failure_count} consecutive API errors")
                         raise Exception(f"Kraken API error: {', '.join(error_msgs) if error_msgs else 'Unknown error'}")
                     
+                    _kraken_failure_count = 0  # Reset on success
                     return result.get('result', {})
                     
             except Exception as e:
-                logger.error(f"❌ Kraken API request failed: {str(e)}")
+                logger.error(f"Kraken API request failed: {str(e)}")
+                _kraken_failure_count += 1
+                if _kraken_failure_count >= _KRAKEN_FAILURE_THRESHOLD:
+                    _kraken_circuit_open = True
+                    _kraken_circuit_opened_at = time.time()
+                    logger.warning(f"Kraken circuit OPENED after {_kraken_failure_count} consecutive failures - cooldown {_KRAKEN_CIRCUIT_COOLDOWN}s")
                 raise
     
     async def test_credentials(self) -> Dict[str, Any]:

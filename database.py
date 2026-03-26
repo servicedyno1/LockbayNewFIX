@@ -33,29 +33,28 @@ except Exception as validator_error:
 if not Config.DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is required")
 
-# OPTIMIZED: Reduced connection pools to prevent exhaustion (Railway max: 100)
-# Sync pool: 3 base + 5 overflow = 8 max
-# Async pool: 5 base + 10 overflow = 15 max
-# Pool manager: 5 base + 10 overflow = 15 max
-# Total: 38 connections max (reduced from 70, safely under 100 limit)
+# FIX: Increased connection pools to prevent exhaustion under background job load
+# Sync pool: 10 base + 15 overflow = 25 max
+# Async pool: 12 base + 20 overflow = 32 max
+# Total: 57 connections max (safely under 100 limit)
 engine = create_engine(
     Config.DATABASE_URL,
     poolclass=QueuePool,
-    pool_size=3,           # Reduced sync base pool (async is primary)
-    max_overflow=5,        # Reduced sync burst capacity
+    pool_size=10,          # Increased from 3 - background jobs need more connections
+    max_overflow=15,       # Increased from 5 - burst capacity for concurrent operations
     pool_pre_ping=True,    # Validate connections before use
-    pool_recycle=1800,     # Recycle connections every 30 min to prevent stale connections
-    pool_timeout=30,       # Wait max 30 seconds for connection during bursts
+    pool_recycle=600,      # Recycle every 10 min (was 30 min) - Railway proxy compatibility
+    pool_timeout=10,       # Reduced from 30s - fail fast to prevent blocking user handlers
     pool_reset_on_return='rollback',  # Ensure clean state when returned to pool
     echo=False,            # Set to True for SQL logging in development
     connect_args={
         "connect_timeout": 10,
         "application_name": "lockbay_telegram_bot",
-        "options": "-c idle_in_transaction_session_timeout=300000 -c statement_timeout=60000",
+        "options": "-c idle_in_transaction_session_timeout=120000 -c statement_timeout=30000",
         "keepalives": 1,
-        "keepalives_idle": 30,
+        "keepalives_idle": 15,
         "keepalives_interval": 5,
-        "keepalives_count": 3,
+        "keepalives_count": 5,
     }
 )
 
@@ -66,28 +65,26 @@ async_database_url = Config.DATABASE_URL.replace('postgresql://', 'postgresql+as
 async_database_url = async_database_url.replace('sslmode=require', 'ssl=require')
 async_database_url = async_database_url.replace('sslmode=prefer', 'ssl=prefer')
 async_database_url = async_database_url.replace('sslmode=disable', 'ssl=disable')
-# OPTIMIZED FOR CLOUD POSTGRESQL: Conservative async connection pool
-# Cloud database plans often have strict connection limits
-# Total: 44 connections max (safely under 50 limit with headroom for admin queries)
+# FIX: Increased async pool for background job load + Railway proxy compatibility
 # Combined with 4-minute keep-alive job to maintain database warmth
 async_engine = create_async_engine(
     async_database_url,
-    pool_size=5,           # Async base pool (reduced from 7 to save connections)
-    max_overflow=10,       # Async burst capacity (reduced from 15)
+    pool_size=12,          # Increased from 5 - async handlers + background jobs need more
+    max_overflow=20,       # Increased from 10 - burst capacity for webhook floods
     pool_pre_ping=True,    # Validate connections before use
-    pool_recycle=1800,     # Recycle connections every 30 min
-    pool_timeout=30,       # Wait max 30 seconds for connection during bursts
+    pool_recycle=600,      # Recycle every 10 min (was 30 min) - Railway proxy drops idle conns
+    pool_timeout=10,       # Reduced from 30s - fail fast, don't block event loop
     pool_reset_on_return='rollback',  # Ensure clean state when returned to pool
     echo=False,            # Disable SQL logging (set DEBUG=true to enable)
     echo_pool=False,       # Disable connection pool logging
     connect_args={
         "server_settings": {
             "application_name": "lockbay_telegram_bot_async",
-            "idle_in_transaction_session_timeout": "300000",   # 5 min - kill leaked transactions
-            "statement_timeout": "60000",                       # 60s - kill runaway queries
+            "idle_in_transaction_session_timeout": "120000",   # 2 min (was 5) - kill leaked txns faster
+            "statement_timeout": "30000",                       # 30s (was 60) - kill runaway queries faster
         },
         "timeout": 10,  # Connection timeout
-        "command_timeout": 30,  # Command execution timeout
+        "command_timeout": 15,  # Command timeout reduced from 30s
     }
 )
 
@@ -485,3 +482,31 @@ def get_pool_stats():
 
 # Note: engine_connect ping removed to prevent SAWarning conflicts with pool_pre_ping=True
 # The pool_pre_ping=True setting already handles connection testing automatically
+
+
+def is_pool_healthy(threshold: float = 0.8) -> bool:
+    """
+    Check if the connection pool has capacity for new operations.
+    Returns True if pool utilization is below threshold (default 80%).
+    Used by background jobs to skip execution when the pool is exhausted.
+    """
+    try:
+        sync_pool = engine.pool
+        checked_out = sync_pool.checkedout()
+        pool_size = sync_pool.size()
+        max_overflow = engine.pool._max_overflow
+        total_capacity = pool_size + max_overflow
+        
+        if total_capacity == 0:
+            return True
+        
+        utilization = checked_out / total_capacity
+        if utilization >= threshold:
+            logger.warning(
+                f"POOL_GUARD: Pool utilization {utilization:.0%} >= {threshold:.0%} "
+                f"({checked_out}/{total_capacity} connections in use) - skipping non-critical operations"
+            )
+            return False
+        return True
+    except Exception:
+        return True  # Assume healthy if we can't check

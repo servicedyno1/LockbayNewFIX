@@ -98,12 +98,15 @@ async def process_existing_user_async(
     if not user or not update.message:
         return ConversationHandler.END
     
-    logger.info(f"⚡ PROCESS_EXISTING_USER_ASYNC: Starting shared session for user {user_telegram_id}")
+    logger.info(f"PROCESS_EXISTING_USER_ASYNC: Starting shared session for user {user_telegram_id}")
     
     try:
         # CRITICAL PERFORMANCE FIX: Open ONE shared session for entire existing user flow
-        async with get_async_session() as shared_session:
-            session_start = time.time()
+        # FIX: Wrap with timeout to prevent hanging when DB pool is exhausted
+        try:
+            async with asyncio.timeout(15):  # 15s max for entire existing user flow
+                async with get_async_session() as shared_session:
+                    session_start = time.time()
             
             # STEP 1: User lookup with shared session
             db_user = await asyncio.wait_for(
@@ -260,11 +263,31 @@ async def process_existing_user_async(
             
             return ConversationHandler.END
             
+        except asyncio.TimeoutError:
+            logger.error(f"DB_TIMEOUT: Entire existing user flow timed out (15s) for user {user_telegram_id}")
+            try:
+                await update.message.reply_text(
+                    "The service is experiencing high load. Please try /start again in a few seconds."
+                )
+            except Exception:
+                pass
+            return ConversationHandler.END
+            
     except asyncio.TimeoutError:
-        logger.error(f"⏰ Database timeout in shared session for user {user_telegram_id}")
+        logger.error(f"Database timeout in shared session for user {user_telegram_id}")
         return None
     except Exception as e:
-        logger.error(f"❌ Error in shared session flow for user {user_telegram_id}: {e}", exc_info=True)
+        err_str = str(e).lower()
+        if "queuepool" in err_str or "connection" in err_str:
+            logger.error(f"DB_EXHAUSTION: Shared session failed for user {user_telegram_id}: {e}")
+            try:
+                await update.message.reply_text(
+                    "The service is experiencing high load. Please try /start again in a few seconds."
+                )
+            except Exception:
+                pass
+            return ConversationHandler.END
+        logger.error(f"Error in shared session flow for user {user_telegram_id}: {e}", exc_info=True)
         return None
 
 
@@ -379,21 +402,44 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         
         try:
             async with async_managed_session() as session:
-                prefetch_data = await prefetch_onboarding_context(user.id, session)
+                prefetch_data = await asyncio.wait_for(
+                    prefetch_onboarding_context(user.id, session),
+                    timeout=10.0  # FIX: 10s max - fail fast if DB is exhausted
+                )
                 if prefetch_data:
                     cache_onboarding_data(context.user_data, prefetch_data)
                     prefetch_time = (time.time() - prefetch_start) * 1000
                     logger.info(
-                        f"⚡ ONBOARDING_PREFETCH_SUCCESS: Completed in {prefetch_time:.1f}ms "
+                        f"ONBOARDING_PREFETCH_SUCCESS: Completed in {prefetch_time:.1f}ms "
                         f"(is_new_user: {prefetch_data.is_new_user}, "
                         f"email_verified: {prefetch_data.email_verified}, "
                         f"onboarding_complete: {prefetch_data.onboarding_complete})"
                     )
                 else:
-                    logger.warning(f"⚠️ ONBOARDING_PREFETCH: No data returned for user {user.id}")
+                    logger.warning(f"ONBOARDING_PREFETCH: No data returned for user {user.id}")
+        except asyncio.TimeoutError:
+            prefetch_time = (time.time() - prefetch_start) * 1000
+            logger.error(f"DB_TIMEOUT: Onboarding prefetch timed out in {prefetch_time:.1f}ms for user {user.id}")
+            try:
+                await update.message.reply_text(
+                    "The service is experiencing high load. Please try /start again in a few seconds."
+                )
+            except Exception:
+                pass
+            return ConversationHandler.END
         except Exception as e:
             prefetch_time = (time.time() - prefetch_start) * 1000
-            logger.error(f"❌ ONBOARDING_PREFETCH_ERROR: Failed in {prefetch_time:.1f}ms: {e}")
+            err_str = str(e).lower()
+            if "queuepool" in err_str or "connection" in err_str:
+                logger.error(f"DB_EXHAUSTION: Prefetch failed in {prefetch_time:.1f}ms for user {user.id}: {e}")
+                try:
+                    await update.message.reply_text(
+                        "The service is experiencing high load. Please try /start again in a few seconds."
+                    )
+                except Exception:
+                    pass
+                return ConversationHandler.END
+            logger.error(f"ONBOARDING_PREFETCH_ERROR: Failed in {prefetch_time:.1f}ms: {e}")
         
         # PRIORITY 1: Check onboarding prefetch cache (most comprehensive)
         cached_onboarding = get_cached_onboarding_data(context.user_data)

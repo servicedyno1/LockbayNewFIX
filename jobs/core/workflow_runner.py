@@ -183,7 +183,11 @@ workflow_runner = WorkflowRunner()
 
 # Exported functions for scheduler integration
 async def run_workflow_processing():
-    """Main entry point for scheduler - processes UTE steps and outbox messages"""
+    """Main entry point for scheduler - processes UTE steps and outbox messages with pool guard"""
+    from database import is_pool_healthy
+    if not is_pool_healthy(threshold=0.80):
+        logger.warning("POOL_GUARD: Skipping workflow processing - pool utilization too high")
+        return {"status": "skipped", "reason": "pool_exhaustion"}
     return await workflow_runner.run_core_workflow_processing()
 
 

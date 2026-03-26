@@ -253,12 +253,15 @@ class ConsolidatedScheduler:
         # Terminates idle-in-transaction connections that are older than 5 minutes
         # Prevents connection exhaustion that can crash the Railway database
         async def kill_leaked_connections():
-            """Kill idle-in-transaction connections to prevent connection exhaustion"""
+            """Kill idle-in-transaction connections to prevent connection exhaustion.
+            FIX: Uses a dedicated fresh connection instead of competing for the pool."""
             try:
-                from database import engine
-                from sqlalchemy import text
-                with engine.connect() as conn:
-                    result = conn.execute(text("""
+                from sqlalchemy import create_engine as _create_engine, text as _text
+                from config import Config as _Config
+                # Use a dedicated one-off connection to avoid competing with the pool
+                _fresh_engine = _create_engine(_Config.DATABASE_URL, pool_pre_ping=True, pool_size=1, max_overflow=0)
+                with _fresh_engine.connect() as conn:
+                    result = conn.execute(_text("""
                         SELECT pid, application_name, state, 
                                extract(epoch from now() - state_change) as idle_seconds
                         FROM pg_stat_activity 
@@ -269,13 +272,13 @@ class ConsolidatedScheduler:
                     leaked = result.fetchall()
                     if leaked:
                         for row in leaked:
-                            conn.execute(text(f"SELECT pg_terminate_backend({row[0]})"))
-                            logger.warning(f"🔪 CONNECTION_LEAK_KILLER: Terminated PID={row[0]} app={row[1]} idle_for={row[3]:.0f}s")
+                            conn.execute(_text(f"SELECT pg_terminate_backend({row[0]})"))
+                            logger.warning(f"CONNECTION_LEAK_KILLER: Terminated PID={row[0]} app={row[1]} idle_for={row[3]:.0f}s")
                         conn.commit()
-                        logger.info(f"🔪 CONNECTION_LEAK_KILLER: Killed {len(leaked)} leaked connections")
+                        logger.info(f"CONNECTION_LEAK_KILLER: Killed {len(leaked)} leaked connections")
                     
                     # Log connection pool health
-                    result = conn.execute(text("""
+                    result = conn.execute(_text("""
                         SELECT state, count(*) 
                         FROM pg_stat_activity 
                         WHERE datname = current_database() 
@@ -283,9 +286,10 @@ class ConsolidatedScheduler:
                     """))
                     stats = {row[0]: row[1] for row in result.fetchall()}
                     total = sum(stats.values())
-                    logger.info(f"📊 CONNECTION_HEALTH: {total}/100 connections - {stats}")
+                    logger.info(f"CONNECTION_HEALTH: {total}/100 connections - {stats}")
+                _fresh_engine.dispose()  # Clean up the one-off engine
             except Exception as e:
-                logger.error(f"❌ CONNECTION_LEAK_KILLER error: {e}")
+                logger.error(f"CONNECTION_LEAK_KILLER error: {e}")
         
         self.scheduler.add_job(
             kill_leaked_connections,

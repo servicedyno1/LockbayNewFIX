@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-03-26T08:54:44.676303",
+  "total_tests": 10,
+  "passed_tests": 10,
+  "success_rate": 100.0,
+  "all_passed": true,
+  "test_details": [
+    {
+      "name": "Health Endpoint",
+      "success": true,
+      "details": "Status: ok",
+      "timestamp": "2026-03-26T08:54:34.138420"
+    },
+    {
+      "name": "Webhook Health",
+      "success": true,
+      "details": "bot_ready: True",
+      "timestamp": "2026-03-26T08:54:34.330133"
+    },
+    {
+      "name": "Database Pool Capacity",
+      "success": true,
+      "details": "Success rate: 100.0% (15/15)",
+      "timestamp": "2026-03-26T08:54:36.635790"
+    },
+    {
+      "name": "FastForex Circuit Breaker",
+      "success": true,
+      "details": "Service responds without crashing",
+      "timestamp": "2026-03-26T08:54:36.746430"
+    },
+    {
+      "name": "Fincra Circuit Breaker",
+      "success": true,
+      "details": "Service responds without crashing",
+      "timestamp": "2026-03-26T08:54:36.843299"
+    },
+    {
+      "name": "Kraken Circuit Breaker",
+      "success": true,
+      "details": "Service responds without crashing",
+      "timestamp": "2026-03-26T08:54:36.939451"
+    },
+    {
+      "name": "Timeout Handling",
+      "success": true,
+      "details": "Response time: 0.10s",
+      "timestamp": "2026-03-26T08:54:37.043983"
+    },
+    {
+      "name": "Pool Guards",
+      "success": true,
+      "details": "Success rate: 100.0% (10/10)",
+      "timestamp": "2026-03-26T08:54:39.033803"
+    },
+    {
+      "name": "Connection Leak Prevention",
+      "success": true,
+      "details": "Avg: 0.10s, Max: 0.14s",
+      "timestamp": "2026-03-26T08:54:44.559827"
+    },
+    {
+      "name": "Graceful Degradation",
+      "success": true,
+      "details": "Meaningful response: {'status': 'ok', 'service': 'LockBay Telegram Bot', 'version': '1.0'}",
+      "timestamp": "2026-03-26T08:54:44.675387"
+    }
+  ]
+}

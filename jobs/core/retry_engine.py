@@ -505,7 +505,11 @@ retry_engine = RetryEngine()
 
 # Exported functions for scheduler integration with clean async patterns
 async def run_retry_processing():
-    """Main entry point for scheduler - processes all retry operations"""
+    """Main entry point for scheduler - processes all retry operations with pool guard"""
+    from database import is_pool_healthy
+    if not is_pool_healthy(threshold=0.75):
+        logger.warning("POOL_GUARD: Skipping retry processing - pool utilization too high, preserving connections for user handlers")
+        return {"status": "skipped", "reason": "pool_exhaustion"}
     return await retry_engine.run_core_retry_processing()
 
 

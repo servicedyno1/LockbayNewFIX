@@ -32,6 +32,14 @@ from utils.financial_audit_logger import (
 
 logger = logging.getLogger(__name__)
 
+# Fincra Authentication Circuit Breaker
+# Stops retrying when credentials are invalid (saves connections + network)
+_fincra_auth_circuit_open = False
+_fincra_auth_failure_count = 0
+_fincra_auth_circuit_opened_at = 0.0
+_FINCRA_AUTH_FAILURE_THRESHOLD = 3       # Open circuit after 3 consecutive auth failures
+_FINCRA_AUTH_CIRCUIT_COOLDOWN = 1800     # 30 minutes before retrying
+
 
 class FincraService(APIAdapterRetry):
     """Service for handling Fincra NGN payments and payouts with unified retry system"""
@@ -576,10 +584,26 @@ class FincraService(APIAdapterRetry):
     async def _make_request(
         self, method: str, endpoint: str, data: Optional[Dict] = None, operation_context: str = 'unknown'
     ) -> Optional[Dict]:
-        """ENHANCED: Make authenticated request with comprehensive retry and circuit breaker logic"""
+        """ENHANCED: Make authenticated request with circuit breaker for auth failures"""
+        global _fincra_auth_circuit_open, _fincra_auth_failure_count, _fincra_auth_circuit_opened_at
+        
         if not self.is_available():
             logger.error("Fincra service not available - missing API keys")
             return None
+
+        # Circuit breaker check for authentication failures
+        if _fincra_auth_circuit_open:
+            elapsed = time.time() - _fincra_auth_circuit_opened_at
+            if elapsed < _FINCRA_AUTH_CIRCUIT_COOLDOWN:
+                logger.debug(
+                    f"Fincra auth circuit OPEN - skipping {method} {endpoint} "
+                    f"({elapsed:.0f}s / {_FINCRA_AUTH_CIRCUIT_COOLDOWN}s cooldown)"
+                )
+                return None
+            else:
+                logger.info("Fincra auth circuit half-open - attempting recovery probe")
+                _fincra_auth_circuit_open = False
+                _fincra_auth_failure_count = 0
 
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
 
@@ -619,12 +643,22 @@ class FincraService(APIAdapterRetry):
                             response_data.get("success") or response_data.get("status")
                         ):
                             logger.info(f"Fincra API success: {method} {endpoint}")
+                            _fincra_auth_failure_count = 0  # Reset on success
                             return response_data
 
                         # Enhanced error categorization
                         elif response.status == 401:
                             logger.error(f"Fincra authentication failed: {response_data}")
-                            logger.error(f"🔑 Check FINCRA_API_KEY and ensure it matches the environment (LIVE/TEST)")
+                            logger.error(f"Check FINCRA_API_KEY and ensure it matches the environment (LIVE/TEST)")
+                            # Track auth failures for circuit breaker
+                            _fincra_auth_failure_count += 1
+                            if _fincra_auth_failure_count >= _FINCRA_AUTH_FAILURE_THRESHOLD:
+                                _fincra_auth_circuit_open = True
+                                _fincra_auth_circuit_opened_at = time.time()
+                                logger.warning(
+                                    f"Fincra auth circuit OPENED after {_fincra_auth_failure_count} consecutive auth failures "
+                                    f"- will retry in {_FINCRA_AUTH_CIRCUIT_COOLDOWN}s. FIX: Update FINCRA_API_KEY/FINCRA_SECRET_KEY"
+                                )
                             return None  # Don't retry auth errors
                         elif response.status == 429:
                             if attempt < max_retries - 1:

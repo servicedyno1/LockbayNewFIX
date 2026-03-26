@@ -312,7 +312,11 @@ reconciliation_engine = ReconciliationEngine()
 
 # Exported functions for scheduler integration  
 async def run_reconciliation():
-    """Main entry point for scheduler - comprehensive reconciliation"""
+    """Main entry point for scheduler - comprehensive reconciliation with pool guard"""
+    from database import is_pool_healthy
+    if not is_pool_healthy(threshold=0.75):
+        logger.warning("POOL_GUARD: Skipping reconciliation - pool utilization too high, preserving connections for user handlers")
+        return {"status": "skipped", "reason": "pool_exhaustion"}
     return await reconciliation_engine.run_core_reconciliation()
 
 
