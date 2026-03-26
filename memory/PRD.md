@@ -75,15 +75,25 @@ Key F821 fixes (runtime bugs):
 - Iteration 7: 100% (22/22 tests) - Bug fixes
 - Iteration 8: 100% (11/11 tests) - Lint fixes + regression
 
+### Session 4 (2026-03-26) - P0 Crash Fix + P1 Pool Monitoring
+- [x] Fixed `ImportError: escape_markdown` in `handlers/rating_ui_enhancements.py` (import pointed to `utils.helpers` instead of `utils.markdown_escaping`)
+- [x] Verified all 19 critical modules import cleanly (no remaining F821/F823 from ruff cleanup)
+- [x] Added `/health/pool` endpoint with detailed pool utilization stats (sync/async breakdown, utilization %, alert thresholds)
+- [x] Enhanced `/health` endpoint with pool health summary
+- [x] Added periodic pool utilization monitor job (every 5 min) to consolidated scheduler with CRITICAL/WARNING/OK log levels
+
 ## Prioritized Backlog
-### P0 (Critical) - None
+### P0 (Critical) - None (all resolved)
 ### P1 (High)
 - Fix Fincra API credentials (auth failing on LIVE mode)
 - Renew FastForex subscription
+- Prioritize user-facing Telegram handlers over background jobs when DB pool >70%
 ### P2 (Medium)
+- Fix Telegram retry amplification logic to prevent webhook floods
 - Web-based admin monitoring dashboard
-- Connection pool utilization metrics endpoint
+- Implement `/admin/lint-health` dashboard endpoint
 
 ## Next Tasks
 1. Fix Fincra API credentials or switch to test mode
 2. Test bot interaction end-to-end via Telegram
+3. Implement pool-aware handler prioritization (user-facing > background when pool >70%)

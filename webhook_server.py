@@ -219,7 +219,19 @@ try:
     @app.get("/health")
     async def health_check():
         """Health check endpoint for Reserve VM deployment probe"""
-        return {"status": "ok", "service": "LockBay Telegram Bot", "version": "1.0"}
+        pool_summary = {}
+        try:
+            from database import get_pool_stats, is_pool_healthy
+            stats = get_pool_stats()
+            pool_summary = {
+                "healthy": is_pool_healthy(threshold=0.7),
+                "checked_out": stats.get("total_connections", 0),
+                "sync": stats.get("sync_checked_out", "N/A"),
+                "async": stats.get("async_checked_out", "N/A"),
+            }
+        except Exception:
+            pool_summary = {"healthy": True}
+        return {"status": "ok", "service": "LockBay Telegram Bot", "version": "1.0", "pool": pool_summary}
     
     # UNIVERSAL LANDING PAGE - Root domain and /start alias
     @app.get("/")
@@ -1035,13 +1047,111 @@ async def health_check():
     except Exception as e:
         logger.debug(f"Performance report unavailable: {e}")
     
+    # Include pool health summary
+    pool_summary = {}
+    try:
+        from database import get_pool_stats, is_pool_healthy
+        pool_stats = get_pool_stats()
+        pool_healthy = is_pool_healthy(threshold=0.7)
+        pool_summary = {
+            "healthy": pool_healthy,
+            "sync_checked_out": pool_stats.get("sync_checked_out", "N/A"),
+            "async_checked_out": pool_stats.get("async_checked_out", "N/A"),
+            "total_active": pool_stats.get("total_connections", "N/A"),
+        }
+    except Exception as e:
+        pool_summary = {"error": str(e)}
+
     return {
         "status": "healthy", 
         "service": "telegram-bot-webhook",
         "ready": True,
         "uptime_seconds": round(uptime, 2),
-        "performance": performance_report
+        "performance": performance_report,
+        "pool": pool_summary
     }
+
+
+@app.get("/health/pool")
+async def pool_health_check():
+    """Database connection pool utilization monitoring endpoint"""
+    import time as _time
+    try:
+        from database import get_pool_stats, is_pool_healthy, engine, async_engine
+
+        pool_stats = get_pool_stats()
+
+        # Compute utilization for sync pool
+        sync_pool = engine.pool
+        sync_size = sync_pool.size()
+        sync_max_overflow = engine.pool._max_overflow
+        sync_checked_out = sync_pool.checkedout()
+        sync_overflow = sync_pool.overflow()
+        sync_checkedin = sync_pool.checkedin()
+        sync_capacity = sync_size + sync_max_overflow
+        sync_utilization = (sync_checked_out / sync_capacity * 100) if sync_capacity > 0 else 0
+
+        # Compute utilization for async pool
+        async_pool = async_engine.pool
+        async_size = async_pool.size() if hasattr(async_pool, 'size') else 0
+        async_max_overflow = async_engine.pool._max_overflow if hasattr(async_engine.pool, '_max_overflow') else 0
+        async_checked_out = async_pool.checkedout() if hasattr(async_pool, 'checkedout') else 0
+        async_overflow = async_pool.overflow() if hasattr(async_pool, 'overflow') else 0
+        async_checkedin = async_pool.checkedin() if hasattr(async_pool, 'checkedin') else 0
+        async_capacity = async_size + async_max_overflow
+        async_utilization = (async_checked_out / async_capacity * 100) if async_capacity > 0 else 0
+
+        total_capacity = sync_capacity + async_capacity
+        total_checked_out = sync_checked_out + async_checked_out
+        overall_utilization = (total_checked_out / total_capacity * 100) if total_capacity > 0 else 0
+
+        # Determine alert level
+        if overall_utilization >= 90:
+            alert = "critical"
+        elif overall_utilization >= 70:
+            alert = "warning"
+        else:
+            alert = "ok"
+
+        healthy = is_pool_healthy(threshold=0.7)
+
+        return {
+            "status": alert,
+            "healthy": healthy,
+            "overall_utilization_pct": round(overall_utilization, 1),
+            "total_checked_out": total_checked_out,
+            "total_capacity": total_capacity,
+            "sync_pool": {
+                "base_size": sync_size,
+                "max_overflow": sync_max_overflow,
+                "capacity": sync_capacity,
+                "checked_out": sync_checked_out,
+                "checked_in": sync_checkedin,
+                "overflow_in_use": sync_overflow,
+                "utilization_pct": round(sync_utilization, 1),
+            },
+            "async_pool": {
+                "base_size": async_size,
+                "max_overflow": async_max_overflow,
+                "capacity": async_capacity,
+                "checked_out": async_checked_out,
+                "checked_in": async_checkedin,
+                "overflow_in_use": async_overflow,
+                "utilization_pct": round(async_utilization, 1),
+            },
+            "thresholds": {
+                "warning_pct": 70,
+                "critical_pct": 90,
+            },
+            "timestamp": _time.time(),
+        }
+    except Exception as e:
+        logger.error(f"Pool health check error: {e}")
+        return JSONResponse(
+            content={"status": "error", "error": str(e)},
+            status_code=500,
+        )
+
 
 # Webhook warm-up routes to eliminate cold starts
 @app.get("/warmup")

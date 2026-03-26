@@ -12,7 +12,7 @@ from database import SessionLocal
 from models import User, Rating
 from services.enhanced_reputation_service import EnhancedReputationService
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
-from utils.helpers import escape_markdown
+from utils.markdown_escaping import escape_markdown
 
 logger = logging.getLogger(__name__)
 

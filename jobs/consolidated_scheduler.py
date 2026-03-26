@@ -301,6 +301,56 @@ class ConsolidatedScheduler:
         )
         logger.info("✅ Connection Leak Killer scheduled every 10 minutes")
 
+        # ===== POOL UTILIZATION MONITOR JOB =====
+        # Logs pool utilization and warns when thresholds exceeded
+        # Frequency: Every 5 minutes (aligned with reconciliation cycle)
+        async def monitor_pool_utilization():
+            """Log database connection pool utilization metrics."""
+            try:
+                from database import get_pool_stats, engine, async_engine
+
+                sync_pool = engine.pool
+                sync_checked_out = sync_pool.checkedout()
+                sync_capacity = sync_pool.size() + engine.pool._max_overflow
+
+                async_pool = async_engine.pool
+                async_checked_out = async_pool.checkedout() if hasattr(async_pool, 'checkedout') else 0
+                async_capacity = (async_pool.size() if hasattr(async_pool, 'size') else 0) + (async_engine.pool._max_overflow if hasattr(async_engine.pool, '_max_overflow') else 0)
+
+                total_out = sync_checked_out + async_checked_out
+                total_cap = sync_capacity + async_capacity
+                utilization = (total_out / total_cap * 100) if total_cap > 0 else 0
+
+                if utilization >= 90:
+                    logger.critical(
+                        f"POOL_MONITOR: CRITICAL utilization {utilization:.0f}% "
+                        f"({total_out}/{total_cap}) - sync={sync_checked_out}/{sync_capacity} async={async_checked_out}/{async_capacity}"
+                    )
+                elif utilization >= 70:
+                    logger.warning(
+                        f"POOL_MONITOR: HIGH utilization {utilization:.0f}% "
+                        f"({total_out}/{total_cap}) - sync={sync_checked_out}/{sync_capacity} async={async_checked_out}/{async_capacity}"
+                    )
+                else:
+                    logger.info(
+                        f"POOL_MONITOR: OK utilization {utilization:.0f}% "
+                        f"({total_out}/{total_cap}) - sync={sync_checked_out}/{sync_capacity} async={async_checked_out}/{async_capacity}"
+                    )
+            except Exception as e:
+                logger.error(f"POOL_MONITOR error: {e}")
+
+        self.scheduler.add_job(
+            monitor_pool_utilization,
+            trigger=IntervalTrigger(minutes=5, start_date=datetime.now().replace(second=55, microsecond=0)),
+            id="pool_utilization_monitor",
+            name="📊 Pool Utilization Monitor - DB Connection Health",
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=60,
+            replace_existing=True
+        )
+        logger.info("✅ Pool Utilization Monitor scheduled every 5 minutes")
+
         # ===== DATABASE KEEP-ALIVE JOB (DISABLED — OPTIMIZATION) =====
         # DISABLED: Only needed for Neon serverless (5min idle suspension).
         # If using Railway PostgreSQL or any always-on database, this is unnecessary.
