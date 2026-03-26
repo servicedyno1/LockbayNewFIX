@@ -9,19 +9,18 @@ import hashlib
 import hmac
 import json
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
-from fastapi import APIRouter, Request, Header
+from fastapi import APIRouter, Request
 from typing import Dict, Any, Optional
 from sqlalchemy import select
 from services.fincra_service import FincraService
-from services.unified_transaction_service import create_unified_transaction_service, TransactionRequest
+from services.unified_transaction_service import create_unified_transaction_service
 from services.dual_write_adapter import DualWriteMode
 from services.webhook_idempotency_service import (
     webhook_idempotency_service,
     WebhookEventInfo,
     WebhookProvider,
-    ProcessingResult,
     WebhookIdempotencyService
 )
 from models import (
@@ -33,15 +32,11 @@ from models import (
     ExchangeOrder,
     # ExchangeTransaction,  # REMOVED: Model doesn't exist - legacy dead code
     User,
-    Escrow,
-    Cashout,
-    SavedBankAccount,
-    WalletHolds,
-    CashoutStatus
+    Escrow
 )
 from config import Config
-from utils.atomic_transactions import atomic_transaction, async_atomic_transaction
-from utils.data_sanitizer import sanitize_for_log, safe_error_log
+from utils.atomic_transactions import async_atomic_transaction
+from utils.data_sanitizer import safe_error_log
 from utils.financial_audit_logger import (
     FinancialAuditLogger, 
     FinancialEventType, 
@@ -49,10 +44,9 @@ from utils.financial_audit_logger import (
     FinancialContext
 )
 from utils.webhook_prefetch import (
-    prefetch_webhook_context,
-    WebhookPrefetchData
+    prefetch_webhook_context
 )
-from utils.exchange_state_validator import ExchangeStateValidator, StateTransitionError
+from utils.exchange_state_validator import ExchangeStateValidator
 from database import get_sync_db_session
 
 logger = logging.getLogger(__name__)
@@ -178,7 +172,7 @@ async def fincra_webhook(request: Request):
     try:
         # Extract headers directly from request - FIXED: Fincra uses 'signature' header
         x_signature = request.headers.get("signature")  # Correct header name per Fincra docs
-        user_agent = request.headers.get("User-Agent")
+        request.headers.get("User-Agent")
         
         # Get request body
         body = await request.body()
@@ -249,7 +243,7 @@ async def fincra_webhook(request: Request):
                 logger.warning(f"Failed to parse createdAt '{created_at}': {e}")
                 webhook_timestamp = None
         else:
-            logger.warning(f"⚠️ Fincra webhook missing createdAt timestamp, using server time")
+            logger.warning("⚠️ Fincra webhook missing createdAt timestamp, using server time")
             webhook_timestamp = datetime.now(timezone.utc)
 
         # Validate timestamp to prevent replay attacks
@@ -520,7 +514,7 @@ async def _process_locked_fincra_payment(payment_data: Dict[str, Any], reference
     """Process Fincra payment within distributed lock context with unified transaction integration"""
     try:
         from decimal import Decimal
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime
         
         # Find associated escrow or exchange order
         async with async_atomic_transaction() as session:
@@ -601,7 +595,7 @@ async def _process_locked_fincra_payment(payment_data: Dict[str, Any], reference
                             potential_orders = result.scalars().all()
                             
                             # Verify timestamp proximity (within 1 hour) to prevent wrong order matching
-                            from datetime import datetime, timedelta, timezone
+                            from datetime import datetime
                             try:
                                 ref_timestamp = int(timestamp_str)
                                 ref_datetime = datetime.fromtimestamp(ref_timestamp)
@@ -1397,7 +1391,7 @@ async def _process_payout_confirmation(payout_data: Dict[str, Any]) -> bool:
         if amount is not None:
             logger.critical(f"💰 FINAL_AMOUNT: Using amount {amount} NGN from source field '{amount_source_field}'")
         else:
-            logger.error(f"❌ NO_AMOUNT_FOUND: Could not extract amount from any field in payout data")
+            logger.error("❌ NO_AMOUNT_FOUND: Could not extract amount from any field in payout data")
             # Set to 0 as fallback but log the issue
             amount = Decimal('0')
         
@@ -1465,7 +1459,7 @@ async def _process_locked_fincra_payout(payout_data: Dict[str, Any], reference: 
         if amount is not None:
             logger.critical(f"💰 LOCKED_PAYOUT_FINAL_AMOUNT: Using amount {amount} NGN from source field '{amount_source_field}'")
         else:
-            logger.error(f"❌ LOCKED_PAYOUT_NO_AMOUNT_FOUND: Could not extract amount from any field in payout data")
+            logger.error("❌ LOCKED_PAYOUT_NO_AMOUNT_FOUND: Could not extract amount from any field in payout data")
             # Set to 0 as fallback but log the issue
             amount = Decimal('0')
         
@@ -1483,7 +1477,7 @@ async def _process_locked_fincra_payout(payout_data: Dict[str, Any], reference: 
         # Find associated exchange order or wallet cashout
         async with async_atomic_transaction() as session:
             from models import ExchangeOrder, User, Cashout  # ExchangeTransaction removed - model doesn't exist
-            from datetime import datetime, timedelta, timezone
+            from datetime import datetime, timedelta
             
             # CRITICAL FIX: Define recent_time at the top to prevent undefined variable errors
             recent_time = datetime.utcnow() - timedelta(hours=24)
@@ -1674,7 +1668,7 @@ async def _process_locked_fincra_payout(payout_data: Dict[str, Any], reference: 
                                     fmeta_cashout_id = getattr(cashout_found, 'cashout_id', 'unknown')
                                     logger.critical(f"✅ FINCRA_META_MATCH: Found cashout {fmeta_cashout_id} by Fincra metadata reference={fincra_ref}")
                                     break
-                            except Exception as fmeta_error:
+                            except Exception:
                                 continue
                 
                 # Fallback 4: Enhanced Fincra reference pattern matching for USD and other cashouts
@@ -1840,7 +1834,7 @@ async def _process_locked_fincra_payout(payout_data: Dict[str, Any], reference: 
                 
                 # Fallback 5: Check all recent cashouts regardless of prefix if still no match
                 if not cashout_found and received_amount > 0:
-                    logger.info(f"🔍 LAST_RESORT_SEARCH: No match found, trying all recent cashouts regardless of type")
+                    logger.info("🔍 LAST_RESORT_SEARCH: No match found, trying all recent cashouts regardless of type")
                     
                     stmt = select(Cashout).where(
                         Cashout.created_at >= recent_time,
@@ -2041,7 +2035,7 @@ async def _process_locked_fincra_payout(payout_data: Dict[str, Any], reference: 
                             # FIXME: WalletHolds model doesn't have linked_id, linked_type, hold_txn_id fields
                             # This code needs to be updated to use the correct WalletHolds schema
                             # For now, we'll comment this out to fix type safety issues
-                            logger.warning(f"⚠️ ORPHANED_HOLD_LOOKUP_DISABLED: WalletHolds schema needs update to support orphaned hold lookup")
+                            logger.warning("⚠️ ORPHANED_HOLD_LOOKUP_DISABLED: WalletHolds schema needs update to support orphaned hold lookup")
                             
                             # TODO: Update when WalletHolds model is updated with correct fields
                             # from models import WalletHolds, WalletHoldStatus
@@ -2135,7 +2129,7 @@ async def _process_locked_fincra_payout(payout_data: Dict[str, Any], reference: 
             else:
                 logger.error(f"❌ PAYOUT_CONFIRMATION_FAILED: No matching exchange order or wallet cashout found for Fincra payout reference: {reference}")
                 logger.error(f"💡 DEBUG_INFO: Fincra_Ref={fincra_ref}, Amount={amount} {currency}")
-                logger.error(f"💡 TROUBLESHOOTING: Check if reference pattern changed or if this is a manual bank transfer")
+                logger.error("💡 TROUBLESHOOTING: Check if reference pattern changed or if this is a manual bank transfer")
                 
                 # Log recent cashouts for manual investigation
                 stmt = select(Cashout).where(
@@ -2404,7 +2398,7 @@ async def send_final_payout_confirmation(user_data, order_data, bank_reference):
         # Send final email receipt
         if user_data.get('email'):
             try:
-                email_service = EmailService()
+                EmailService()
                 # Note: This would need order object reconstruction for complex email templates
                 # For now, we'll keep it simple or pass the needed email data separately
                 logger.info(f"✅ Final payout email notification queued for {user_data['email']}")
@@ -2591,7 +2585,7 @@ async def _process_virtual_account_expiration(expiration_data: Dict[str, Any]) -
         account_id = expiration_data.get("id")
         merchant_reference = expiration_data.get("merchantReference", "")
         currency = expiration_data.get("currency", "NGN")
-        expires_at = expiration_data.get("expiresAt")
+        expiration_data.get("expiresAt")
         status = expiration_data.get("status")
         
         logger.info(
@@ -2685,11 +2679,11 @@ async def process_fincra_webhook_from_queue(
         # PRODUCTION MODE DEFENSIVE ASSERT: Check security requirements FIRST
         if is_production:
             if not webhook_secret:
-                logger.critical(f"🚨 PRODUCTION_SECURITY_BREACH: FINCRA_WEBHOOK_ENCRYPTION_KEY not configured in PRODUCTION")
+                logger.critical("🚨 PRODUCTION_SECURITY_BREACH: FINCRA_WEBHOOK_ENCRYPTION_KEY not configured in PRODUCTION")
                 return {"status": "error", "message": "Webhook security not configured"}
             
             if not signature:
-                logger.critical(f"🚨 PRODUCTION_SECURITY_BREACH: No signature in PRODUCTION webhook")
+                logger.critical("🚨 PRODUCTION_SECURITY_BREACH: No signature in PRODUCTION webhook")
                 return {"status": "error", "message": "Missing webhook signature"}
         
         # Extract webhook data
@@ -2705,7 +2699,7 @@ async def process_fincra_webhook_from_queue(
         else:
             # Fallback: Re-serialize if raw body not available (legacy support)
             raw_body_bytes = json.dumps(payload, separators=(',', ':')).encode('utf-8')
-            logger.warning(f"⚠️ FINCRA_SIGNATURE: No raw body in metadata, using re-serialized JSON (may cause signature mismatch)")
+            logger.warning("⚠️ FINCRA_SIGNATURE: No raw body in metadata, using re-serialized JSON (may cause signature mismatch)")
         
         # PRODUCTION SECURITY: Enforce signature verification in production
         if is_production:

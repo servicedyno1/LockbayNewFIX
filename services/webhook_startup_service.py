@@ -10,7 +10,6 @@ This service:
 """
 
 import logging
-import asyncio
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -73,15 +72,8 @@ class WebhookStartupService:
         """Register webhook processors for all supported providers"""
         try:
             # LEGACY REMOVED: webhook_processor replaced with simplified handlers
-            from handlers.dynopay_webhook import DynoPayWebhookHandler
-            from handlers.dynopay_exchange_webhook import DynoPayExchangeWebhookHandler
             
             # Register DynoPay processors if not already registered
-            processors = [
-                ("dynopay", "payment", self._create_dynopay_payment_processor),
-                ("dynopay", "exchange", self._create_dynopay_exchange_processor),
-                ("blockbee", "payment", self._create_blockbee_payment_processor),  # For future BlockBee integration
-            ]
             
             # LEGACY REMOVED: Direct handlers replaced webhook processor registration
             # All providers now use simplified direct processing architecture
@@ -150,7 +142,7 @@ class WebhookStartupService:
         async def process_blockbee_payment(payload, headers, client_ip, signature=None, metadata=None, event_id=None):
             try:
                 # Placeholder for BlockBee integration
-                logger.info(f"🔄 BLOCKBEE_PAYMENT: Processing payment webhook (placeholder)")
+                logger.info("🔄 BLOCKBEE_PAYMENT: Processing payment webhook (placeholder)")
                 
                 # For now, just log and mark as success
                 return {"status": "success", "message": "BlockBee processor placeholder"}

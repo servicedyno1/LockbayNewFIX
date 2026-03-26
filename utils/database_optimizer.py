@@ -4,9 +4,7 @@ Implements connection pooling, query optimization, and monitoring
 """
 
 import logging
-from sqlalchemy import event, pool, text
-from sqlalchemy.engine import Engine
-from typing import Optional
+from sqlalchemy import event, text
 import time
 from contextlib import contextmanager
 
@@ -137,12 +135,12 @@ class DatabaseOptimizer:
             # Test critical queries with highly optimized approach using indexes
             start_time = time.time()
             # Use optimized query that only checks existence, not full count
-            result = session.execute(text("SELECT 1 FROM users LIMIT 1")).fetchone()
+            session.execute(text("SELECT 1 FROM users LIMIT 1")).fetchone()
             user_query_time = time.time() - start_time
             
             start_time = time.time() 
             # Use optimized query that leverages indexes
-            result = session.execute(text("SELECT 1 FROM escrows WHERE status = 'active' LIMIT 1")).fetchone()
+            session.execute(text("SELECT 1 FROM escrows WHERE status = 'active' LIMIT 1")).fetchone()
             escrow_query_time = time.time() - start_time
             
             session.close()

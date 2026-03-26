@@ -5,7 +5,7 @@ Production validation system for data integrity and business rules
 
 import logging
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from config import Config
 
 logger = logging.getLogger(__name__)

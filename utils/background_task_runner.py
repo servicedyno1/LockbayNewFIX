@@ -20,7 +20,6 @@ import os
 import sys
 import logging
 from typing import Coroutine, Any, Callable, Optional
-from concurrent.futures import Executor
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +124,7 @@ class BackgroundTaskRunner:
                 
                 # Ensure we have a running loop
                 try:
-                    loop = asyncio.get_running_loop()
+                    asyncio.get_running_loop()
                     return await asyncio.to_thread(fn, *args, **kwargs)
                 except RuntimeError:
                     logger.warning("No running event loop, executing synchronously")

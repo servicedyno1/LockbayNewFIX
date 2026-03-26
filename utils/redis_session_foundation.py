@@ -3,10 +3,9 @@ Redis-based Session Management Foundation
 Replaces in-memory session storage with distributed Redis-based storage
 """
 
-import json
 import time
 import logging
-from typing import Any, Optional, Dict, List, Union
+from typing import Any, Optional, Dict, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 

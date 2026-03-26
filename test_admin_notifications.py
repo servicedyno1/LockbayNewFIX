@@ -9,7 +9,6 @@ import sys
 from decimal import Decimal
 from datetime import datetime, timezone
 
-from database import AsyncSessionLocal
 from services.admin_trade_notifications import AdminTradeNotificationService
 
 

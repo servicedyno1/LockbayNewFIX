@@ -4,7 +4,7 @@ Comprehensive mapping from 38+ legacy statuses to unified transaction status sys
 Supports bidirectional mapping and dual-write operations during transition
 """
 
-from typing import Dict, Optional, Set, List, Tuple, Any
+from typing import Dict, List, Tuple, Any
 from datetime import datetime
 from enum import Enum
 import logging
@@ -13,8 +13,7 @@ from models import (
     EscrowStatus, 
     CashoutStatus, 
     ExchangeStatus, 
-    UnifiedTransactionStatus,
-    UnifiedTransactionType
+    UnifiedTransactionStatus
 )
 
 logger = logging.getLogger(__name__)

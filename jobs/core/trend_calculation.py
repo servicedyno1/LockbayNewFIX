@@ -6,13 +6,10 @@ Integrates with the completion time trends monitor to provide data-driven insigh
 """
 
 import logging
-import asyncio
-from typing import Dict, Any
 from datetime import datetime, timezone
 
-from utils.completion_time_trends_monitor import completion_time_monitor, OperationType
-from utils.completion_time_integration import CompletionTimeIntegration
-from utils.safe_timing import safe_datetime_duration, SafeTimer
+from utils.completion_time_trends_monitor import completion_time_monitor
+from utils.safe_timing import safe_datetime_duration
 
 logger = logging.getLogger(__name__)
 

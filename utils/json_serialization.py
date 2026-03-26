@@ -6,7 +6,7 @@ Handles conversion of non-JSON-serializable types (Decimal, datetime, etc.) to J
 import json
 from decimal import Decimal
 from datetime import datetime, date
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 
 
 def ensure_json_safe(data: Any) -> Any:

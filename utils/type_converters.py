@@ -21,7 +21,7 @@ Usage:
     await bot.send_message(chat_id=normalize_chat_id(user.telegram_id), text="Hello")
 """
 
-from typing import Union, Optional, Any
+from typing import Union, Optional
 from decimal import Decimal
 import logging
 

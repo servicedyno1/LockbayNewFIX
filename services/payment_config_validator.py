@@ -5,7 +5,7 @@ Ensures consistency and correctness of payment configuration across all services
 
 import logging
 from decimal import Decimal
-from typing import Dict, List, Any
+from typing import Dict, Any
 from config import Config
 
 logger = logging.getLogger(__name__)

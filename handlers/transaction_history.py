@@ -34,26 +34,23 @@ Usage pattern in handlers:
 import logging
 import hashlib
 from typing import Optional, List, Dict, Any, Tuple
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.error import BadRequest
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import desc, func, or_, and_, text, select
+from sqlalchemy import or_
 
-from database import SessionLocal, AsyncSessionLocal
 from models import (
     User, Transaction, UnifiedTransaction, TransactionType, TransactionStatus,
-    UnifiedTransactionType, UnifiedTransactionStatus, Wallet
+    UnifiedTransactionType, UnifiedTransactionStatus
 )
 from utils.session_reuse_manager import get_reusable_session
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 from utils.transaction_history_prefetch import (
     prefetch_transaction_history,
     get_cached_transaction_history,
-    cache_transaction_history,
-    invalidate_transaction_history_cache
+    cache_transaction_history
 )
 
 logger = logging.getLogger(__name__)
@@ -79,11 +76,11 @@ def ensure_timezone_aware(dt: Optional[datetime]) -> datetime:
     return dt
 
 
-def escape_markdown(text: str) -> str:
+def escape_markdown(md_text: str) -> str:
     """Safely escape markdown characters to prevent parsing errors"""
-    if not text:
+    if not md_text:
         return ""
-    return (str(text)
+    return (str(md_text)
         .replace('\\', '\\\\')
         .replace('_', '\\_')
         .replace('*', '\\*')
@@ -331,7 +328,7 @@ def get_transaction_description(transaction_type: str, external_id: str = None, 
     if external_id:
         # Truncate and escape external ID if too long
         ext_id = external_id[:12] + "..." if len(external_id) > 12 else external_id
-        ext_id_escaped = escape_markdown(ext_id)
+        escape_markdown(ext_id)
         return f"{base_desc}"  # Don't show external ID to keep display clean
     
     return base_desc
@@ -581,7 +578,7 @@ async def render_transaction_history(db_user_id: int, page: int, filter_type: st
                 amount_display = f"{amount_str} {currency}"
             
             # Format status
-            status_str = format_transaction_status(tx_data['status'])
+            format_transaction_status(tx_data['status'])
             
             # Format date
             min_dt = datetime.min.replace(tzinfo=timezone.utc)
@@ -761,7 +758,7 @@ def render_prefetched_transaction_history(prefetch_data: dict, page: int, filter
         
         # Get transaction type icon and description
         type_icon = get_transaction_type_icon(tx_dict['transaction_type'], tx_dict)
-        desc = get_transaction_description(tx_dict['transaction_type'], external_id=tx_dict.get('external_id'), tx_data=tx_dict)
+        tx_desc = get_transaction_description(tx_dict['transaction_type'], external_id=tx_dict.get('external_id'), tx_data=tx_dict)
         
         # Format amount with proper sign
         amount = tx_dict['amount']
@@ -785,12 +782,12 @@ def render_prefetched_transaction_history(prefetch_data: dict, page: int, filter
         if isinstance(created_at, str):
             try:
                 created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-            except:
+            except Exception:
                 created_at = datetime.utcnow()
         date_str = created_at.strftime("%m/%d %H:%M") if created_at else "Unknown"
         
         # Build simplified display line
-        line = f"{type_icon} {amount_display} {desc} • {date_str}\n"
+        line = f"{type_icon} {amount_display} {tx_desc} • {date_str}\n"
         message += line
     
     # Add auto-refresh timestamp
@@ -1183,7 +1180,7 @@ async def show_transaction_detail(update: Update, context: ContextTypes.DEFAULT_
                 # Use actual transaction_id for regular transactions
                 display_transaction_id = tx.transaction_id
             
-            message = f"📋 Transaction Details\n\n"
+            message = "📋 Transaction Details\n\n"
             message += f"Type: {escape_markdown(desc)}\n"
             message += f"Amount: {amount_str}\n"
             message += f"Status: {status_str}\n"
@@ -1211,7 +1208,7 @@ async def show_transaction_detail(update: Update, context: ContextTypes.DEFAULT_
             
             # Add metadata if available
             if hasattr(transaction, 'metadata') and transaction.metadata:
-                message += f"\nAdditional Info:\n"
+                message += "\nAdditional Info:\n"
                 # Handle metadata properly - check if it's a dictionary first
                 try:
                     if isinstance(transaction.metadata, dict):
@@ -1223,7 +1220,7 @@ async def show_transaction_detail(update: Update, context: ContextTypes.DEFAULT_
                         message += f"• Metadata: {str(transaction.metadata)}\n"
                 except Exception as e:
                     logger.warning(f"Could not process transaction metadata: {e}")
-                    message += f"• Metadata: Available but not displayable\n"
+                    message += "• Metadata: Available but not displayable\n"
             
             keyboard = [
                 [InlineKeyboardButton("🔙 Back to History", callback_data="transaction_history")],

@@ -6,7 +6,7 @@ Provides comprehensive alerting for database schema issues
 import logging
 import asyncio
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from dataclasses import dataclass
 from enum import Enum
 from utils.proactive_schema_monitor import proactive_schema_monitor
@@ -275,9 +275,9 @@ class SchemaAlertSystem:
             
             if escalation_count >= 3:
                 # After 3 escalations, create emergency alert
-                emergency_message = f"🚨🚨🚨 ESCALATED SCHEMA EMERGENCY\n"
+                emergency_message = "🚨🚨🚨 ESCALATED SCHEMA EMERGENCY\n"
                 emergency_message += f"Alert '{rule.name}' has escalated {escalation_count} times\n"
-                emergency_message += f"This indicates a persistent schema issue requiring immediate attention\n"
+                emergency_message += "This indicates a persistent schema issue requiring immediate attention\n"
                 emergency_message += f"Critical Issues: {context.get('critical_issues', 0)}\n"
                 emergency_message += f"Original Severity: {rule.severity.value}"
                 

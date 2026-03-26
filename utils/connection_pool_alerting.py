@@ -7,17 +7,12 @@ import logging
 import asyncio
 import time
 import threading
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Any, Callable, Tuple, Set
-from collections import deque, defaultdict, Counter
-from dataclasses import dataclass, field, asdict
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Callable
+from collections import deque, defaultdict
+from dataclasses import dataclass, field
 from enum import Enum
 import statistics
-import json
-import uuid
-import smtplib
-import weakref
-from email.mime.text import MIMEText, MIMEMultipart
 from concurrent.futures import ThreadPoolExecutor
 import psutil
 import ast
@@ -651,7 +646,7 @@ class ConnectionPoolAlerting:
     
     async def _notify_console(self, alert: Alert, rule: AlertRule):
         """Console notification handler"""
-        print(f"\n🚨 ALERT NOTIFICATION 🚨")
+        print("\n🚨 ALERT NOTIFICATION 🚨")
         print(f"Title: {alert.title}")
         print(f"Severity: {alert.severity.value.upper()}")
         print(f"Description: {alert.description}")
@@ -1013,7 +1008,7 @@ class ConnectionPoolAlerting:
                     category=AlertCategory.PERFORMANCE,
                     severity=AlertSeverity.WARNING,
                     description=f"Anomaly detected: {anomaly['description']}",
-                    condition=f"True",  # Already detected
+                    condition="True",  # Already detected
                     enabled=False  # Don't re-evaluate
                 )
                 

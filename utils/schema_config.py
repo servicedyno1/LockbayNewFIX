@@ -4,7 +4,7 @@ Centralized configuration for database schema monitoring and validation
 """
 
 import os
-from typing import Dict, List, Any, Optional
+from typing import List, Optional
 from dataclasses import dataclass
 
 @dataclass

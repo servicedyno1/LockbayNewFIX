@@ -6,19 +6,18 @@ Phase 3B implementation of user retention and achievement system
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc
+from sqlalchemy import func, or_
 
 from database import SessionLocal
 from models import (
     User, UserAchievement, UserStreakTracking, AchievementType,
-    Escrow, EscrowStatus, Transaction, Cashout, CashoutStatus
+    Escrow, EscrowStatus
 )
 from utils.branding_utils import BrandingUtils
 from utils.branding import SecurityIcons, UserRetentionElements
 from utils.json_serialization import sanitize_for_json_column
-from config import Config
 
 logger = logging.getLogger(__name__)
 

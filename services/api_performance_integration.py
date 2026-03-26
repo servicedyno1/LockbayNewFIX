@@ -3,10 +3,9 @@ API Performance Integration Helper
 Provides optimized patterns for integrating external API services with performance enhancements
 """
 
-import asyncio
 import logging
-from typing import Dict, Any, Optional, Callable, List
-from services.external_api_optimizer import get_api_optimizer, optimized_http_session
+from typing import Dict, Any, Callable, List
+from services.external_api_optimizer import get_api_optimizer
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ This eliminates the 600ms-3000ms delays in webhook response paths
 import logging
 import asyncio
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from services.fastforex_service import fastforex_service
 from utils.production_cache import set_cached
 

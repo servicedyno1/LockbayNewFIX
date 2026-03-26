@@ -347,14 +347,14 @@ class QRCodeService:
             
             # For mobile camera compatibility, use plain address format
             # Most phone cameras don't recognize crypto URI schemes
-            logger.info(f"Generating camera-compatible QR with plain address for better recognition")
+            logger.info("Generating camera-compatible QR with plain address for better recognition")
             
             # Try plain address first (better camera compatibility) with platform branding
             qr_result = cls.generate_qr_code(address, add_branding=True)
             
             # If plain address fails, try URI format as fallback for crypto wallets
             if not qr_result and amount and currency:
-                logger.warning(f"Plain address QR failed, trying URI format as fallback")
+                logger.warning("Plain address QR failed, trying URI format as fallback")
                 qr_result = cls.generate_qr_code(qr_data, add_branding=True)
                 
             return qr_result

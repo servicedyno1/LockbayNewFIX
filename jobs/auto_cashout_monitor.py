@@ -4,10 +4,10 @@ Monitors and processes automatic cashout requests using unified PaymentProcessor
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any
 from datetime import datetime
-from database import SessionLocal, managed_session
-from models import Cashout, User, CashoutStatus
+from database import managed_session
+from models import Cashout, CashoutStatus
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import or_, and_
 import time

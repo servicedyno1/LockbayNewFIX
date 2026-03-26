@@ -4,11 +4,10 @@ Comprehensive monitoring and alerting for SSL database connection stability
 """
 
 import logging
-import time
 import threading
 from datetime import datetime, timedelta
 from collections import deque, defaultdict
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from dataclasses import dataclass, asdict
 import asyncio
 

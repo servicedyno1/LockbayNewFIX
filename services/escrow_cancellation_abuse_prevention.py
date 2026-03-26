@@ -5,7 +5,7 @@ Prevents malicious users from abusing the cancellation system
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Optional, List, Tuple
 from enum import Enum
 from dataclasses import dataclass
 from decimal import Decimal
@@ -353,7 +353,6 @@ class EscrowCancellationAbusePreventor:
         """Check if user has active cancellation restrictions"""
         try:
             from database import SessionLocal
-            from models import User
             
             session = SessionLocal()
             
@@ -630,7 +629,6 @@ class EscrowCancellationAbusePreventor:
     ):
         """Log abuse detection for monitoring"""
         try:
-            from database import SessionLocal
             
             # Log the abuse detection (would need an abuse_log table)
             logger.warning(f"🚨 ESCROW_CANCELLATION_ABUSE_DETECTED: "

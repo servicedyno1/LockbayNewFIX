@@ -6,7 +6,6 @@ Prevents data corruption and ensures integrity during currency switches
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +138,7 @@ class ContextDataProtector:
         try:
             checkpoint_id = f"cp_{switch_type}_{int(datetime.utcnow().timestamp())}"
             
-            checkpoint_data = {
+            {
                 "checkpoint_id": checkpoint_id,
                 "switch_type": switch_type,
                 "from_currency": from_currency,

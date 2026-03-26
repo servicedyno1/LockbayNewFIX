@@ -13,7 +13,6 @@ from datetime import datetime
 
 from utils.comprehensive_audit_logger import (
     ComprehensiveAuditLogger,
-    AuditEventType,
     AuditLevel,
     TraceContext,
     RelatedIDs,

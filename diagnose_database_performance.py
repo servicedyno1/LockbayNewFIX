@@ -7,7 +7,6 @@ import os
 import time
 import asyncio
 import logging
-from datetime import datetime
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import create_async_engine
 from typing import Dict, Any
@@ -200,13 +199,13 @@ class DatabasePerformanceDiagnostics:
         railway_sync = self.test_sync_connection(self.railway_url, "Railway")
         neon_sync = self.test_sync_connection(self.neon_url, "Neon")
         
-        print(f"Railway (Production):")
+        print("Railway (Production):")
         print(f"  • Connection: {railway_sync['connection_time_ms']}ms")
         print(f"  • Query: {railway_sync['query_time_ms']}ms")
         print(f"  • Total: {railway_sync['total_time_ms']}ms")
         print(f"  • Users: {railway_sync.get('user_count', 'N/A')}")
         print()
-        print(f"Neon (Development):")
+        print("Neon (Development):")
         print(f"  • Connection: {neon_sync['connection_time_ms']}ms")
         print(f"  • Query: {neon_sync['query_time_ms']}ms")
         print(f"  • Total: {neon_sync['total_time_ms']}ms")
@@ -230,12 +229,12 @@ class DatabasePerformanceDiagnostics:
         railway_async = loop.run_until_complete(self.test_async_connection(self.railway_url, "Railway"))
         neon_async = loop.run_until_complete(self.test_async_connection(self.neon_url, "Neon"))
         
-        print(f"Railway (Production):")
+        print("Railway (Production):")
         print(f"  • Connection: {railway_async['connection_time_ms']}ms")
         print(f"  • Query: {railway_async['query_time_ms']}ms")
         print(f"  • Total: {railway_async['total_time_ms']}ms")
         print()
-        print(f"Neon (Development):")
+        print("Neon (Development):")
         print(f"  • Connection: {neon_async['connection_time_ms']}ms")
         print(f"  • Query: {neon_async['query_time_ms']}ms")
         print(f"  • Total: {neon_async['total_time_ms']}ms")
@@ -257,12 +256,12 @@ class DatabasePerformanceDiagnostics:
         railway_latency = self.test_network_latency(self.railway_url, "Railway", 5)
         neon_latency = self.test_network_latency(self.neon_url, "Neon", 5)
         
-        print(f"Railway (Production):")
+        print("Railway (Production):")
         print(f"  • Average: {railway_latency['avg_latency_ms']}ms")
         print(f"  • Min: {railway_latency['min_latency_ms']}ms")
         print(f"  • Max: {railway_latency['max_latency_ms']}ms")
         print()
-        print(f"Neon (Development):")
+        print("Neon (Development):")
         print(f"  • Average: {neon_latency['avg_latency_ms']}ms")
         print(f"  • Min: {neon_latency['min_latency_ms']}ms")
         print(f"  • Max: {neon_latency['max_latency_ms']}ms")
@@ -289,7 +288,7 @@ class DatabasePerformanceDiagnostics:
         
         slowdown = ((total_railway - total_neon) / total_neon) * 100
         
-        print(f"Overall Performance:")
+        print("Overall Performance:")
         print(f"  • Railway Total: {total_railway:.0f}ms")
         print(f"  • Neon Total: {total_neon:.0f}ms")
         print(f"  • Railway is {abs(slowdown):.0f}% {'SLOWER' if slowdown > 0 else 'FASTER'}")

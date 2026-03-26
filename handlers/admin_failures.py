@@ -7,12 +7,10 @@ import logging
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from typing import Dict, Any, Optional
 
 from utils.admin_security import admin_required
 from services.admin_failure_service import admin_failure_service
 from services.admin_email_alerts import admin_email_service
-from models import AdminActionType
 from utils.database_pool_manager import database_pool
 from utils.helpers import format_amount
 from utils.callback_utils import safe_answer_callback_query
@@ -619,7 +617,7 @@ Are you sure you want to proceed?
                     percentage = (count / max(total_failures, 1)) * 100
                     message += f"• {error_type}: {count} ({percentage:.1f}%)\n"
                 
-                message += f"\n💰 **Currency Breakdown**:\n"
+                message += "\n💰 **Currency Breakdown**:\n"
                 currency_breakdown = summary.get('currency_breakdown', {})
                 for currency, data in currency_breakdown.items():
                     count = data['count']

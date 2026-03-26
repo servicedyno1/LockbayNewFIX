@@ -3,7 +3,7 @@ UI state validation system to prevent duplicate displays and conflicts
 """
 from telegram import Update
 from telegram.ext import ContextTypes
-from typing import Optional, Dict, Any
+from typing import Dict
 import time
 import logging
 

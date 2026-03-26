@@ -38,7 +38,6 @@ from decimal import Decimal
 from dataclasses import dataclass, asdict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
 
 from models import User, Wallet, Escrow, ExchangeOrder, UnifiedTransaction
 

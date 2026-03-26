@@ -236,7 +236,7 @@ async def test_balance_check():
         # Test currency-specific balance check
         btc_balance_result = await payment_processor.check_balance(["BTC"])
         assert btc_balance_result.success == True
-        logger.info(f"   ✅ BTC-specific balance check successful")
+        logger.info("   ✅ BTC-specific balance check successful")
         
         logger.info("✅ Balance checking working correctly")
         return True

@@ -7,12 +7,11 @@ with auto-recovery, detailed logging, and admin alerting
 import logging
 from decimal import Decimal
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func, select
+from sqlalchemy import func, select
 
-from models import EscrowHolding, Escrow, Transaction, TransactionType, User, PlatformRevenue
-from database import SessionLocal
+from models import EscrowHolding, Escrow, Transaction, TransactionType, PlatformRevenue
 from utils.atomic_transactions import atomic_transaction
 from utils.financial_audit_logger import (
     financial_audit_logger,
@@ -20,8 +19,6 @@ from utils.financial_audit_logger import (
     FinancialContext,
     EntityType
 )
-from services.unified_email_verification import UnifiedEmailVerificationService
-from services.admin_email_alerts import AdminEmailAlertService
 
 logger = logging.getLogger(__name__)
 

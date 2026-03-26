@@ -8,15 +8,13 @@ import logging
 import time
 import json
 import traceback
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Callable
 from datetime import datetime
-from contextlib import asynccontextmanager
 
 from .persistent_webhook_queue import (
     persistent_webhook_queue, 
     WebhookEvent, 
-    WebhookEventStatus,
-    WebhookEventPriority
+    WebhookEventStatus
 )
 
 logger = logging.getLogger(__name__)

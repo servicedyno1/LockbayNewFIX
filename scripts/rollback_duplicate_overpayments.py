@@ -10,7 +10,7 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from sqlalchemy import select, text
 from database import async_managed_session
-from models import Transaction, User, Wallet
+from models import Transaction, Wallet
 from utils.universal_id_generator import UniversalIDGenerator
 
 async def rollback_duplicate_overpayments(dry_run=True, days_back=None, force=False):
@@ -123,7 +123,7 @@ async def rollback_duplicate_overpayments(dry_run=True, days_back=None, force=Fa
             print(f"    Current Balance: ${wallet.available_balance}")
             
             if wallet.available_balance < Decimal(str(excess_credited)):
-                print(f"    ⚠️  WARNING: Insufficient balance to deduct full amount!")
+                print("    ⚠️  WARNING: Insufficient balance to deduct full amount!")
                 print(f"    Available: ${wallet.available_balance}, Need: ${excess_credited}")
                 deduct_amount = wallet.available_balance  # Deduct what's available
             else:
@@ -182,7 +182,7 @@ async def rollback_duplicate_overpayments(dry_run=True, days_back=None, force=Fa
                     'reversal_tx_id': reversal_tx_id
                 })
                 
-                print(f"    ✅ Wallet balance adjusted")
+                print("    ✅ Wallet balance adjusted")
                 print(f"    ✅ Reversal transaction created: {reversal_tx_id}")
             else:
                 print(f"    [DRY RUN] Would deduct ${deduct_amount} and create reversal transaction")

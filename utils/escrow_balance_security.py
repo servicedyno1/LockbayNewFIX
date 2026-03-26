@@ -6,7 +6,6 @@ SECURITY: No caching for critical decisions - always uses fresh locked database 
 
 import logging
 from decimal import Decimal
-from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 

@@ -16,26 +16,23 @@ Key Features:
 
 import logging
 import uuid
-import json
-from typing import Dict, Any, Optional, List, Union, Tuple, Callable
+from typing import Dict, Any, Optional, List
 from decimal import Decimal
 from datetime import datetime, timezone
 from contextlib import contextmanager
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from enum import Enum
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, OperationalError
-from sqlalchemy import and_, or_, func
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import and_
 
-from database import managed_session
 from models import (
-    User, Wallet, InternalWallet, TransactionType, IdempotencyToken,
-    DistributedLock, BalanceAuditLog, WalletBalanceSnapshot
+    Wallet, InternalWallet, IdempotencyToken
 )
-from utils.database_locking import DatabaseLockingService, CashoutLockError, WalletLockError
+from utils.database_locking import DatabaseLockingService
 from services.balance_audit_service import (
-    BalanceAuditService, BalanceChangeContext, BalanceChangeResult, balance_audit_service
+    BalanceAuditService, BalanceChangeContext, balance_audit_service
 )
 
 logger = logging.getLogger(__name__)
@@ -183,7 +180,7 @@ class TransactionSafetyService:
         except Exception as e:
             if transaction_manager:
                 try:
-                    rollback_result = transaction_manager.rollback_transaction()
+                    transaction_manager.rollback_transaction()
                     logger.error(
                         f"🔄 TRANSACTION: Rolled back transaction {context.transaction_id} due to error: {e}"
                     )

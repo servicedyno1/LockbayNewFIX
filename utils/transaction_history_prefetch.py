@@ -32,13 +32,13 @@ from datetime import datetime
 from decimal import Decimal
 from dataclasses import dataclass, asdict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, literal, union_all, text, case, and_, or_
+from sqlalchemy import select, func, literal, union_all, case
 from sqlalchemy.orm import aliased
 
 from models import (
     User, UnifiedTransaction, Escrow, ExchangeOrder, Cashout, Transaction,
     UnifiedTransactionType, UnifiedTransactionStatus, TransactionType,
-    EscrowStatus, CashoutStatus
+    EscrowStatus
 )
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,7 @@ async def prefetch_transaction_history(
         # Create aliases for counterparty users
         BuyerUser = aliased(User, name='buyer_user')
         SellerUser = aliased(User, name='seller_user')
-        CounterpartyUser = aliased(User, name='counterparty_user')
+        aliased(User, name='counterparty_user')
         
         # =====================================================================
         # UNIFIED QUERY: Combine all transaction types with UNION ALL

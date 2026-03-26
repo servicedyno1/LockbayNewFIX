@@ -53,7 +53,7 @@ class AdminEmailAlertService:
             # Check if the user object is attached to a session
             state = inspect(user)
             if state.detached:
-                logger.warning(f"User object is detached from session, using minimal info")
+                logger.warning("User object is detached from session, using minimal info")
                 # For detached objects, only access attributes that are already loaded
                 try:
                     # For detached objects, only access attributes that are already loaded
@@ -574,8 +574,8 @@ class AdminEmailAlertService:
             
             # Build comprehensive email content
             content_sections = [
-                f"<h2>🚨 Transaction Failure Requiring Admin Intervention</h2>",
-                f"<p><strong>A cashout transaction has failed and requires immediate admin attention.</strong></p>",
+                "<h2>🚨 Transaction Failure Requiring Admin Intervention</h2>",
+                "<p><strong>A cashout transaction has failed and requires immediate admin attention.</strong></p>",
                 
                 "<div style='background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;'>",
                 "<h3>💳 Transaction Details</h3>",
@@ -741,7 +741,7 @@ class AdminEmailAlertService:
             
             # Build summary content
             content_sections = [
-                f"<h2>📊 Multiple Transaction Failures Alert</h2>",
+                "<h2>📊 Multiple Transaction Failures Alert</h2>",
                 f"<p><strong>You have {total_failures} transactions requiring admin intervention.</strong></p>",
                 
                 "<div style='background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0;'>",

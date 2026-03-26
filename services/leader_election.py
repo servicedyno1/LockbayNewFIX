@@ -6,15 +6,13 @@ Redis-based leader election with automatic failover and job coordination
 import asyncio
 import logging
 import os
-import time
 import uuid
 from typing import Optional, Dict, Any, Callable, Set
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 
 from services.state_manager import state_manager
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -453,7 +451,6 @@ class LeaderElection:
     async def _count_votes(self, term: int) -> int:
         """Count votes for this instance in the given term"""
         try:
-            vote_pattern = f"leader_election:{self.service_name}:votes:{term}:*"
             # This would need a Redis SCAN operation in a real implementation
             # For now, return 1 (our own vote)
             return 1
@@ -497,7 +494,7 @@ class DistributedJobCoordinator:
         
         self.running = True
         await self.leader_election.start()
-        logger.info(f"🚀 Distributed job coordinator started")
+        logger.info("🚀 Distributed job coordinator started")
     
     async def stop(self):
         """Stop the distributed job coordinator"""
@@ -506,7 +503,7 @@ class DistributedJobCoordinator:
         
         self.running = False
         await self.leader_election.stop()
-        logger.info(f"🛑 Distributed job coordinator stopped")
+        logger.info("🛑 Distributed job coordinator stopped")
     
     def register_job_handler(self, job_type: str, handler: Callable):
         """Register a handler for a specific job type"""
@@ -549,7 +546,7 @@ class DistributedJobCoordinator:
     
     async def _on_lose_leadership(self):
         """Called when this instance loses leadership"""
-        logger.info(f"👥 Lost leadership - stopping leader-only jobs")
+        logger.info("👥 Lost leadership - stopping leader-only jobs")
         
         # In a real implementation, we would cancel scheduled jobs here
         # This would integrate with APScheduler or the persistent job service

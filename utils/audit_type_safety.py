@@ -4,7 +4,7 @@ Provides comprehensive type guards and safe operations to prevent iteration erro
 """
 
 import logging
-from typing import Any, Dict, List, Set, Optional, Union
+from typing import Any, Dict, List, Set, Union
 
 logger = logging.getLogger(__name__)
 

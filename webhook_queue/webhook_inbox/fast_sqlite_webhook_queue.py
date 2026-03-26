@@ -13,19 +13,15 @@ Expected Performance: 15-20ms enqueue time
 """
 
 import sqlite3
-import json
 import orjson  # PERFORMANCE: 3-5x faster JSON serialization than stdlib
 import uuid
 import time
 import logging
 import os
 from typing import Dict, Any, Optional, List, Tuple
-from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-import asyncio
-from contextlib import contextmanager
 from queue import Queue, Empty
 import threading
 
@@ -148,7 +144,7 @@ class ConnectionPool:
         """Return connection to pool"""
         try:
             self._pool.put_nowait(conn)
-        except:
+        except Exception:
             # Pool full, close connection
             conn.close()
     
@@ -158,7 +154,7 @@ class ConnectionPool:
             try:
                 conn = self._pool.get_nowait()
                 conn.close()
-            except:
+            except Exception:
                 pass
 
 
@@ -503,7 +499,7 @@ class FastSQLiteWebhookQueue:
         """Cleanup on deletion"""
         try:
             self.pool.close_all()
-        except:
+        except Exception:
             pass
 
 

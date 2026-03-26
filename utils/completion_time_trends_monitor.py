@@ -8,17 +8,16 @@ import logging
 import asyncio
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 from collections import deque, defaultdict
 import statistics
-import json
 from contextlib import asynccontextmanager
 from functools import wraps
 
 # Import safe timing utilities
-from utils.safe_timing import safe_duration_calculation, SafeTimer, validate_and_log_duration
+from utils.safe_timing import safe_duration_calculation, validate_and_log_duration
 
 logger = logging.getLogger(__name__)
 
@@ -310,7 +309,6 @@ class CompletionTimeTrendsMonitor:
             
             @wraps(func)
             def sync_wrapper(*args, **kwargs):
-                import asyncio
                 # For sync functions, we'll track manually
                 start_time = time.perf_counter()  # Use perf_counter for better precision
                 success = True

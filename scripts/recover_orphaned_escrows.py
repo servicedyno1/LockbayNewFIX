@@ -19,13 +19,13 @@ import asyncio
 import argparse
 from decimal import Decimal
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import async_managed_session
 from models import Escrow, EscrowHolding, Transaction, TransactionType
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 import logging
 

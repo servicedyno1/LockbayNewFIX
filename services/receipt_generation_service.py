@@ -6,17 +6,15 @@ Phase 3B implementation of branded receipt system for all transaction types
 import logging
 from decimal import Decimal
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Union
-from sqlalchemy.orm import Session
+from typing import Dict, List, Optional, Any
+from sqlalchemy import or_
 
 from database import SessionLocal
 from models import (
-    User, Escrow, Transaction, Cashout, ExchangeOrder,
-    UnifiedTransaction, TransactionType, TransactionStatus
+    User, Escrow, Cashout, UnifiedTransaction, TransactionType
 )
 from utils.branding_utils import BrandingUtils
 from utils.branding import SecurityIcons, UserRetentionElements
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -88,10 +86,8 @@ class ReceiptGenerationService:
                 # Determine user role and amount
                 if user_id == escrow.buyer_id:
                     user_role = "buyer"
-                    transaction_type = "escrow_purchase"
                 elif user_id == escrow.seller_id:
                     user_role = "seller"
-                    transaction_type = "escrow_sale"
                 else:
                     logger.error(f"User {user_id} not involved in escrow {escrow_id}")
                     return None

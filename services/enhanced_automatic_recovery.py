@@ -4,7 +4,7 @@ Provides advanced recovery capabilities for the escrow platform
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

@@ -5,13 +5,11 @@ Monitors file changes and automatically pushes to GitHub repository
 """
 
 import os
-import sys
 import time
 import subprocess
 import threading
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Set, Optional
+from datetime import datetime
+from typing import Optional
 import hashlib
 
 class AutoPushMonitor:

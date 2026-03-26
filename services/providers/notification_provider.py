@@ -5,7 +5,7 @@ Standardizes notification operations across different providers (Twilio SMS, Bre
 """
 
 from abc import abstractmethod
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from enum import Enum
 
 from .base import BaseProvider, ProviderResult

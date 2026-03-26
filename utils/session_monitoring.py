@@ -9,14 +9,12 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from database import async_engine
 from models.onboarding import OnboardingSession
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_ as sql_and
-from utils.background_task_runner import run_io_task
-from services.consolidated_notification_service import ConsolidatedNotificationService, NotificationChannel
-import json
+from services.consolidated_notification_service import ConsolidatedNotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +124,7 @@ class SessionMonitoringService:
         
         try:
             metrics = await cls.get_session_metrics()
-            now = datetime.utcnow()
+            datetime.utcnow()
             
             # Alert 1: Sessions expiring soon (timeout warning)
             if metrics.expiring_soon > 0:

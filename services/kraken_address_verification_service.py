@@ -4,7 +4,7 @@ Smart routing for crypto withdrawals based on address availability
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 from decimal import Decimal
 from services.kraken_withdrawal_service import get_kraken_withdrawal_service
 from utils.production_cache import get_cached, set_cached, delete_cached
@@ -81,11 +81,11 @@ class KrakenAddressVerificationService:
                     'message': 'Address needs to be added to Kraken dashboard before withdrawal',
                     'routing_reason': 'address_needs_configuration',
                     'admin_instructions': {
-                        'step1': f'Login to Kraken dashboard',
-                        'step2': f'Navigate to Funding > Withdraw',
+                        'step1': 'Login to Kraken dashboard',
+                        'step2': 'Navigate to Funding > Withdraw',
                         'step3': f'Add new {crypto_currency} address: {withdrawal_address}',
-                        'step4': f'Verify the address via email/SMS',
-                        'step5': f'Return to admin panel and complete withdrawal'
+                        'step4': 'Verify the address via email/SMS',
+                        'step5': 'Return to admin panel and complete withdrawal'
                     }
                 }
                 
@@ -99,7 +99,7 @@ class KrakenAddressVerificationService:
                 'is_verified': False,
                 'requires_configuration': True,
                 'route_to_admin': True,
-                'message': f'Unable to verify address. Routing to admin for manual processing.',
+                'message': 'Unable to verify address. Routing to admin for manual processing.',
                 'routing_reason': 'verification_error',
                 'error': str(e)
             }
@@ -150,7 +150,7 @@ class KrakenAddressVerificationService:
                 'kraken_addresses_doge'
             ]
             for key in cache_keys:
-                production_cache_service.delete(key)
+                delete_cached(key)
             logger.info("🗑️ Invalidated all Kraken address caches")
     
     async def get_routing_decision(

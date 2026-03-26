@@ -13,21 +13,18 @@ Key Features:
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Tuple, Union
+from typing import Dict, Optional, List, Union
 from decimal import Decimal
-from datetime import datetime
-import asyncio
 
 from database import async_managed_session
 from models import (
     User, UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
-    Wallet, SavedAddress, SavedBankAccount
+    Wallet
 )
 
 from .payment_data_structures import (
-    PayinRequest, PayoutRequest, PaymentResult, BalanceCheckResult, BalanceSnapshot,
-    PaymentProvider, TransactionStatus, PaymentError, PaymentDirection,
-    PaymentDestination, create_success_result, create_error_result
+    PayinRequest, PayoutRequest, PaymentResult, BalanceCheckResult, PaymentProvider, TransactionStatus, PaymentError, PaymentDirection,
+    PaymentDestination, create_error_result
 )
 
 from .unified_error_handler import (
@@ -40,8 +37,7 @@ from .payment_provider_interface import (
 )
 
 from .state_manager import (
-    StateManager, StateTransitionContext, state_manager,
-    transition_to_processing, transition_to_success, transition_to_failed
+    StateTransitionContext, state_manager
 )
 
 logger = logging.getLogger(__name__)

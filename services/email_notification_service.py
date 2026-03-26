@@ -6,7 +6,6 @@ Part of the architect-approved direct notification flow.
 """
 
 import logging
-from typing import Optional
 from database import get_sync_db_session
 from models import User
 from services.email import EmailService

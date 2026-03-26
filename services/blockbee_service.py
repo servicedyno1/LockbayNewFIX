@@ -3,7 +3,6 @@
 import asyncio
 import aiohttp
 import logging
-import os
 import random
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
@@ -11,7 +10,7 @@ from decimal import Decimal
 from config import Config
 from utils.atomic_transactions import atomic_transaction
 from utils.data_sanitizer import mask_api_key_safe
-from utils.exchange_state_validator import ExchangeStateValidator, StateTransitionError
+from utils.exchange_state_validator import ExchangeStateValidator
 from models import Escrow, ExchangeOrder, CashoutErrorCode, ExchangeStatus
 from services.api_adapter_retry import APIAdapterRetry
 from sqlalchemy import select
@@ -889,7 +888,7 @@ class BlockBeeService(APIAdapterRetry):
                         )
                         
                         # CRITICAL: Extract and log holding verification results for BlockBee crypto payments
-                        holding_verification = processing_result.fund_breakdown.get('holding_verification', {})
+                        processing_result.fund_breakdown.get('holding_verification', {})
                         holding_verified = processing_result.fund_breakdown.get('holding_verified', False)
                         holding_auto_recovered = processing_result.fund_breakdown.get('holding_auto_recovered', False)
                         
@@ -1041,7 +1040,7 @@ class BlockBeeService(APIAdapterRetry):
                                     escrow_held = Decimal(str(fund_segregation_result.get('escrow_held', 0)))
                                     platform_fee_collected = Decimal(str(fund_segregation_result.get('platform_fee_collected', 0)))
                                     overpayment_credited = Decimal(str(fund_segregation_result.get('overpayment_credited', 0)))
-                                    underpayment_amount = Decimal(str(fund_segregation_result.get('underpayment_amount', 0)))
+                                    Decimal(str(fund_segregation_result.get('underpayment_amount', 0)))
                                     
                                     # Calculate expected totals for validation
                                     expected_escrow_amount = base_amount
@@ -1520,7 +1519,7 @@ class BlockBeeService(APIAdapterRetry):
             
             # ARCHITECTURE FIX: Remove nested distributed lock - outer lock already protects this flow
             # Process wallet deposit directly since we're already inside the distributed lock context
-            logger.info(f"🏦 DIRECT_CALL: Processing wallet deposit directly (no nested lock needed)")
+            logger.info("🏦 DIRECT_CALL: Processing wallet deposit directly (no nested lock needed)")
             logger.info(f"🏦 DIRECT_PARAMS: wallet_txn_id={wallet_txn_id}, txid_in={txid_in}, value_fiat={value_fiat}, value_coin={value_coin}, currency={currency}, user_id={user_id}")
             
             result = await self._process_locked_wallet_deposit(
@@ -1546,14 +1545,14 @@ class BlockBeeService(APIAdapterRetry):
     ) -> bool:
         """Process wallet deposit within distributed lock context"""
         try:
-            logger.info(f"🏦 WALLET_DEPOSIT: Starting locked wallet deposit processing")
+            logger.info("🏦 WALLET_DEPOSIT: Starting locked wallet deposit processing")
             
             # CRITICAL FIX: Check for duplicate processing INSIDE the lock
             from models import Transaction, TransactionType
             from utils.atomic_transactions import atomic_transaction
             from datetime import datetime
             
-            logger.info(f"🏦 WALLET_DEPOSIT: About to create atomic transaction")
+            logger.info("🏦 WALLET_DEPOSIT: About to create atomic transaction")
             
             with atomic_transaction(session) as tx_session:
                 # Check for existing transaction within atomic transaction
@@ -1620,7 +1619,7 @@ class BlockBeeService(APIAdapterRetry):
                 transaction.confirmed_at = datetime.utcnow()
                 tx_session.commit()
                 
-                logger.info(f"Wallet deposit processed successfully with 2% markup calculation")
+                logger.info("Wallet deposit processed successfully with 2% markup calculation")
                 
                 # Send wallet-specific confirmation notification
                 try:
@@ -1687,7 +1686,7 @@ class BlockBeeService(APIAdapterRetry):
                 
                 # Calculate actual escrow amount (total received minus platform fee)
                 from utils.fee_calculator import FeeCalculator
-                fee_calculator = FeeCalculator()
+                FeeCalculator()
                 
                 # Get platform fee percentage and calculate net escrow amount
                 platform_fee_percentage = FeeCalculator.get_platform_fee_percentage()
@@ -1847,7 +1846,7 @@ class BlockBeeService(APIAdapterRetry):
         except Exception as e:
             logger.error(f"Error sending exchange payment confirmation: {e}")
             # Don't raise - this is non-critical for exchange processing
-            logger.warning(f"Exchange payment confirmation failed but order processing continues")
+            logger.warning("Exchange payment confirmation failed but order processing continues")
             
     async def _send_exchange_payment_email(self, exchange_order, user, source_crypto, target_currency, final_amount, txid_in):
         """Send email notification for exchange payment confirmation"""
@@ -2016,7 +2015,7 @@ class BlockBeeService(APIAdapterRetry):
             try:
                 # Get order details (these are already loaded in memory)
                 final_amount = getattr(exchange_order, 'final_amount', 0)
-                source_currency = getattr(exchange_order, 'source_currency', 'CRYPTO')
+                getattr(exchange_order, 'source_currency', 'CRYPTO')
                 
                 # Create consistent final completion message for Sell Crypto (crypto→NGN)
                 message = (

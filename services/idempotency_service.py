@@ -8,7 +8,7 @@ import json
 import time
 import hashlib
 import logging
-from typing import Any, Optional, Dict, List, Union, Callable
+from typing import Any, Optional, Dict, List, Callable
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -18,10 +18,8 @@ from services.state_manager import state_manager
 from config import Config
 
 # SECURITY: Database imports for fallback coordination
-from database import SessionLocal, engine
-from sqlalchemy import text
+from database import SessionLocal
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from models import IdempotencyKey  # Import existing model instead of defining duplicate
 
 # Import advisory locks for database-backed coordination
@@ -397,7 +395,7 @@ class IdempotencyService:
                 
                 return True, None
                 
-            except IntegrityError as e:
+            except IntegrityError:
                 # Unique constraint violation - operation already claimed
                 session.rollback()
                 logger.info(f"🔑 DB_CLAIM_DUPLICATE: {key} already claimed (integrity error)")

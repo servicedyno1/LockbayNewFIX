@@ -5,8 +5,8 @@ Streamlines handler setup process and reduces initialization time
 
 import logging
 import time
-from typing import Dict, List, Callable, Any
-from telegram.ext import Application, CallbackQueryHandler, MessageHandler, CommandHandler
+from typing import List
+from telegram.ext import Application, CallbackQueryHandler, MessageHandler
 
 logger = logging.getLogger(__name__)
 

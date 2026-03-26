@@ -12,7 +12,6 @@ from telegram import User as TelegramUser
 from models import User, Escrow
 from config import Config
 from utils.constants import CURRENCY_EMOJIS, STATUS_EMOJIS, DATETIME_FORMAT
-from utils.markdown_escaping import escape_markdown
 from utils.universal_id_generator import UniversalIDGenerator
 
 logger = logging.getLogger(__name__)
@@ -276,7 +275,7 @@ def _validate_email_internal(email: str) -> bool:
     # Allow Unicode characters in domain (for IDN domains like тест@домен.рф)
     try:
         # Try to encode domain as ASCII (will fail for IDN domains)
-        domain_ascii = domain_part.encode('ascii')
+        domain_part.encode('ascii')
         # Use strict ASCII pattern for ASCII domains
         pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return re.match(pattern, email) is not None
@@ -510,7 +509,7 @@ def get_user_display_name(user: Optional[User]) -> str:
             return first_name
         else:
             return f"User {telegram_id or 'unknown'}"
-    except Exception as e:
+    except Exception:
         # Fallback for any formatting issues
         return f"User {getattr(user, 'id', 'unknown')}"
 
@@ -863,7 +862,7 @@ def shorten_bank_name(bank_name: str, max_length: int = 20) -> str:
     return short_name
 
 
-def create_user_wallet(user_id: int, session, currency: str = "USD", balance: float = 0.0) -> 'Wallet':
+def create_user_wallet(user_id: int, session, currency: str = "USD", balance: float = 0.0):
     """
     Create a USD wallet for a user with consistent parameters.
     
@@ -888,7 +887,7 @@ def create_user_wallet(user_id: int, session, currency: str = "USD", balance: fl
     return wallet
 
 
-def ensure_user_has_wallet(user_id: int, session) -> 'Wallet':
+def ensure_user_has_wallet(user_id: int, session):
     """
     Ensure a user has a USD wallet, create one if missing.
     

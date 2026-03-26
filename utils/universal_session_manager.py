@@ -5,16 +5,15 @@ Handles 50,000+ concurrent users with multiple simultaneous operations
 
 import logging
 import json
-from typing import Dict, Set, Optional, Any, List, Tuple
+from typing import Dict, Optional, Any, List, Tuple
 from datetime import datetime, timedelta
 from enum import Enum
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from collections import defaultdict
 import asyncio
 from sqlalchemy import text
 
 from database import SessionLocal
-from models import User
 
 logger = logging.getLogger(__name__)
 
@@ -446,7 +445,7 @@ async def periodic_cleanup():
     """Periodic cleanup task"""
     while True:
         try:
-            removed = universal_session_manager.cleanup_expired_sessions()
+            universal_session_manager.cleanup_expired_sessions()
             stats = universal_session_manager.get_statistics()
             
             if stats["current_sessions"] > 0:

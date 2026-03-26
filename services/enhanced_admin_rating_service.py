@@ -6,10 +6,10 @@ Addresses Issues: #5, #6, #8, #10, #11, #16
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, func, and_, or_, text
+from sqlalchemy import desc, func, or_, text
 from collections import defaultdict
 
 from database import SessionLocal
@@ -792,7 +792,7 @@ def _notify_rating_moderation(rating: Rating, action: str, reason: str, session:
     try:
         # Notify the person whose rating was moderated
         rater = session.query(User).filter(User.id == rating.rater_id).first()
-        rated = session.query(User).filter(User.id == rating.rated_id).first()
+        session.query(User).filter(User.id == rating.rated_id).first()
         
         if rater and rater.email:
             email_service = EmailService()

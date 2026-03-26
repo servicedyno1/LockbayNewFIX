@@ -4,10 +4,8 @@ Tests critical financial scenarios to validate anomaly detection system
 """
 
 import logging
-import asyncio
 from datetime import datetime
-from typing import Dict, List, Any, Optional
-from decimal import Decimal
+from typing import Dict, List, Any
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +80,7 @@ class AnomalyTestScenarios:
             "timestamp": datetime.utcnow().isoformat()
         }
         
-        logger.critical(f"🧪 TEST SUITE COMPLETE:")
+        logger.critical("🧪 TEST SUITE COMPLETE:")
         logger.critical(f"   Total Tests: {total_tests}")
         logger.critical(f"   Passed: {passed_tests}")
         logger.critical(f"   Failed: {failed_tests}")

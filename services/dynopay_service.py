@@ -1,17 +1,12 @@
 """DynoPay Cryptocurrency Payment API Service - Backup to BlockBee"""
 
-import asyncio
 import aiohttp
 import logging
-import os
-from typing import Dict, Any, Optional
-from datetime import datetime
+from typing import Dict, Any
 from decimal import Decimal
 from config import Config
-from utils.atomic_transactions import atomic_transaction
 from utils.data_sanitizer import mask_api_key_safe
 from services.external_api_optimizer import optimized_http_session
-from models import Escrow, ExchangeOrder
 
 logger = logging.getLogger(__name__)
 

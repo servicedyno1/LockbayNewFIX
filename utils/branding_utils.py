@@ -12,14 +12,12 @@ This module provides standardized branding functions for:
 """
 
 import logging
-import secrets
-import string
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, Dict, Any, Union
 from config import Config
-from utils.constants import CURRENCY_EMOJIS, STATUS_EMOJIS, PLATFORM_NAME
-from utils.branding import SecurityIcons, TrustMessages, UserRetentionElements
+from utils.constants import CURRENCY_EMOJIS
+from utils.branding import SecurityIcons, TrustMessages
 from utils.universal_id_generator import UniversalIDGenerator
 
 logger = logging.getLogger(__name__)
@@ -167,12 +165,12 @@ class BrandingUtils:
             
             # Add QR verification note
             if qr_data:
-                receipt_lines.append(f"📱 **Verification:** Scan QR code for instant verification")
+                receipt_lines.append("📱 **Verification:** Scan QR code for instant verification")
                 receipt_lines.append("")
             
             # Add sharing encouragement
             receipt_lines.extend([
-                f"📤 **Share:** Forward this receipt as proof of payment",
+                "📤 **Share:** Forward this receipt as proof of payment",
                 f"💬 **Support:** {BrandingUtils.SUPPORT_HANDLE} for assistance",
                 "",
                 BrandingUtils.make_trust_footer()
@@ -438,8 +436,8 @@ class BrandingUtils:
         try:
             # Import here to avoid circular imports
             from database import SessionLocal
-            from models import Escrow, UnifiedTransaction, EscrowStatus
-            from sqlalchemy import func, and_, text
+            from models import Escrow, EscrowStatus
+            from sqlalchemy import func, and_
             from datetime import datetime, timedelta
             
             # Use sync session since this is a compatibility function

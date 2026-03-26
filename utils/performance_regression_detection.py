@@ -7,18 +7,16 @@ import logging
 import asyncio
 import time
 import statistics
-from typing import Dict, List, Optional, Any, Tuple, NamedTuple
+from typing import Dict, List, Optional, Any, NamedTuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict, field
 from enum import Enum
 from collections import defaultdict, deque
-import math
 
-from utils.standardized_metrics_framework import standardized_metrics, StandardMetric
+from utils.standardized_metrics_framework import standardized_metrics
 from utils.performance_baselines_config import (
-    performance_baselines, PerformanceLevel, evaluate_metric_performance
+    performance_baselines, PerformanceLevel
 )
-from utils.comprehensive_monitoring_dashboard import comprehensive_dashboard
 from utils.enhanced_alert_correlation import alert_correlation, AlertSeverity
 
 logger = logging.getLogger(__name__)
@@ -830,7 +828,7 @@ class PerformanceRegressionDetector:
                     RegressionSeverity.CRITICAL: AlertSeverity.EMERGENCY
                 }
                 
-                alert_severity = alert_severity_map.get(regression.severity, AlertSeverity.WARNING)
+                alert_severity_map.get(regression.severity, AlertSeverity.WARNING)
                 
                 # Create a performance evaluation for the alert system
                 performance_evaluation = {

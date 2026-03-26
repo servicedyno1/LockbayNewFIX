@@ -15,32 +15,23 @@ Key Features:
 
 import logging
 import asyncio
-import json
 import time
-from typing import Dict, Any, Optional, List, Union, Tuple
+from typing import Dict, Any, Optional, List
 from decimal import Decimal
-from datetime import datetime, timedelta
-from enum import Enum
-from dataclasses import dataclass, asdict
-from contextlib import asynccontextmanager
-import uuid
+from datetime import datetime
+from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy import and_, or_, func, text
+from sqlalchemy import and_, or_
 
-from database import managed_session, get_db_session
+from database import managed_session
 from models import (
     UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
     UnifiedTransactionPriority, UnifiedTransactionStatusHistory,
     OutboxEvent, OutboxEventStatus, InboxWebhook, InboxWebhookStatus,
-    SagaStep, SagaStepStatus, TransactionEngineEvent, User, Wallet
+    SagaStep, SagaStepStatus, TransactionEngineEvent
 )
 from utils.universal_id_generator import UniversalIDGenerator
-from utils.atomic_transactions import atomic_transaction
-from utils.financial_audit_logger import (
-    financial_audit_logger, FinancialEventType, FinancialContext, EntityType
-)
 from utils.unified_transaction_state_validator import (
     UnifiedTransactionStateValidator,
     StateTransitionError
@@ -48,10 +39,7 @@ from utils.unified_transaction_state_validator import (
 from config import Config
 
 # Import provider interfaces
-from services.providers import BaseProvider, ProviderResult, ProviderError
-from services.providers.payment_provider import PaymentProvider, PaymentType
-from services.providers.notification_provider import NotificationProvider, NotificationType
-from services.providers.rates_provider import RatesProvider, RateType
+from services.providers import BaseProvider
 
 logger = logging.getLogger(__name__)
 
@@ -1044,7 +1032,7 @@ class UnifiedTransactionEngine:
                     }
                 )
                 
-            except ValueError as e:
+            except ValueError:
                 # Handle unknown status values (legacy compatibility)
                 logger.warning(
                     f"⚠️ ENGINE_TX_UNKNOWN_STATUS: Transaction {transaction_id} has unknown status "

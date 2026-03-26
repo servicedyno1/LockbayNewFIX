@@ -4,13 +4,10 @@ Prevents runtime failures by detecting model/database schema mismatches at start
 """
 
 import logging
-import asyncio
-from typing import Dict, List, Optional, Any, Tuple
+from typing import List, Optional
 from dataclasses import dataclass
 from sqlalchemy import inspect, text
-from sqlalchemy.engine.reflection import Inspector
 from models import Base
-from database import managed_session
 import os
 
 logger = logging.getLogger(__name__)

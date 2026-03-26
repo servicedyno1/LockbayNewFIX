@@ -131,7 +131,7 @@ class AdminNotificationHandler:
                              if f.timestamp > datetime.utcnow() - timedelta(hours=6)][:5]
             
             if recent_failures:
-                message += f"\n🕒 **Recent Failures (Last 6h)**:\n"
+                message += "\n🕒 **Recent Failures (Last 6h)**:\n"
                 for failure in recent_failures:
                     time_str = failure.timestamp.strftime("%H:%M")
                     message += f"• {time_str} - User {failure.user_id} ({failure.notification_type}): {failure.error_message[:30]}...\n"

@@ -7,9 +7,8 @@ Ensures data integrity and proper operation of enhanced state management
 import logging
 import asyncio
 import time
-from typing import Dict, Any, List, Optional, Tuple
-from decimal import Decimal
-from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional
+from datetime import datetime
 from dataclasses import dataclass
 
 # Import all state management components
@@ -18,15 +17,9 @@ from utils.financial_operation_locker import financial_locker, FinancialLockType
 from utils.enhanced_db_session_manager import enhanced_db_session_manager
 from utils.state_management_monitor import state_management_monitor
 from handlers.wallet_direct_enhanced_operations import (
-    process_wallet_cashout_enhanced, 
     get_wallet_balance_with_locking
 )
-from handlers.escrow_enhanced_operations import (
-    create_escrow_with_enhanced_locking,
-    transition_escrow_status_enhanced
-)
 from models import EscrowStatus
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -213,7 +206,7 @@ class StateManagementValidator:
                     raise ValueError("Active lock count validation failed")
             
             # Verify lock was released
-            post_lock_metrics = financial_locker.get_lock_metrics()
+            financial_locker.get_lock_metrics()
             
             duration_ms = (time.time() - start_time) * 1000
             
@@ -430,7 +423,7 @@ class StateManagementValidator:
                     operation_id="invalid_test",
                     lock_type=FinancialLockType.WALLET_BALANCE,
                     timeout_seconds=0.001  # Very short timeout to trigger timeout error
-                ) as session:
+                ):
                     pass  # This should timeout
             except Exception as expected_error:
                 # This error is expected and shows error handling works

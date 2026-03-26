@@ -5,26 +5,24 @@ RESTORED: Full functionality from wallet_legacy_archived.py
 
 import logging
 import asyncio
-import telegram
 import base58
 import hashlib
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from typing import Optional, Union
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.error import TelegramError
-from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import ContextTypes
 from eth_utils.address import is_checksum_address
 
 # Core imports
-from database import get_session, async_managed_session, get_async_session
+from database import async_managed_session
 from sqlalchemy import select
 
 # Async button handler utilities for <500ms performance
-from utils.button_handler_async import button_callback_wrapper, async_button_user_lookup
+from utils.button_handler_async import button_callback_wrapper
 from models import (
-    User, Wallet, Transaction, TransactionType, SavedBankAccount, SavedAddress,
-    EmailVerification, Cashout, Escrow, CashoutStatus, CashoutType, PendingCashout, CashoutProcessingMode
+    User, Wallet, SavedBankAccount, SavedAddress,
+    Cashout, CashoutType, PendingCashout, CashoutProcessingMode
 )
 
 # PERFORMANCE OPTIMIZATION: Wallet context prefetch (reduces 88 queries to 2)
@@ -36,10 +34,9 @@ from utils.wallet_prefetch import (
 )
 
 # ORM typing helpers for Column[Type] vs Type compatibility
-from utils.orm_typing_helpers import as_int, as_str, as_decimal, as_bool, as_datetime
+from utils.orm_typing_helpers import as_int, as_str, as_decimal, as_bool
 
 # Wallet management imports
-from utils.wallet_manager import get_user_wallet
 
 # Branding imports
 from utils.branding_utils import BrandingUtils, make_header, make_trust_footer, format_branded_amount
@@ -85,7 +82,7 @@ class WalletStates:
     CONFIRMING_NGN_PAYOUT = 334
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 from utils.decimal_precision import MonetaryDecimal
-from utils.precision_money import format_money, decimal_to_string, safe_multiply, safe_divide, safe_add, safe_subtract
+from utils.precision_money import format_money, decimal_to_string, safe_multiply, safe_add, safe_subtract
 
 # Import per-update caching system
 from utils.update_cache import get_cached_user, invalidate_user_cache
@@ -118,8 +115,6 @@ from config import Config
 
 # ENHANCED STATE MANAGEMENT IMPORTS
 from utils.session_migration_helper import session_migration_helper
-from utils.financial_operation_locker import financial_locker, FinancialLockType
-from utils.enhanced_db_session_manager import enhanced_db_session_manager
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +150,7 @@ async def clear_cashout_session(user_id: int, context: ContextTypes.DEFAULT_TYPE
 
 # ===== TTL-BASED SESSION EXPIRY =====
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone
 
 CASHOUT_SESSION_TTL_MINUTES = 30  # 30-minute TTL for cashout sessions
 
@@ -228,7 +223,7 @@ async def check_and_clear_expired_sessions(user_id: int, context: ContextTypes.D
                         created_time = created_time.replace(tzinfo=timezone.utc)
                     age_minutes = (datetime.now(timezone.utc) - created_time).total_seconds() / 60
                     age_str = f"{age_minutes:.1f} minutes"
-                except Exception as e:
+                except Exception:
                     pass
                     
             logger.info(f"⏰ TTL_EXPIRY: Auto-clearing expired cashout session for user {user_id} (age: {age_str})")
@@ -482,7 +477,7 @@ def classify_cashout_status(normalized_status, has_txid=False):
         
         # IMPROVED: Handle 'pending' (default) status explicitly to prevent unknown warnings  
         if normalized_status == 'pending':
-            logger.debug(f"🔧 STATUS_CLASSIFY: Handling default 'pending' status (likely from error recovery or empty status)")
+            logger.debug("🔧 STATUS_CLASSIFY: Handling default 'pending' status (likely from error recovery or empty status)")
             return {
                 'category': 'pending',
                 'requires_admin': False,  # Basic pending doesn't require admin
@@ -776,7 +771,7 @@ async def calculate_crypto_cashout_with_network_fees(
                         network_fee = get_fallback_network_fee(currency, network)
                         network_fee_source = "fallback"
                 else:
-                    logger.warning(f"⚠️ Kraken fee estimation failed, using fallback")
+                    logger.warning("⚠️ Kraken fee estimation failed, using fallback")
                     network_fee = get_fallback_network_fee(currency, network)
                     network_fee_source = "fallback"
             else:
@@ -1612,7 +1607,7 @@ Proceeding to currency selection...
             
             # Send confirmation message (with proper error handling)
             if update.message:
-                confirmation_msg = await update.message.reply_text(
+                await update.message.reply_text(
                     success_text,
                     parse_mode="Markdown"
                 )
@@ -1623,14 +1618,14 @@ Proceeding to currency selection...
                 from telegram import Message
                 msg = update.callback_query.message
                 if isinstance(msg, Message):
-                    confirmation_msg = await msg.reply_text(
+                    await msg.reply_text(
                         success_text,
                         parse_mode="Markdown"
                     )
             else:
                 # Add null check for effective_chat
                 if update.effective_chat:
-                    confirmation_msg = await context.bot.send_message(
+                    await context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=success_text,
                         parse_mode="Markdown"
@@ -2109,7 +2104,6 @@ Please enter your bank details to proceed with NGN cashout."""
 async def show_crypto_currency_selection(query, context) -> None:
     """Show cryptocurrency selection screen with fees and smart defaults - PHASE 1 & 2 OPTIMIZED"""
     from utils.helpers import get_currency_emoji
-    from services.percentage_cashout_fee_service import percentage_cashout_fee_service
 
     if not context.user_data:
         context.user_data = {}
@@ -2626,7 +2620,7 @@ async def proceed_to_ngn_otp_verification(update: Update, context: ContextTypes.
             uuid_suffix = str(uuid.uuid4()).replace('-', '')[:6]  # 6 chars, no dashes
             cashout_id = f"ng_{timestamp_suffix}_{uuid_suffix}"
             
-            cashout_context = {
+            {
                 'cashout_id': cashout_id,
                 'amount': str(cashout_amount),  # FIXED: Consistent string type
                 'currency': 'NGN',
@@ -2650,7 +2644,7 @@ async def proceed_to_ngn_otp_verification(update: Update, context: ContextTypes.
             from decimal import Decimal
             
             amount_ngn_decimal = Decimal(str(rate_lock.get('ngn_amount', 0)))
-            cashout_amount_usd = Decimal(str(rate_lock.get('usd_amount', cashout_data.get('amount', 0))))
+            Decimal(str(rate_lock.get('usd_amount', cashout_data.get('amount', 0))))
             
             logger.info(f"📝 DIRECT_CASHOUT: User {user_id} cashout ₦{amount_ngn_decimal:,.2f} (OTP removed)")
             
@@ -2763,7 +2757,6 @@ async def handle_confirm_unverified_cashout(update: Update, context: ContextType
         
         # Process the NGN cashout (same as verified flow, but without OTP)
         # Import auto cashout service
-        from services.auto_cashout import process_ngn_cashout_direct
         
         async with async_managed_session() as session:
             # Get user
@@ -2829,7 +2822,7 @@ async def handle_confirm_unverified_cashout(update: Update, context: ContextType
         logger.error(f"❌ Error in handle_confirm_unverified_cashout: {e}")
         await safe_edit_message_text(
             query,
-            f"❌ <b>Cashout Error</b>\n\nFailed to process cashout.\n\nPlease try again.",
+            "❌ <b>Cashout Error</b>\n\nFailed to process cashout.\n\nPlease try again.",
             parse_mode="HTML",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("🔄 Try Again", callback_data="wallet_cashout")],
@@ -3162,7 +3155,7 @@ async def handle_retry_bank_verification(update: Update, context: ContextTypes.D
     """Handle retry bank verification - ASYNC OPTIMIZED"""
     try:
         # PERFORMANCE: Use button_callback_wrapper for instant feedback (<50ms)
-        async with button_callback_wrapper(update, "🔄 Loading...") as session:
+        async with button_callback_wrapper(update, "🔄 Loading..."):
             query = update.callback_query
             if not query:
                 return
@@ -3434,7 +3427,6 @@ async def handle_crypto_currency_selection(update: Update, context: ContextTypes
         selected_currency = callback_data.replace("select_crypto:", "")
         if not update or not update.effective_user:
             return
-        user_id = update.effective_user.id
         
         # Validate currency is supported
         if selected_currency not in Config.SUPPORTED_CURRENCIES:
@@ -3584,7 +3576,7 @@ async def show_crypto_cashout_confirmation(query, context, saved_address) -> Non
     network = get_network_display_name(currency)
     user_id = query.from_user.id if query and query.from_user else 0
     
-    emoji = get_currency_emoji(currency)
+    get_currency_emoji(currency)
     
     # Handle both ORM objects and dictionaries
     if hasattr(saved_address, 'is_verified'):
@@ -3699,7 +3691,7 @@ async def show_usdt_network_selection(query, context, amount_usd, currency_with_
     
     # Extract base currency (USDT)
     base_currency = currency_with_network.split("-")[0] if "-" in currency_with_network else currency_with_network
-    emoji = get_currency_emoji(base_currency)
+    get_currency_emoji(base_currency)
     
     text = f"""💰 {base_currency} Network Selection
 
@@ -3888,6 +3880,7 @@ async def show_crypto_cashout_confirmation_with_fees(query, context, selected_ad
         
         # Attempt to get address_key for real-time Kraken fees
         try:
+            from services.kraken_withdrawal_service import get_kraken_withdrawal_service
             kraken_service = get_kraken_withdrawal_service()
             resolve_result = await kraken_service.resolve_withdraw_key(base_currency, network, address)
             if resolve_result.get('success'):
@@ -3925,7 +3918,7 @@ async def show_crypto_cashout_confirmation_with_fees(query, context, selected_ad
     })
     
     emoji = get_currency_emoji(selected_currency)
-    network_name = get_network_display_name(selected_currency)
+    get_network_display_name(selected_currency)
     
     # Get address info
     if hasattr(selected_address, 'address'):  # SavedAddress object
@@ -4445,7 +4438,6 @@ async def handle_save_crypto_address(update: Update, context: ContextTypes.DEFAU
             
             # CRITICAL: Get IDs and attributes before session closes (detached objects can't access attributes)
             address_id = saved_address.id
-            user_id = user_db.id
             cached_address_data = {
                 'address': saved_address.address,
                 'label': saved_address.label or default_label,
@@ -5032,7 +5024,6 @@ async def handle_skip_save_crypto(update: Update, context: ContextTypes.DEFAULT_
         address = callback_data.replace("skip_save_crypto:", "")
         if not update or not update.effective_user:
             return
-        user_id = update.effective_user.id
         
         # Store address in cashout data without saving to database
         if not context.user_data:
@@ -5315,10 +5306,9 @@ async def start_add_funds(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """Start add funds process with both NGN and crypto options"""
     async with button_callback_wrapper(update, "⏳ Loading funding options..."):
         query = update.callback_query
-        from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
+        from utils.callback_utils import safe_edit_message_text
         from utils.constants import CallbackData
         from utils.normalizers import normalize_telegram_id
-        from sqlalchemy import update as sqlalchemy_update
         
         if not update or not update.effective_user:
             return
@@ -5433,12 +5423,12 @@ Choose funding method:
         # Otherwise, use normal edit for smooth navigation
         try:
             if coming_from_ngn_page:
-                logger.info(f"📱 NGN_BACK: Delete old message and send fresh (fixes caching)")
+                logger.info("📱 NGN_BACK: Delete old message and send fresh (fixes caching)")
                 try:
                     from telegram import Message
                     if query and query.message and isinstance(query.message, Message):
                         await query.message.delete()
-                    logger.info(f"✅ Old message deleted")
+                    logger.info("✅ Old message deleted")
                 except Exception as del_err:
                     logger.warning(f"⚠️ Couldn't delete: {del_err}")
                 
@@ -5448,13 +5438,13 @@ Choose funding method:
                     text=text,
                     reply_markup=InlineKeyboardMarkup(keyboard)
                 )
-                logger.info(f"✅ Fresh funding options sent")
+                logger.info("✅ Fresh funding options sent")
             else:
-                logger.info(f"📱 NORMAL_NAV: Using standard edit")
+                logger.info("📱 NORMAL_NAV: Using standard edit")
                 await safe_edit_message_text(
                     query, text, reply_markup=InlineKeyboardMarkup(keyboard)
                 )
-                logger.info(f"✅ Screen updated via edit")
+                logger.info("✅ Screen updated via edit")
         except Exception as e:
             logger.error(f"❌ Failed to update screen: {e}")
             # Fallback to opposite method
@@ -5466,7 +5456,7 @@ Choose funding method:
                     if query and query.message and isinstance(query.message, Message):
                         await query.message.delete()
                     await context.bot.send_message(telegram_user_id, text, reply_markup=InlineKeyboardMarkup(keyboard))
-                logger.info(f"✅ Used fallback method")
+                logger.info("✅ Used fallback method")
             except Exception as e2:
                 logger.error(f"❌ All methods failed: {e2}")
 
@@ -5559,7 +5549,7 @@ async def handle_deposit_currency_selection(update: Update, context: ContextType
                 )
             except asyncio.TimeoutError:
                 logger.error(f"❌ Timeout generating {currency} address for user {user_id}")
-                raise Exception(f"Address generation timeout - please try again")
+                raise Exception("Address generation timeout - please try again")
             
             # Enhanced validation of address info
             if not address_info:
@@ -5704,7 +5694,7 @@ async def show_deposit_qr(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """Show deposit QR code - ASYNC OPTIMIZED"""
     try:
         # PERFORMANCE: Use button_callback_wrapper for instant feedback (<50ms)
-        async with button_callback_wrapper(update, "📱 Loading QR...") as session:
+        async with button_callback_wrapper(update, "📱 Loading QR..."):
             query = update.callback_query
             if not query:
                 return
@@ -5716,7 +5706,7 @@ async def handle_save_bank_account(update: Update, context: ContextTypes.DEFAULT
     """Handle save bank account - ASYNC OPTIMIZED"""
     try:
         # PERFORMANCE: Use button_callback_wrapper for instant feedback (<50ms)
-        async with button_callback_wrapper(update, "💾 Saving...") as session:
+        async with button_callback_wrapper(update, "💾 Saving..."):
             query = update.callback_query
             if not query:
                 return
@@ -5728,7 +5718,7 @@ async def handle_cancel_bank_save(update: Update, context: ContextTypes.DEFAULT_
     """Handle cancel bank save - ASYNC OPTIMIZED"""
     try:
         # PERFORMANCE: Use button_callback_wrapper for instant feedback (<50ms)
-        async with button_callback_wrapper(update, "⏳ Processing...") as session:
+        async with button_callback_wrapper(update, "⏳ Processing..."):
             query = update.callback_query
             if not query:
                 return
@@ -5858,7 +5848,7 @@ async def handle_bank_addition_account_input(update: Update, context: ContextTyp
                 # Delete processing message
                 try:
                     await processing_msg.delete()
-                except Exception as e:
+                except Exception:
                     pass
                     
                 if all_verified_accounts:
@@ -6286,7 +6276,7 @@ Select your bank:"""
             
     except Exception as e:
         logger.error(f"Error showing bank selection menu: {e}")
-        error_text = f"❌ Error Loading Banks\n\nUnable to load bank list. Please try again later."
+        error_text = "❌ Error Loading Banks\n\nUnable to load bank list. Please try again later."
         
         query = update.callback_query
         if query:
@@ -6482,7 +6472,7 @@ async def show_account_confirmation(update: Update, context: ContextTypes.DEFAUL
     """Show account confirmation with optional label input"""
     try:
         await loading_msg.delete()
-    except Exception as e:
+    except Exception:
         pass
     
     if not context.user_data:
@@ -6690,9 +6680,9 @@ Your bank account has been securely saved and can now be used for:
         if not update.message:
             return
         await update.message.reply_text(
-            f"❌ Error Saving Account\n\n"
-            f"Unable to save bank account due to technical issue.\n"
-            f"Please try again later.",
+            "❌ Error Saving Account\n\n"
+            "Unable to save bank account due to technical issue.\n"
+            "Please try again later.",
             parse_mode='Markdown'
         )
 
@@ -6913,7 +6903,7 @@ async def show_saved_bank_accounts_management(update: Update, context: ContextTy
     """Show saved bank accounts management - ASYNC OPTIMIZED"""
     try:
         # PERFORMANCE: Use button_callback_wrapper for instant feedback (<50ms)
-        async with button_callback_wrapper(update, "🏦 Loading banks...") as session:
+        async with button_callback_wrapper(update, "🏦 Loading banks..."):
             query = update.callback_query
             if not query:
                 return
@@ -7141,7 +7131,7 @@ async def handle_back_to_main(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Handle back to main menu - ASYNC OPTIMIZED"""
     try:
         # PERFORMANCE: Use button_callback_wrapper for instant feedback (<50ms)
-        async with button_callback_wrapper(update, "🏠 Loading menu...") as session:
+        async with button_callback_wrapper(update, "🏠 Loading menu..."):
             # Import and use the proper main menu handler
             from handlers.start import show_main_menu
             await show_main_menu(update, context)
@@ -7235,7 +7225,7 @@ async def handle_ngn_bank_account_input(update: Update, context: ContextTypes.DE
                 # Delete processing message
                 try:
                     await processing_msg.delete()
-                except Exception as e:
+                except Exception:
                     pass
                     
                 if all_verified_accounts:
@@ -7438,7 +7428,7 @@ async def handle_select_verified_bank(update: Update, context: ContextTypes.DEFA
                         logger.error(f"❌ CRITICAL_FIX: Database error saving bank account: {db_error}")
                         await session.rollback()
             else:
-                logger.error(f"❌ CRITICAL_FIX: No effective_user.id found in update")
+                logger.error("❌ CRITICAL_FIX: No effective_user.id found in update")
         except Exception as save_error:
             logger.error(f"❌ CRITICAL_FIX: Error saving bank account to database: {save_error}")
         
@@ -7483,7 +7473,6 @@ async def cancel_ngn_cashout(update: Update, context: ContextTypes.DEFAULT_TYPE)
             # 1. Rate Lock Cleanup - Invalidate any active rate locks
             if rate_lock and user_id:
                 try:
-                    from utils.rate_lock import RateLock
                     # Mark rate lock as invalidated to prevent further use
                     rate_lock['is_active'] = False
                     rate_lock['cancelled_at'] = datetime.utcnow().isoformat()
@@ -7494,7 +7483,6 @@ async def cancel_ngn_cashout(update: Update, context: ContextTypes.DEFAULT_TYPE)
             # 2. Email Verification Cleanup - Invalidate pending verifications
             if user_id and cashout_data.get('cashout_id'):
                 try:
-                    from services.email_verification_service import EmailVerificationService
                     from models import EmailVerification
                     
                     async with async_managed_session() as session:
@@ -7827,7 +7815,7 @@ async def handle_ngn_otp_verification(update: Update, context: ContextTypes.DEFA
                         bank_destination = f"{verified_account.get('bank_name', 'Unknown Bank')}|{verified_account['account_number']}|{verified_account.get('account_name', 'Account Holder')}|{verified_account['bank_code']}"
                         
                         # Enhanced metadata with rate lock and verification info
-                        enhanced_metadata = {
+                        {
                             'verification_id': verification_id,
                             'rate_lock_token': rate_lock_token,
                             'locked_rate': str(locked_rate),
@@ -7988,7 +7976,6 @@ async def handle_ngn_otp_verification(update: Update, context: ContextTypes.DEFA
                                 
                                 # ENHANCEMENT: Final Confirmation Page with enhanced UI
                                 from utils.branding_utils import make_header, make_trust_footer, format_branded_amount, BrandingUtils
-                                from datetime import datetime
                                 header = make_header("Transfer Complete")
                                 usd_formatted = format_branded_amount(Decimal(str(usd_amount or 0)), "USD")
                                 ngn_formatted = format_branded_amount(Decimal(str(ngn_amount or 0)), "NGN")
@@ -8955,7 +8942,7 @@ async def handle_confirm_ngn_cashout_and_save(update: Update, context: ContextTy
             reply_markup=InlineKeyboardMarkup([])  # Remove buttons during processing
         )
         
-        logger.info(f"✅ User UI immediately updated with processing message for NGN cashout with bank save")
+        logger.info("✅ User UI immediately updated with processing message for NGN cashout with bank save")
             
         # Save the bank account first using async session
         try:
@@ -9861,7 +9848,7 @@ async def handle_exchange_menu(update: Update, context: ContextTypes.DEFAULT_TYP
     
     try:
         # Exchange handler not available - direct_exchange.py does not exist
-        logger.warning(f"⚠️ Exchange handler not available - handlers.direct_exchange does not exist")
+        logger.warning("⚠️ Exchange handler not available - handlers.direct_exchange does not exist")
         await safe_edit_message_text(
             query,
             "❌ Exchange Service Unavailable\n\nThe exchange service is currently being updated. Please try again later.",

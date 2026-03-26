@@ -6,7 +6,7 @@ This module ensures all trade data remains consistent and prevents critical fail
 import logging
 from database import SessionLocal
 from models import Escrow, User, NotificationPreference
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

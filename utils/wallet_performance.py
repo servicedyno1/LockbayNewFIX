@@ -5,7 +5,7 @@ Fast balance calculations and cached user data for wallet display
 
 import logging
 from decimal import Decimal
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)

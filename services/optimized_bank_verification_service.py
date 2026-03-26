@@ -8,9 +8,7 @@ import logging
 import asyncio
 import aiohttp
 import time
-from decimal import Decimal
 from typing import Optional, Dict, Any, List
-from config import Config
 from services.fincra_service import FincraService
 
 logger = logging.getLogger(__name__)
@@ -252,7 +250,7 @@ class OptimizedBankVerificationService:
                         logger.warning(f"🔍 TIER1_UNEXPECTED: {bank_name} returned unexpected result: {result}")
                 
             except asyncio.TimeoutError:
-                logger.warning(f"⏰ TIER1_TIMEOUT: Digital banks took longer than 2.5s, but continuing...")
+                logger.warning("⏰ TIER1_TIMEOUT: Digital banks took longer than 2.5s, but continuing...")
             
             # Log current status
             logger.info(f"📊 PHASE1_COMPLETE: Found {len(all_verified_accounts)} verified accounts so far")

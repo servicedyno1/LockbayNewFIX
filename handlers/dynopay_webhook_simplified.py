@@ -15,8 +15,7 @@ from fastapi.responses import JSONResponse
 from typing import Optional, Dict, Any
 from sqlalchemy import and_, or_, select
 
-from database import get_db_session
-from models import CryptoDeposit, CryptoDepositStatus, User, Transaction
+from models import Transaction
 from services.simplified_payment_processor import simplified_payment_processor
 from utils.session_manager import SessionManager
 
@@ -388,9 +387,9 @@ async def handle_dynopay_escrow_webhook(request: Request):
         if not reference_id:
             event = webhook_data.get("event", "")
             if event == "payment.pending":
-                logger.info(f"📥 DYNOPAY_ESCROW: Pending payment acknowledged (no reference yet)")
+                logger.info("📥 DYNOPAY_ESCROW: Pending payment acknowledged (no reference yet)")
                 return JSONResponse({"status": "success", "message": "Pending payment acknowledged"})
-            logger.error(f"❌ DYNOPAY_ESCROW: No reference_id found in webhook payload")
+            logger.error("❌ DYNOPAY_ESCROW: No reference_id found in webhook payload")
             return JSONResponse({"error": "Missing reference_id"}, status_code=400)
 
         # Normalize
@@ -403,7 +402,6 @@ async def handle_dynopay_escrow_webhook(request: Request):
         # Process escrow payment: update escrow status to funded
         try:
             from models import Escrow, CryptoDeposit
-            from sqlalchemy import update as sqlalchemy_update
             
             txid = normalized["txid"]
             usd_amount = normalized["amount"]

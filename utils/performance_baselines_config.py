@@ -4,15 +4,13 @@ Establishes standard performance thresholds, alert levels, and benchmarks for th
 """
 
 import logging
-from typing import Dict, List, Optional, Any, NamedTuple
+from typing import Dict, Optional, Any
 from dataclasses import dataclass, field
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
-import json
 
 from utils.standardized_metrics_framework import MetricThreshold, MetricUnit
-from utils.metric_definitions_catalog import MetricDefinition, metrics_catalog
 
 logger = logging.getLogger(__name__)
 

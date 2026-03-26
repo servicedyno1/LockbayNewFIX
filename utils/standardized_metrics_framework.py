@@ -6,17 +6,16 @@ Provides unified metrics collection, naming, and reporting across all system com
 import time
 import logging
 import asyncio
-from typing import Dict, List, Optional, Any, Protocol, Union
+from typing import Dict, List, Optional, Any, Protocol
 from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 from enum import Enum
-from collections import defaultdict, deque
-import json
+from collections import deque
 import threading
 from contextlib import asynccontextmanager
 
 # Import existing safe timing utilities
-from utils.safe_timing import safe_duration_calculation, SafeTimer, TIMING_CONSTANTS
+from utils.safe_timing import safe_duration_calculation
 from utils.shared_cpu_monitor import get_cpu_usage, get_memory_usage
 
 logger = logging.getLogger(__name__)

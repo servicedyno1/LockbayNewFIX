@@ -33,18 +33,13 @@ from telegram.constants import ParseMode
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
-    CallbackQueryHandler,
-    MessageHandler,
-    filters,
 )
-from models import User, Escrow, EscrowStatus, Wallet, TransactionType, EscrowHolding, Dispute, Rating
+from models import User, Escrow, EscrowStatus, Wallet, TransactionType, EscrowHolding, Rating
 from utils.keyboards import *
 from utils.helpers import *
-from utils.wallet_manager import get_or_create_wallet, get_user_wallet
 from utils.markdown_escaping import escape_markdown, format_username_html
 from utils.constants import States, CallbackData, EscrowStates
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
-from utils.error_handler import handle_error
 from utils.production_validator import ProductionValidator
 from utils.universal_id_generator import UniversalIDGenerator
 from config import Config
@@ -55,18 +50,11 @@ from services.fincra_service import FincraService
 from services.admin_trade_notifications import admin_trade_notifications
 
 # Import per-update caching system
-from utils.update_cache import get_cached_user, invalidate_user_cache
+from utils.update_cache import get_cached_user
 
 # ASYNC BUTTON HANDLER FOR <500MS PERFORMANCE
-from utils.button_handler_async import button_callback_wrapper
 
 # UNIFIED TRANSACTION SYSTEM INTEGRATION
-from services.unified_transaction_service import (
-    UnifiedTransactionService, TransactionRequest, UnifiedTransactionType, 
-    UnifiedTransactionPriority
-)
-from services.conditional_otp_service import ConditionalOTPService
-from services.dual_write_adapter import DualWriteConfig, DualWriteMode, DualWriteStrategy
 
 # BRANDING INTEGRATION
 from utils.branding_utils import BrandingUtils
@@ -75,14 +63,12 @@ from utils.branding_utils import BrandingUtils
 from utils.wallet_validation import WalletValidator
 
 # ID GENERATORS
-from utils.universal_id_generator import UniversalIDGenerator
 
 # STATE TRANSITION VALIDATION
 from utils.escrow_state_validator import EscrowStateValidator, StateTransitionError
 
 # PRECISION MONEY UTILITIES
-from utils.precision_money import format_money, decimal_to_string, safe_multiply, safe_divide, safe_add, safe_subtract, calculate_percentage
-from utils.decimal_precision import MonetaryDecimal
+from utils.precision_money import format_money, decimal_to_string, safe_multiply, safe_add, safe_subtract, calculate_percentage
 
 # ESCROW PREFETCH CACHE MANAGEMENT
 from utils.escrow_prefetch import invalidate_prefetch_cache
@@ -165,11 +151,11 @@ def format_trade_review_message(
     delivery_display = ""
     if delivery_hours:
         if delivery_hours == 1:
-            delivery_display = f"\n⏰ 1 hour"
+            delivery_display = "\n⏰ 1 hour"
         elif delivery_hours < 24:
             delivery_display = f"\n⏰ {delivery_hours} hours"
         elif delivery_hours == 24:
-            delivery_display = f"\n⏰ 24 hours"
+            delivery_display = "\n⏰ 24 hours"
         elif delivery_hours % 24 == 0:
             days = delivery_hours // 24
             delivery_display = f"\n⏰ {days} day{'s' if days != 1 else ''}"
@@ -565,7 +551,7 @@ async def start_secure_trade(update: TelegramUpdate, context: ContextTypes.DEFAU
                 logger.error(f"Failed to set conversation state: {e}")
     else:
         logger.error("No effective_user found for database state setting")
-    logger.info(f"✅ RETURNING EscrowStates.SELLER_INPUT state for ConversationHandler")
+    logger.info("✅ RETURNING EscrowStates.SELLER_INPUT state for ConversationHandler")
     
     # TIMING LOG: Total start_secure_trade execution time
     total_elapsed = (time.perf_counter() - start_time) * 1000
@@ -657,7 +643,7 @@ async def handle_seller_input(update: TelegramUpdate, context: ContextTypes.DEFA
             
             error_msg = (
                 "❌ Invalid seller username\n\n"
-                f"The text you entered looks like a crypto wallet address.\n\n"
+                "The text you entered looks like a crypto wallet address.\n\n"
                 "Please enter the seller's Telegram username:\n"
                 "• @johndoe (with @ symbol)\n"
                 "• johndoe (without @ symbol)\n\n"
@@ -867,7 +853,7 @@ async def handle_seller_input(update: TelegramUpdate, context: ContextTypes.DEFA
     # Replaced with robust validation at escrow creation time in both crypto and NGN payment flows
     # This ensures seller information is properly validated when escrows are actually created
     logger.info(f"✅ Seller information collected: {seller_type}={seller_identifier}")
-    logger.info(f"🎯 ROBUST VALIDATION: Seller assignment will be validated at escrow creation time")
+    logger.info("🎯 ROBUST VALIDATION: Seller assignment will be validated at escrow creation time")
     
     # Display seller profile if found (optimized for fast display)
     reputation_text = ""
@@ -999,9 +985,9 @@ async def handle_seller_input(update: TelegramUpdate, context: ContextTypes.DEFA
     except Exception as e:
         logger.error(f"Error displaying seller reputation for {seller_identifier}: {e}")
         # Fallback reputation display on error
-        reputation_text = f"\n\n👤 <b>Seller Profile</b>\n"
+        reputation_text = "\n\n👤 <b>Seller Profile</b>\n"
         reputation_text += f"• {html.escape(seller_identifier)}\n"
-        reputation_text += f"• Profile information temporarily unavailable\n"
+        reputation_text += "• Profile information temporarily unavailable\n"
 
     # STEP 2 of 4: Amount Input - Badge-First Seller Card UI (5% bigger)
     text = f"""🛡️ SELLER PROFILE
@@ -1243,7 +1229,7 @@ async def handle_amount_input(update: TelegramUpdate, context: ContextTypes.DEFA
             
             if is_trade_review_edit:
                 # User is editing from trade review - recalculate fees and return to review
-                logger.info(f"💰 SMART_AMOUNT: User editing from trade review, recalculating fees and returning to review")
+                logger.info("💰 SMART_AMOUNT: User editing from trade review, recalculating fees and returning to review")
                 
                 # Preserve first-trade-free status by checking existing fee breakdown
                 is_first_trade_free = escrow_data.get("fee_breakdown", {}).get("is_first_trade_free", False)
@@ -1402,7 +1388,7 @@ async def handle_description_input(update: TelegramUpdate, context: ContextTypes
         
         if is_trade_review_edit:
             # User is editing from trade review - return to review
-            logger.info(f"📝 SMART_DESCRIPTION: User editing from trade review, returning to review")
+            logger.info("📝 SMART_DESCRIPTION: User editing from trade review, returning to review")
             
             # Update database state to trade_review for direct handler routing
             user = update.effective_user
@@ -1548,7 +1534,7 @@ async def handle_delivery_time_callback(
         
         if is_trade_review_edit:
             # User is editing from trade review - return to review
-            logger.info(f"⏰ SMART_DELIVERY: User editing from trade review, returning to review")
+            logger.info("⏰ SMART_DELIVERY: User editing from trade review, returning to review")
             
             # Update database state to trade_review for direct handler routing
             user = update.effective_user
@@ -1626,7 +1612,7 @@ async def handle_delivery_time_input(
             
             if is_trade_review_edit:
                 # User is editing from trade review - return to review
-                logger.info(f"⏰ SMART_DELIVERY_CUSTOM: User editing from trade review, returning to review")
+                logger.info("⏰ SMART_DELIVERY_CUSTOM: User editing from trade review, returning to review")
                 
                 # Update database state to trade_review for direct handler routing
                 user = update.effective_user
@@ -2111,13 +2097,10 @@ Choose delivery deadline:"""
     fee_split_option = None
     if query and query.data == "fee_split":
         fee_split_option = "split"
-        option_text = "Split Fees"
     elif query and query.data == "fee_buyer_pays":
         fee_split_option = "buyer_pays"
-        option_text = "Buyer Pays All"
     elif query and query.data == "fee_seller_pays":
         fee_split_option = "seller_pays"
-        option_text = "Seller Pays All"
     else:
         return EscrowStates.FEE_SPLIT_OPTION
 
@@ -2347,9 +2330,9 @@ async def show_trade_review(query, context: ContextTypes.DEFAULT_TYPE, update=No
     
     # Format delivery time
     if delivery_hours >= 24:
-        delivery_text = f"{delivery_hours // 24} day{'s' if delivery_hours >= 48 else ''}"
+        f"{delivery_hours // 24} day{'s' if delivery_hours >= 48 else ''}"
     else:
-        delivery_text = f"{delivery_hours} hours"
+        pass
     
     # Format fee option
     fee_display = {"split": "Split Fees", "buyer_pays": "Buyer Pays All", "seller_pays": "Seller Pays All"}.get(fee_option, "Split")
@@ -2579,7 +2562,7 @@ async def handle_confirm_trade_final(update: TelegramUpdate, context: ContextTyp
     if query:
         await safe_answer_callback_query(query, "🔄 Creating your escrow...")
         # INSTANT FEEDBACK: Update message immediately to show processing
-        processing_text = f"""🔄 Processing Your Trade...
+        processing_text = """🔄 Processing Your Trade...
 
 ⏳ Creating secure escrow
 ⏳ Setting up payment address
@@ -3178,7 +3161,7 @@ async def show_trade_review_OLD_DUPLICATE(query_or_update, context: ContextTypes
             ngn_amount = safe_multiply(Decimal(str(total_amount)), dynamic_rate, precision=2)
             # Use clean rate for display (without adding markup confusion)
             ngn_display = f"\n🇳🇬 NGN Equivalent: ₦{ngn_amount:,.2f} @ ₦{dynamic_rate:.0f}/USD"
-            logger.info(f"🚀 Escrow payment: Eliminated duplicate FastForex call - using single rate fetch")
+            logger.info("🚀 Escrow payment: Eliminated duplicate FastForex call - using single rate fetch")
         else:
             raise Exception("Exchange rate unavailable")
     except Exception as e:
@@ -3441,7 +3424,7 @@ async def handle_escrow_crypto_selection(
     
     # Extract crypto currency from callback
     crypto = query.data.replace("crypto_", "")
-    escrow_data = context.user_data["escrow_data"]
+    context.user_data["escrow_data"]
     
     # CRITICAL FIX: Process crypto payment directly without state transitions
     try:
@@ -3696,7 +3679,6 @@ async def handle_crypto_payment_direct(
                 logger.info(f"✅ EXISTING_ESCROW_FOUND: Using existing escrow {escrow_id} instead of creating new one")
                 
                 # CRITICAL: Check if crypto currency matches before reusing payment address
-                existing_crypto = existing_escrow.currency
                 existing_payment_address = existing_escrow.deposit_address
                 
                 # ALWAYS generate new payment address (never reuse old ones)
@@ -3716,7 +3698,7 @@ async def handle_crypto_payment_direct(
             
             # NO SEPARATE UTID GENERATION - use the same unified ID
             if should_create_new_escrow:
-                escrow_utid = escrow_id  # Same ID for consistency - no separate generation
+                pass  # Same ID for consistency - no separate generation
 
             # AMOUNT AND FEE CALCULATION (CRITICAL PRECISION): Use pre-calculated fees from UI to preserve first-trade-free
     
@@ -3744,14 +3726,14 @@ async def handle_crypto_payment_direct(
                         logger.info(f"✅ NORMALIZED: Copied 'total_payment' → 'buyer_total_payment': {fee_breakdown['buyer_total_payment']}")
                     else:
                         # Last resort: Recalculate entire fee breakdown
-                        logger.warning(f"⚠️ RECALCULATING: Missing both 'buyer_total_payment' and 'total_payment', recalculating fees")
+                        logger.warning("⚠️ RECALCULATING: Missing both 'buyer_total_payment' and 'total_payment', recalculating fees")
                         fee_breakdown = FeeCalculator.calculate_escrow_breakdown(
                             escrow_amount=escrow_amount,
                             fee_split_option=fee_split_option
                         )
             else:
                 # Fallback: Calculate fresh fees (shouldn't normally happen)
-                logger.warning(f"⚠️ ESCROW_CREATION: No fee_breakdown in escrow_data, recalculating fees")
+                logger.warning("⚠️ ESCROW_CREATION: No fee_breakdown in escrow_data, recalculating fees")
                 fee_breakdown = FeeCalculator.calculate_escrow_breakdown(
                     escrow_amount=escrow_amount,
                     fee_split_option=fee_split_option
@@ -3782,8 +3764,8 @@ async def handle_crypto_payment_direct(
             # TIMING: Separate timeouts for seller response vs payment 
             # When no seller assigned: Use seller response timeout (15 min)
             # When seller accepts: Use payment timeout (24 hours)
-            seller_response_expiry = current_time + timedelta(minutes=Config.SELLER_RESPONSE_TIMEOUT_MINUTES)
-            payment_expiry = current_time + timedelta(minutes=Config.PAYMENT_TIMEOUT_MINUTES)
+            current_time + timedelta(minutes=Config.SELLER_RESPONSE_TIMEOUT_MINUTES)
+            current_time + timedelta(minutes=Config.PAYMENT_TIMEOUT_MINUTES)
             
             # ===================================================================
             # CRYPTO UPDATE PATH: Handle existing escrow crypto changes
@@ -3853,7 +3835,6 @@ async def handle_crypto_payment_direct(
                     
                     # CRITICAL FIX: Use async session update instead of direct object modification
                     new_deposit_address = address_data.get('address')
-                    new_payment_provider = provider_used.value
                     
                     # Update escrow with async session.execute instead of direct object access
                     update_stmt = sqlalchemy_update(Escrow).where(
@@ -4142,7 +4123,6 @@ Payment Address:
 
             # CRITICAL VALIDATION: Prevent orphaned escrows without seller assignment
             # This prevents the exact issue where buyer pays but no seller exists
-            seller_validation_passed = False
             seller_info_summary = "No seller information"
             
             # Check that seller information was properly collected and assigned
@@ -4163,13 +4143,11 @@ Payment Address:
             # Validation passed - log successful seller assignment  # type: ignore
             if new_escrow.seller_id:  # type: ignore
                 seller_info_summary = f"seller_id={new_escrow.seller_id}"
-                seller_validation_passed = True  # type: ignore
             elif new_escrow.seller_contact_type and new_escrow.seller_contact_value:  # type: ignore
                 seller_info_summary = f"seller_contact={new_escrow.seller_contact_type}:{new_escrow.seller_contact_display}"
-                seller_validation_passed = True
                 
             logger.info(f"✅ VALIDATION PASSED: Escrow {escrow_id} has valid seller assignment: {seller_info_summary}")
-            logger.info(f"🎯 ORPHANED ESCROW PREVENTION: Validation ensures buyer payment will have assigned seller")
+            logger.info("🎯 ORPHANED ESCROW PREVENTION: Validation ensures buyer payment will have assigned seller")
 
             # Orchestrator already created and committed the escrow - no need to add/commit again
             # Just extract the needed IDs for context
@@ -4305,7 +4283,6 @@ Payment Address:
         # to avoid session binding issues
 
         # Use the saved escrow ID for display (not the detached object)
-        escrow_id_display = saved_escrow_id
         
         # Use the already generated transaction ID for consistent display
         header = BrandingUtils.make_header("Crypto Payment")
@@ -4317,8 +4294,8 @@ Payment Address:
         display_trade_id = lb_trade_id  # Show full ID with prefix (ES, EX, CO, TX, RF)
         
         # Format fee breakdown for display
-        formatted_escrow = BrandingUtils.format_branded_amount(escrow_amount, "USD")
-        formatted_fee = BrandingUtils.format_branded_amount(buyer_fee_amount, "USD")
+        BrandingUtils.format_branded_amount(escrow_amount, "USD")
+        BrandingUtils.format_branded_amount(buyer_fee_amount, "USD")
         
         # Extract just the numeric amounts without emojis for compact display
         escrow_numeric = str(escrow_amount) if escrow_amount else "0"
@@ -4652,9 +4629,9 @@ async def handle_crypto_payment(update: TelegramUpdate, context: ContextTypes.DE
         formatted_usd = BrandingUtils.format_branded_amount(buyer_pays_usd, "USD")
         
         # Format fee breakdown for display
-        formatted_escrow = BrandingUtils.format_branded_amount(escrow_amount, "USD")
+        BrandingUtils.format_branded_amount(escrow_amount, "USD")
         platform_fee = buyer_pays_usd - Decimal(str(escrow_amount))
-        formatted_fee = BrandingUtils.format_branded_amount(platform_fee, "USD")
+        BrandingUtils.format_branded_amount(platform_fee, "USD")
         
         # Extract just the numeric amounts without emojis for compact display
         escrow_numeric = str(escrow_amount) if escrow_amount else "0"
@@ -5014,7 +4991,7 @@ async def handle_ngn_payment(update: TelegramUpdate, context: ContextTypes.DEFAU
             current_time = datetime.now(timezone.utc)
             
             # PAYMENT TIMING: Calculate payment expiry based on configured timeout
-            payment_expiry = current_time + timedelta(minutes=Config.PAYMENT_TIMEOUT_MINUTES)
+            current_time + timedelta(minutes=Config.PAYMENT_TIMEOUT_MINUTES)
             
             # ===================================================================
             # ORCHESTRATOR MIGRATION: Use EscrowOrchestrator for NGN payments
@@ -5237,7 +5214,6 @@ async def handle_ngn_payment(update: TelegramUpdate, context: ContextTypes.DEFAU
 
             # CRITICAL VALIDATION: Prevent orphaned escrows without seller assignment (NGN Bank Payment Flow)
             # This mirrors the validation added to crypto payment flow to ensure complete coverage
-            seller_validation_passed = False
             seller_info_summary = "No seller information"
             
             # Check that seller information was properly collected and assigned
@@ -5260,16 +5236,13 @@ async def handle_ngn_payment(update: TelegramUpdate, context: ContextTypes.DEFAU
             # Validation passed - log successful seller assignment
             if new_escrow.seller_id is not None:
                 seller_info_summary = f"seller_id={new_escrow.seller_id}"
-                seller_validation_passed = True
             elif new_escrow.seller_email is not None:
                 seller_info_summary = f"seller_email={new_escrow.seller_email}"
-                seller_validation_passed = True
             elif getattr(new_escrow, 'seller_phone', None):
                 seller_info_summary = f"seller_phone={getattr(new_escrow, 'seller_phone', None)}"
-                seller_validation_passed = True
                 
             logger.info(f"✅ NGN VALIDATION PASSED: Escrow {escrow_id_to_use} has valid seller assignment: {seller_info_summary}")
-            logger.info(f"🎯 ORPHANED ESCROW PREVENTION (NGN): Validation ensures buyer payment will have assigned seller")
+            logger.info("🎯 ORPHANED ESCROW PREVENTION (NGN): Validation ensures buyer payment will have assigned seller")
 
             session.add(new_escrow)
             await session.flush()  # Get database ID
@@ -5553,7 +5526,7 @@ async def process_immediate_wallet_payment(query, context, user, total_amount, s
             "seller": context.user_data.get('escrow_data', {}).get('seller_identifier', ''),
             "timestamp": int(datetime.now(timezone.utc).timestamp())
         }
-        idempotency_key = hashlib.sha256(
+        hashlib.sha256(
             json.dumps(idempotency_data, sort_keys=True).encode()
         ).hexdigest()[:16]
         
@@ -5893,7 +5866,6 @@ async def process_immediate_wallet_payment(query, context, user, total_amount, s
         # Process wallet debit with pessimistic locking
         from utils.financial import FinancialCalculator
         from services.crypto import CryptoServiceAtomic
-        from utils.atomic_transactions import locked_wallet_operation
 
         crypto_service = CryptoServiceAtomic()
         rates_raw = await crypto_service.get_crypto_rates()
@@ -5998,7 +5970,6 @@ async def process_immediate_wallet_payment(query, context, user, total_amount, s
         buyer = user
         
         # Save ALL escrow AND buyer attributes BEFORE expunge (prevent lazy loading errors)
-        escrow_db_id = new_escrow.id
         escrow_public_id = str(new_escrow.escrow_id)
         escrow_amount = new_escrow.amount
         escrow_buyer_fee = new_escrow.buyer_fee_amount
@@ -6067,7 +6038,6 @@ async def process_immediate_wallet_payment(query, context, user, total_amount, s
         # Send wallet payment confirmation to buyer via consolidated notification service (bot + email)
         try:
             from services.consolidated_notification_service import ConsolidatedNotificationService, NotificationRequest, NotificationCategory, NotificationPriority
-            from utils.referral import ReferralSystem
             
             notification_service = ConsolidatedNotificationService()
             
@@ -6089,7 +6059,7 @@ async def process_immediate_wallet_payment(query, context, user, total_amount, s
                 referral_link = f"https://t.me/{Config.BOT_USERNAME}?start=ref_{buyer_referral_code}"
                 share_text = quote("Hey! Join me on Lockbay for secure trades 🛡️")
                 
-                referral_section = f"""
+                referral_section = """
 
 ⚠️ Seller not on platform
 
@@ -6520,17 +6490,16 @@ async def send_offer_to_seller(escrow, context) -> int:  # type: ignore
                         f"Sending trade offer to @{username} (telegram_id: {seller.telegram_id})"
                     )
                     # Generate fee breakdown text
-                    fee_text = ""
                     amount = Decimal(str(getattr(escrow, 'amount', 0) or 0))
                     buyer_fee = Decimal(str(getattr(escrow, 'buyer_fee_amount', None) or 0))
                     seller_fee = Decimal(str(getattr(escrow, 'seller_fee_amount', None) or 0))
                     
                     if escrow.fee_split_option == "split":
-                        fee_text = f"\n🎯 You receive: ${amount:.2f}\n💳 Buyer paid: ${amount + buyer_fee:.2f} (includes fees)"
+                        f"\n🎯 You receive: ${amount:.2f}\n💳 Buyer paid: ${amount + buyer_fee:.2f} (includes fees)"
                     elif escrow.fee_split_option == "buyer_pays":
-                        fee_text = f"\n💰 Fee: Buyer paid all (${buyer_fee:.2f})"
+                        pass
                     elif escrow.fee_split_option == "seller_pays":
-                        fee_text = f"\n💰 Fee: You pay ${seller_fee:.2f}"
+                        pass
 
                     buyer_username = getattr(buyer, "username", None) if buyer else None
                     buyer_first_name = getattr(buyer, "first_name", None) if buyer else None
@@ -6878,7 +6847,7 @@ async def handle_cancel_escrow(update: TelegramUpdate, context: ContextTypes.DEF
     
     await safe_edit_message_text(
         query,
-        f"""❌ Trade Cancelled
+        """❌ Trade Cancelled
 
 Your trade has been cancelled.
 
@@ -6954,7 +6923,7 @@ async def handle_escrow_crypto_switching(update: TelegramUpdate, context: Contex
     # FIXED: Use buyer_fee from fee split calculation instead of hardcoded 5%
     amount = Decimal(str(escrow_data["amount"]))
     buyer_fee = Decimal(str(escrow_data.get("buyer_fee", get_default_fee(amount))))
-    total_amount = amount + buyer_fee
+    amount + buyer_fee
     
     text = """🔄 Switch Cryptocurrency
 
@@ -7198,7 +7167,7 @@ async def handle_back_to_payment(update: TelegramUpdate, context: ContextTypes.D
             ngn_amount = Decimal(str(Decimal(str(total_amount)) * dynamic_rate))
             # Use clean rate for display (without adding markup confusion)
             ngn_display = f"\n🇳🇬 NGN Equivalent: ₦{ngn_amount:,.2f} @ ₦{dynamic_rate:.0f}/USD"
-            logger.info(f"🚀 Escrow payment: Eliminated duplicate FastForex call - using single rate fetch")
+            logger.info("🚀 Escrow payment: Eliminated duplicate FastForex call - using single rate fetch")
         else:
             raise Exception("Exchange rate unavailable")
     except Exception as e:
@@ -7370,7 +7339,7 @@ async def handle_wallet_payment_confirmation(
             # - buyer_wallet_payment: What buyer pays from wallet (amount + buyer_fee only)
             # - total_amount: Database field (amount + buyer_fee + seller_fee)
             buyer_wallet_payment = amount + buyer_fee
-            total_amount = amount + buyer_fee + seller_fee
+            amount + buyer_fee + seller_fee
 
             # CRITICAL: Validate sufficient balance before processing payment
             # Check buyer has enough for their wallet payment, NOT the full total_amount
@@ -7687,6 +7656,8 @@ async def handle_seller_invitation_response(
     session,
 ) -> int:  # type: ignore
     """Handle seller invitation acceptance/decline from deep links"""
+    from datetime import datetime, timezone
+    from models import User
     try:
         escrow = session.query(Escrow).filter(Escrow.escrow_id == escrow_id).first()
         if not escrow:
@@ -7702,7 +7673,7 @@ async def handle_seller_invitation_response(
         user = result.scalar_one_or_none()
 
         if not user:
-            message_text = f"❌ Error: User account not found. Please restart the process."
+            message_text = "❌ Error: User account not found. Please restart the process."
             if update.message:
                 await update.message.reply_text(message_text)
             elif update.callback_query:
@@ -7946,6 +7917,8 @@ You have declined this trade. The buyer will be refunded automatically."""
 
 async def handle_seller_response(update: TelegramUpdate, context: ContextTypes.DEFAULT_TYPE) -> int:  # type: ignore
     """SECURITY FIXED: Handle seller acceptance/decline with atomic operations"""
+    from models import User
+    from datetime import datetime, timezone
     query = update.callback_query
     # PERFORMANCE: Instant acknowledgment
     # IMMEDIATE FEEDBACK: Escrow management
@@ -8054,7 +8027,6 @@ async def handle_seller_response(update: TelegramUpdate, context: ContextTypes.D
                     # CRITICAL FIX: Process refund when seller declines payment_confirmed trade
                     if escrow.status == "payment_confirmed":
                         # Release held funds back to buyer
-                        from services.escrow_fund_manager import EscrowFundManager
                         
                         # Get held amount from escrow holding
                         holding = session.query(EscrowHolding).filter(
@@ -8093,7 +8065,6 @@ async def handle_seller_response(update: TelegramUpdate, context: ContextTypes.D
                                 
                                 # Create refund transaction record
                                 from models import Transaction
-                                from utils.helpers import generate_transaction_id
                                 refund_tx = Transaction(
                                     transaction_id=UniversalIDGenerator.generate_transaction_id(),
                                     user_id=escrow.buyer_id,
@@ -8419,7 +8390,7 @@ async def handle_view_trade(update: TelegramUpdate, context: ContextTypes.DEFAUL
                     counterparty_name = str(getattr(buyer, 'username', None) or getattr(buyer, 'first_name', 'Buyer') or 'Buyer')
 
             # Build message text with comprehensive timestamp information
-            created_str = created_at.strftime("%b %d, %Y %I:%M %p") if created_at else "Unknown"
+            created_at.strftime("%b %d, %Y %I:%M %p") if created_at else "Unknown"
         
             # Comprehensive timestamp formatting for user context
             def format_timestamp(timestamp, default="Unknown"):
@@ -8543,10 +8514,10 @@ async def handle_view_trade(update: TelegramUpdate, context: ContextTypes.DEFAUL
                         else:
                             timestamp_info = f"\n⏰ Seller has {minutes}m left to accept"
                     else:
-                        timestamp_info = f"\n⏰ Acceptance deadline expired"
+                        timestamp_info = "\n⏰ Acceptance deadline expired"
                 else:
                     # Fallback to static message if no time info available
-                    timestamp_info = f"\n⏰ Seller has 24h to accept"
+                    timestamp_info = "\n⏰ Seller has 24h to accept"
                 
                 # 2. Show payment confirmation timestamp
                 if payment_confirmed_at:
@@ -8627,9 +8598,9 @@ async def handle_view_trade(update: TelegramUpdate, context: ContextTypes.DEFAUL
                     # Dispute status
                     dispute_status = getattr(dispute, 'status', 'open')
                     if dispute_status == 'under_review':
-                        timestamp_info += f"\n⚖️ Status: Under Admin Review"
+                        timestamp_info += "\n⚖️ Status: Under Admin Review"
                     elif dispute_status == 'resolved':
-                        timestamp_info += f"\n✅ Status: Resolved"
+                        timestamp_info += "\n✅ Status: Resolved"
                         
                         # Show resolution time if resolved
                         dispute_resolved_at = getattr(dispute, 'resolved_at', None)
@@ -8643,7 +8614,7 @@ async def handle_view_trade(update: TelegramUpdate, context: ContextTypes.DEFAUL
                             resolution_display = resolution[:80] + "..." if len(resolution) > 80 else resolution
                             timestamp_info += f"\n📋 Decision: {resolution_display}"
                     else:
-                        timestamp_info += f"\n⚖️ Status: Open"
+                        timestamp_info += "\n⚖️ Status: Open"
                 else:
                     # Fallback if no dispute record found
                     updated_at = getattr(escrow, 'updated_at', None)
@@ -8729,17 +8700,15 @@ async def handle_view_trade(update: TelegramUpdate, context: ContextTypes.DEFAUL
         
             # Get payment method information
             payment_method = getattr(escrow, 'payment_method', None)
-            payment_info = ""
             if payment_method:
                 if payment_method.startswith('crypto_'):
                     crypto_currency = payment_method.replace('crypto_', '')
-                    payment_info = f"💰 <b>Payment:</b> {crypto_currency} (Crypto)"
                 elif payment_method == 'ngn':
-                    payment_info = f"💰 <b>Payment:</b> Nigerian Naira (NGN)"
+                    pass
                 elif payment_method == 'wallet':
-                    payment_info = f"💰 <b>Payment:</b> Wallet Balance"
+                    pass
                 else:
-                    payment_info = f"💰 <b>Payment:</b> {payment_method.upper()}"
+                    f"💰 <b>Payment:</b> {payment_method.upper()}"
         
             # Ratings removed to improve performance - view separately via rating button
             ratings_info = ""
@@ -9031,8 +9000,8 @@ async def handle_mark_delivered(update: TelegramUpdate, context: ContextTypes.DE
     from telegram import InlineKeyboardMarkup
     
     processing_message = (
-        f"⏳ *Processing Delivery Confirmation...*\n\n"
-        f"Please wait while we notify the buyer and update the trade status..."
+        "⏳ *Processing Delivery Confirmation...*\n\n"
+        "Please wait while we notify the buyer and update the trade status..."
     )
     
     await safe_edit_message_text(
@@ -9042,7 +9011,7 @@ async def handle_mark_delivered(update: TelegramUpdate, context: ContextTypes.DE
         reply_markup=InlineKeyboardMarkup([])  # Remove buttons during processing
     )
     
-    logger.info(f"✅ Seller UI immediately updated with processing message for delivery confirmation")
+    logger.info("✅ Seller UI immediately updated with processing message for delivery confirmation")
 
     async with async_managed_session() as session:
         try:
@@ -9379,7 +9348,7 @@ async def handle_confirm_release_funds(update: TelegramUpdate, context: ContextT
     # Import required services at function level
     from services.crypto import CryptoServiceAtomic
     from models import EscrowHolding, Transaction
-    from services.escrow_fund_manager import EscrowFundManager
+    from services.admin_trade_notifications import AdminTradeNotificationService
     
     query = update.callback_query
     if query:
@@ -9408,12 +9377,12 @@ async def handle_confirm_release_funds(update: TelegramUpdate, context: ContextT
     from telegram import InlineKeyboardMarkup
     
     processing_message = (
-        f"⏳ *Processing Fund Release...*\n\n"
-        f"Please wait while we:\n"
-        f"• Transfer funds to seller\n"
-        f"• Complete the trade\n"
-        f"• Update records\n\n"
-        f"This may take a few seconds..."
+        "⏳ *Processing Fund Release...*\n\n"
+        "Please wait while we:\n"
+        "• Transfer funds to seller\n"
+        "• Complete the trade\n"
+        "• Update records\n\n"
+        "This may take a few seconds..."
     )
     
     await safe_edit_message_text(
@@ -9423,7 +9392,7 @@ async def handle_confirm_release_funds(update: TelegramUpdate, context: ContextT
         reply_markup=InlineKeyboardMarkup([])  # Remove buttons during processing
     )
     
-    logger.info(f"✅ Buyer UI immediately updated with processing message for fund release")
+    logger.info("✅ Buyer UI immediately updated with processing message for fund release")
 
     async with async_managed_session() as session:
         try:
@@ -10299,7 +10268,7 @@ This is an email confirmation for your records.""",
                 idempotency_key=f"escrow_{escrow_id_str}_seller_accept_email"
             )
             
-            seller_result = await notification_service.send_notification(seller_email_request)
+            await notification_service.send_notification(seller_email_request)
             logger.info(f"✅ Seller email audit sent to user {seller_id} for accepted trade {escrow_id_str}")
         except Exception as seller_email_error:
             logger.error(f"❌ Failed to send seller email for trade {escrow_id_str}: {seller_email_error}")
@@ -10760,7 +10729,6 @@ async def handle_buyer_cancel_confirmed(update: TelegramUpdate, context: Context
             # Create transaction record for the refund - only if there was a refund
             if original_status == "payment_confirmed" and amount > 0:
                 from models import Transaction, TransactionType, TransactionStatus
-                from utils.helpers import generate_transaction_id
                 refund_transaction = Transaction(
                     transaction_id=UniversalIDGenerator.generate_transaction_id(),
                     user_id=user.id,
@@ -10791,7 +10759,7 @@ async def handle_buyer_cancel_confirmed(update: TelegramUpdate, context: Context
 New Wallet Balance: ${new_balance:.2f} USD"""
             else:
                 # No payment was made - simple cancellation message
-                success_text = f"""✅ Trade Cancelled
+                success_text = """✅ Trade Cancelled
 
 Your trade has been cancelled.
 

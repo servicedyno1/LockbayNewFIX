@@ -13,10 +13,9 @@ from dataclasses import dataclass
 from enum import Enum
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, and_, or_
 
-from database import SessionLocal
 from models import WebhookEventLedger
 from utils.atomic_transactions import atomic_transaction
 from utils.data_sanitizer import sanitize_for_log, safe_error_log

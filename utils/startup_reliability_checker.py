@@ -4,11 +4,9 @@ Startup Reliability Checker - Comprehensive system initialization validation
 Ensures all critical components are operational before allowing bot to serve users
 """
 
-import asyncio
 import logging
 import time
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from sqlalchemy import text
@@ -152,7 +150,7 @@ class StartupReliabilityChecker:
             try:
                 for i in range(3):  # Test 3 concurrent sessions
                     session = SessionLocal()
-                    result = session.execute(text("SELECT :test_value"), {"test_value": i})
+                    session.execute(text("SELECT :test_value"), {"test_value": i})
                     sessions.append(session)
                 
                 response_time = (time.time() - start_time) * 1000
@@ -206,7 +204,7 @@ class StartupReliabilityChecker:
                 
                 # Test a few rapid connections to check for SSL issues
                 for i in range(3):
-                    with engine.connect() as test_conn:
+                    with sync_engine.connect() as test_conn:
                         test_conn.execute(text("SELECT 1"))
                 
                 response_time = (time.time() - start_time) * 1000

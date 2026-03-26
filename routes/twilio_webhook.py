@@ -42,7 +42,7 @@ async def handle_sms_status_callback(
                 logger.error(f"Twilio webhook validation failed: {validation_result.get('error')}")
                 raise HTTPException(status_code=401, detail="Invalid webhook signature")
             
-            logger.info(f"Twilio webhook signature validated successfully")
+            logger.info("Twilio webhook signature validated successfully")
         
         # Get form data from Twilio
         form_data = await request.form()
@@ -93,7 +93,7 @@ async def handle_incoming_sms(
                 logger.error(f"Twilio incoming SMS validation failed: {validation_result.get('error')}")
                 raise HTTPException(status_code=401, detail="Invalid webhook signature")
             
-            logger.info(f"Twilio incoming SMS webhook signature validated successfully")
+            logger.info("Twilio incoming SMS webhook signature validated successfully")
         
         # Get form data from Twilio
         form_data = await request.form()

@@ -518,7 +518,6 @@ Elite trader achievement! You're among the most experienced and trusted traders 
     async def _add_escrow_completion_tracking(cls, session, savings, escrow_amount_usd: float):
         """Add escrow completion tracking - simplified version of add_escrow_completion"""
         try:
-            from decimal import Decimal
             
             # Update escrow tracking
             savings.total_escrows_completed = (savings.total_escrows_completed or 0) + 1

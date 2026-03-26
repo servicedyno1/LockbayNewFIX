@@ -18,15 +18,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import existing models and utilities
 from models import (
-    User, Escrow, Cashout, SavedAddress, SavedBankAccount, 
-    CashoutStatus, UnifiedTransaction, UnifiedTransactionStatus, CashoutType
+    Escrow, Cashout, CashoutType
 )
 
 # Import the new unified services
 from services.auto_cashout_unified import unified_auto_cashout_service
 from services.migration_adapters import (
-    payment_adapter, fincra_adapter, kraken_adapter,
-    process_unified_payout, check_unified_balance
+    payment_adapter
 )
 
 # Import original auto_cashout for fallback

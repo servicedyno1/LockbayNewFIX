@@ -5,6 +5,54 @@ This file contains additional methods to be added to the WalletService class
 to complete the integration with the comprehensive audit trail system.
 """
 
+import logging
+from typing import Optional, Dict, Any
+from decimal import Decimal
+
+logger = logging.getLogger(__name__)
+
+# Lazy imports to avoid circular dependencies
+def _get_balance_validator():
+    try:
+        from services.balance_validator import balance_validator
+        return balance_validator
+    except ImportError:
+        return None
+
+def _get_balance_audit_service():
+    try:
+        from services.balance_audit_service import balance_audit_service
+        return balance_audit_service
+    except ImportError:
+        return None
+
+def _get_transaction_safety_service():
+    try:
+        from services.transaction_safety_service import transaction_safety_service
+        return transaction_safety_service
+    except ImportError:
+        return None
+
+def _get_financial_audit_logger():
+    try:
+        from utils.financial_audit_logger import financial_audit_logger
+        return financial_audit_logger
+    except ImportError:
+        return None
+
+# Safe enums - fallback to string if not available
+try:
+    from models import TransactionType
+except ImportError:
+    TransactionType = None
+
+try:
+    from utils.financial_audit_logger import FinancialEventType, FinancialContext, EntityType
+except ImportError:
+    FinancialEventType = None
+    FinancialContext = None
+    EntityType = None
+
 def validate_wallet_balance(self,
                           user_id: int,
                           currency: Optional[str] = None) -> Dict[str, Any]:
@@ -20,7 +68,7 @@ def validate_wallet_balance(self,
     """
     try:
         # Use the new balance validator for comprehensive validation
-        validation_result = balance_validator.validate_user_wallet(
+        validation_result = _get_balance_validator().validate_user_wallet(
             session=self.db,
             user_id=user_id,
             currency=currency,
@@ -68,7 +116,7 @@ def get_wallet_audit_history(self,
     """
     try:
         # Use the new balance audit service to get history
-        audit_history = balance_audit_service.get_audit_history(
+        audit_history = _get_balance_audit_service().get_audit_history(
             session=self.db,
             wallet_type="user",
             user_id=user_id,
@@ -124,7 +172,7 @@ def transfer_between_users(self,
     """
     try:
         # Use the new TransactionSafetyService for atomic transfer with complete audit
-        result = transaction_safety_service.transfer_between_wallets(
+        result = _get_transaction_safety_service().transfer_between_wallets(
             session=self.db,
             from_user_id=from_user_id,
             to_user_id=to_user_id,
@@ -133,7 +181,7 @@ def transfer_between_users(self,
             transaction_type=transaction_type.value if transaction_type else "user_transfer",
             description=description or f"Transfer {amount} {currency} from user {from_user_id} to user {to_user_id}",
             initiated_by="wallet_service",
-            initiated_by_id=f"wallet_service_transfer"
+            initiated_by_id="wallet_service_transfer"
         )
         
         if result.success:
@@ -143,7 +191,7 @@ def transfer_between_users(self,
                 currency=currency
             )
             
-            financial_audit_logger.log_financial_event(
+            _get_financial_audit_logger().log_financial_event(
                 event_type=FinancialEventType.WALLET_TRANSFER,
                 entity_type=EntityType.WALLET,
                 entity_id=f"wallet_transfer_{from_user_id}_to_{to_user_id}",
@@ -230,7 +278,7 @@ def create_balance_snapshot(self,
         
         # Create snapshots for each wallet
         for wallet in wallets:
-            snapshot_id = balance_audit_service.create_balance_snapshot(
+            snapshot_id = _get_balance_audit_service().create_balance_snapshot(
                 session=self.db,
                 wallet_type="user",
                 user_id=user_id,
@@ -281,7 +329,7 @@ def detect_balance_discrepancies(self,
         # Use the balance validator to detect discrepancies
         if user_id:
             # Validate specific user
-            validation_result = balance_validator.validate_user_wallet(
+            validation_result = _get_balance_validator().validate_user_wallet(
                 session=self.db,
                 user_id=user_id,
                 currency=currency,
@@ -290,7 +338,7 @@ def detect_balance_discrepancies(self,
             )
         else:
             # Detect discrepancies across all wallets
-            validation_result = balance_validator.detect_balance_discrepancies(
+            validation_result = _get_balance_validator().detect_balance_discrepancies(
                 session=self.db,
                 threshold=threshold,
                 max_age_days=7

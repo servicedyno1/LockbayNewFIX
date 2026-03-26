@@ -5,14 +5,10 @@ Replaces the over-engineered financial_operation_locker.py
 """
 
 import logging
-from typing import Optional, Tuple
 from contextlib import contextmanager
-from decimal import Decimal
 
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 from database import SessionLocal
-from models import User, Wallet, Escrow, Cashout
+from models import Wallet, Escrow, Cashout
 
 logger = logging.getLogger(__name__)
 

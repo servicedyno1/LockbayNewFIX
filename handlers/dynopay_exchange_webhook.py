@@ -5,10 +5,7 @@ from typing import Dict, Any, Optional
 from decimal import Decimal
 from datetime import datetime, timezone
 from fastapi import Request, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func, select
-from database import SessionLocal, async_managed_session
+from sqlalchemy import select
 from models import ExchangeOrder, Transaction, TransactionType, ExchangeStatus, User, UnifiedTransaction, UnifiedTransactionType, UnifiedTransactionStatus, WebhookEventLedger, Wallet
 from services.unified_transaction_service import create_unified_transaction_service
 from services.dual_write_adapter import DualWriteMode
@@ -271,7 +268,7 @@ class DynoPayExchangeWebhookHandler:
         """Process DynoPay exchange payment within distributed lock context"""
         try:
             # Extract webhook data
-            meta_data = webhook_data.get('meta_data', {})
+            webhook_data.get('meta_data', {})
             paid_amount = webhook_data.get('paid_amount')
             paid_currency = webhook_data.get('paid_currency')
             
@@ -629,7 +626,7 @@ class DynoPayExchangeWebhookHandler:
                     
                 # ENHANCED TRANSACTION VERIFICATION: Log successful completion
                 logger.info(f"✅ TRANSACTION_COMPLETED: DynoPay exchange deposit processed successfully: {reference_id}")
-                logger.debug(f"✅ TRANSACTION_VERIFICATION: All operations completed within single atomic transaction")
+                logger.debug("✅ TRANSACTION_VERIFICATION: All operations completed within single atomic transaction")
                 
                 return {
                     "status": "success",
@@ -648,7 +645,6 @@ class DynoPayExchangeWebhookHandler:
         """Process the exchange order after payment confirmation"""
         try:
             # Import here to avoid circular imports
-            from services.financial_gateway import financial_gateway
             
             if str(exchange_order.order_type) == "crypto_to_ngn":
                 # Process crypto to NGN exchange
@@ -913,7 +909,6 @@ class DynoPayExchangeWebhookHandler:
         """Log webhook event for auditing and idempotency using asyncio.to_thread pattern"""
         try:
             import asyncio
-            from datetime import datetime
             from database import managed_session
             
             def _write():

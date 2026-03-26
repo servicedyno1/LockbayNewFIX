@@ -33,7 +33,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 
 from models import User, Escrow
-from config import Config
 
 logger = logging.getLogger(__name__)
 

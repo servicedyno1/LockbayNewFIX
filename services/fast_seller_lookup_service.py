@@ -24,17 +24,14 @@ Target: <100ms vs ~400ms sequential queries
 import logging
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple, Any
-from decimal import Decimal
+from typing import List, Optional
 from dataclasses import dataclass
-from sqlalchemy.orm import Session, sessionmaker, joinedload
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import desc, func, and_, or_, text, select
-import asyncio
+from sqlalchemy import func, select
 
 from database import SessionLocal
-from models import Rating, User, Escrow, Transaction, Dispute, EscrowStatus
-from utils.constants import PLATFORM_NAME
+from models import Rating, User
 
 logger = logging.getLogger(__name__)
 

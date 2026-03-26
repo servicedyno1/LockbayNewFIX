@@ -39,7 +39,7 @@ from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 from database import get_async_session
-from models import User, Wallet
+from models import User
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
@@ -219,7 +219,6 @@ async def get_cached_user_with_escrows(
     
     try:
         async with get_async_session() as session:
-            from models import Escrow
             
             result = await session.execute(
                 select(User)

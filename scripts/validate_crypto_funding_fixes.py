@@ -20,7 +20,7 @@ import logging
 import time
 import sys
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 # Add project root to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -213,7 +213,7 @@ class CryptoFundingValidator:
             
             # Performance test: Rate fetching
             start_time = time.time()
-            rate = await fastforex.get_usd_to_ngn_rate()
+            await fastforex.get_usd_to_ngn_rate()
             rate_fetch_time = time.time() - start_time
             
             self.performance_metrics['rate_fetch_time'] = rate_fetch_time
@@ -349,7 +349,7 @@ class CryptoFundingValidator:
         logger.info(f"⏱️ Total Validation Time: {total_time:.2f}s")
         
         if self.performance_metrics:
-            logger.info(f"\n⚡ Performance Metrics:")
+            logger.info("\n⚡ Performance Metrics:")
             for metric, value in self.performance_metrics.items():
                 logger.info(f"   • {metric}: {value:.3f}s")
         

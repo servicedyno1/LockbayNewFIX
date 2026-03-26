@@ -4,16 +4,13 @@ User feedback management, reputation analytics, and rating oversight
 """
 
 import logging
-from typing import Optional, List, Dict
-from datetime import datetime, timedelta
-from decimal import Decimal
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import desc, func, and_, or_
+from sqlalchemy import desc, func
 
 from database import SessionLocal
-from models import Rating, User, Escrow, EscrowStatus
+from models import Rating, User, Escrow
 from utils.admin_security import is_admin_secure
 from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
 
@@ -67,7 +64,7 @@ async def handle_admin_ratings(update: Update, context: ContextTypes.DEFAULT_TYP
             ).order_by(desc('avg_rating')).limit(5).all()
             
             # Recent ratings
-            recent_ratings = session.query(Rating).order_by(
+            session.query(Rating).order_by(
                 desc(Rating.created_at)
             ).limit(5).all()
             
@@ -284,7 +281,7 @@ async def handle_admin_ratings_top(update: Update, context: ContextTypes.DEFAULT
             
             # Reputation insights
             total_users_with_ratings = len(top_users)
-            message += f"\n\n📊 **Insights**"
+            message += "\n\n📊 **Insights**"
             message += f"\n• Users with ratings: {total_users_with_ratings}"
             
             if top_users:

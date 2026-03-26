@@ -1,10 +1,8 @@
 """Withdrawal Status Monitor Service for tracking Kraken withdrawals and updating blockchain transaction hashes"""
 
-import asyncio
 import logging
 from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import List, Optional, Dict, Any
+from typing import Dict, Any
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session

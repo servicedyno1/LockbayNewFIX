@@ -9,7 +9,7 @@ format checking to prevent financial losses from ambiguous inputs.
 import re
 import logging
 from decimal import Decimal, InvalidOperation
-from typing import Tuple, Optional
+from typing import Tuple
 
 logger = logging.getLogger(__name__)
 

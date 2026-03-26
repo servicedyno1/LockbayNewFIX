@@ -4,7 +4,7 @@ Ensures proper handler routing without message consumption conflicts
 """
 
 import logging
-from typing import Optional, Dict, Any, Callable
+from typing import Callable
 from telegram import Update
 from telegram.ext import ContextTypes
 from functools import wraps

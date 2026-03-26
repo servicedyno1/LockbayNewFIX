@@ -5,7 +5,7 @@ Reduces startup time and optimizes handler registration
 
 import logging
 import asyncio
-from typing import List, Dict, Any
+from typing import Dict, Any
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -165,7 +165,6 @@ class StartupOptimizer:
     @staticmethod
     async def _init_cache_systems():
         """Initialize caching systems"""
-        from utils.performance_cache import PerformanceCache
         
         # Initialize cache systems
         await asyncio.sleep(0.05)

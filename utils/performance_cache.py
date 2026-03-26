@@ -6,7 +6,6 @@ Implements caching for security checks, callback responses, and frequently acces
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 

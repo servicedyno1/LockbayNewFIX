@@ -10,7 +10,7 @@ from typing import Dict, Any
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
-from models import Transaction, Cashout, Escrow, UserSMSUsage
+from models import Transaction, Cashout, Escrow
 
 logger = logging.getLogger(__name__)
 

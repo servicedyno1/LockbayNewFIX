@@ -13,13 +13,9 @@ import json
 import hashlib
 import hmac
 from decimal import Decimal
-from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request, Header
 from typing import Optional, Dict, Any
-from sqlalchemy import and_
 
-from database import get_db_session
-from models import CryptoDeposit, CryptoDepositStatus, User
 from services.simplified_payment_processor import simplified_payment_processor
 from config import Config
 

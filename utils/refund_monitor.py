@@ -9,10 +9,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
-from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from models import Refund, RefundType, RefundStatus
+from models import Refund
 from database import SessionLocal
 
 logger = logging.getLogger(__name__)

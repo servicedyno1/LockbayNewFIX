@@ -5,14 +5,10 @@ Provides compatibility layer during transition period
 """
 
 import logging
-import json
-from typing import Any, Optional, Dict, List, Union
-from datetime import datetime, timedelta
+from typing import Any, Dict, List
 from telegram.ext import ContextTypes
 
-from services.state_manager import state_manager
-from utils.redis_session_foundation import RedisSessionManager, SessionState
-from config import Config
+from utils.redis_session_foundation import RedisSessionManager
 
 logger = logging.getLogger(__name__)
 

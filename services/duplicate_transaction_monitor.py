@@ -5,8 +5,7 @@ Monitors and alerts on potential duplicate transaction records that could cause 
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Tuple
-from decimal import Decimal
+from typing import Dict, List, Any
 from database import SessionLocal
 from models import Transaction, Cashout, TransactionType
 from services.consolidated_notification_service import consolidated_notification_service

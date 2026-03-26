@@ -44,29 +44,29 @@ async def verify_profile():
         print(f"💯 TRUST SCORE: {reputation.trust_score}")
         print()
         
-        print(f"📈 RATING DISTRIBUTION:")
+        print("📈 RATING DISTRIBUTION:")
         for stars, count in sorted(reputation.rating_distribution.items(), reverse=True):
             percentage = (count / reputation.total_ratings * 100) if reputation.total_ratings > 0 else 0
             bar = '⭐' * stars
             print(f"   {bar} ({stars}): {count} ({percentage:.1f}%)")
         print()
         
-        print(f"💰 TRADING STATS:")
+        print("💰 TRADING STATS:")
         print(f"   Total Volume: ${reputation.total_volume}")
         print(f"   Completion Rate: {reputation.completion_rate * 100:.1f}%")
         print(f"   Dispute Rate: {reputation.dispute_rate * 100:.1f}%")
         print(f"   Recent Activity (30d): {reputation.recent_activity} ratings")
         print()
         
-        print(f"🎖️  BADGES:")
+        print("🎖️  BADGES:")
         if reputation.badges:
             for badge in reputation.badges:
                 print(f"   ✅ {badge}")
         else:
-            print(f"   (No badges yet)")
+            print("   (No badges yet)")
         print()
         
-        print(f"🔒 SECURITY:")
+        print("🔒 SECURITY:")
         print(f"   Verification: {reputation.verification_status}")
         print(f"   Risk Level: {reputation.risk_level.upper()}")
         print(f"   Reputation Trend: {reputation.reputation_trend}")
@@ -75,7 +75,7 @@ async def verify_profile():
         print(f"{'='*70}")
         
         # Verify against expected values
-        print(f"\n✅ VERIFICATION CHECKS:")
+        print("\n✅ VERIFICATION CHECKS:")
         checks = {
             "28 ratings received": reputation.total_ratings == 28,
             "5.0 average rating": reputation.overall_rating == 5.0,

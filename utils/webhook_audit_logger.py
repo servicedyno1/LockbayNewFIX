@@ -8,12 +8,11 @@ import time
 import uuid
 import inspect
 from typing import Dict, Any, Optional
-from fastapi import Request, Response
+from fastapi import Request
 from functools import wraps
 
 from utils.comprehensive_audit_logger import (
     ComprehensiveAuditLogger, 
-    AuditEventType, 
     AuditLevel,
     TraceContext,
     RelatedIDs,

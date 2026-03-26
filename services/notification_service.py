@@ -4,9 +4,8 @@ Handles email and Telegram notifications without handler coupling
 """
 
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from datetime import datetime
-import asyncio
 from decimal import Decimal
 from services.email import EmailService
 # Consolidated notification service removed during cleanup
@@ -157,7 +156,7 @@ class NotificationService:
         try:
             # Check if SMS is enabled
             if not Config.TWILIO_ENABLED:
-                logger.warning(f"SMS invitations disabled - Twilio not configured")
+                logger.warning("SMS invitations disabled - Twilio not configured")
                 return False
             
             # Use consolidated notification service for SMS

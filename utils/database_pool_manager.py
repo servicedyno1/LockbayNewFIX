@@ -8,16 +8,16 @@ import time
 import asyncio
 import os
 import sys
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from contextlib import contextmanager
-from sqlalchemy import create_engine, pool, event, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 from config import Config
 import threading
 from collections import deque
 from datetime import datetime, timedelta
-from utils.ssl_connection_monitor import record_ssl_error, record_ssl_recovery, record_ssl_retry
+from utils.ssl_connection_monitor import record_ssl_error, record_ssl_retry
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,7 @@ class OptimizedDatabasePool:
             for old_session in self._warmed_sessions:
                 try:
                     old_session.close()
-                except Exception as e:
+                except Exception:
                     pass
             self._warmed_sessions.clear()
             
@@ -194,7 +194,7 @@ class OptimizedDatabasePool:
                             if session:
                                 try:
                                     session.close()
-                                except Exception as e:
+                                except Exception:
                                     pass
                             break
             
@@ -361,7 +361,6 @@ class OptimizedDatabasePool:
                     self._pool_stats['slow_connections'] += 1
                     now = datetime.now()
                     if now - self._pool_stats['last_warning'] > timedelta(seconds=30):
-                        context_emoji = "👋" if is_onboarding_context else "🔌"
                         context_type = "ONBOARDING" if is_onboarding_context else "SSL"
                         logger.warning(
                             f"⚠️ Slow {context_type} connection ({connection_time:.2f}s) for {context_id}. "

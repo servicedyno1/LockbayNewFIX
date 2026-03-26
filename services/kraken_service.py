@@ -10,7 +10,6 @@ import json
 import aiohttp
 import asyncio
 import logging
-from decimal import Decimal
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
 from services.api_adapter_retry import APIAdapterRetry
@@ -329,7 +328,6 @@ class KrakenService(APIAdapterRetry):
                     methods = await self.get_withdrawal_methods(asset)
                     
                     # OPTIMIZATION: Make parallel calls for all methods to reduce latency
-                    import asyncio
                     method_tasks = []
                     
                     for method_info in methods:
@@ -433,7 +431,7 @@ class KrakenService(APIAdapterRetry):
         try:
             # CRITICAL FINANCIAL SAFETY: Context validation is MANDATORY for all withdrawals
             if session is None or cashout_id is None or transaction_id is None:
-                logger.error(f"🚨 CONTEXT_VALIDATION_FAILED: Kraken withdrawal requires session, cashout_id, and transaction_id for idempotency protection")
+                logger.error("🚨 CONTEXT_VALIDATION_FAILED: Kraken withdrawal requires session, cashout_id, and transaction_id for idempotency protection")
                 return {
                     'success': False,
                     'error': 'Missing required context for withdrawal - session, cashout_id, and transaction_id are mandatory',
@@ -744,7 +742,7 @@ class KrakenService(APIAdapterRetry):
             
             result = await self._make_request('WithdrawStatus', params)
             
-            logger.info(f"✅ Withdrawal status retrieved")
+            logger.info("✅ Withdrawal status retrieved")
             return result
             
         except Exception as e:
@@ -926,7 +924,7 @@ class KrakenService(APIAdapterRetry):
         try:
             # CRITICAL FINANCIAL SAFETY: Context validation is MANDATORY for all withdrawals
             if session is None or cashout_id is None or transaction_id is None:
-                logger.error(f"🚨 CONTEXT_VALIDATION_FAILED: Kraken withdraw_crypto requires session, cashout_id, and transaction_id for idempotency protection")
+                logger.error("🚨 CONTEXT_VALIDATION_FAILED: Kraken withdraw_crypto requires session, cashout_id, and transaction_id for idempotency protection")
                 return {
                     'success': False,
                     'error': 'Missing required context for withdrawal - session, cashout_id, and transaction_id are mandatory',
@@ -985,12 +983,12 @@ class KrakenService(APIAdapterRetry):
                 
                 # Check if address is verified
                 if not key_result.get('verified'):
-                    logger.warning(f"⚠️ Address exists but not verified in Kraken")
+                    logger.warning("⚠️ Address exists but not verified in Kraken")
                     return {
                         'success': False,
                         'error': f'Address {address} exists in Kraken but is not verified',
                         'error_type': 'address_not_verified',
-                        'actionable_message': f'The address is in your Kraken account but needs verification. Please check your email/SMS and verify the address, then try again.',
+                        'actionable_message': 'The address is in your Kraken account but needs verification. Please check your email/SMS and verify the address, then try again.',
                         'provider': 'kraken'
                     }
             
@@ -1009,7 +1007,7 @@ class KrakenService(APIAdapterRetry):
             )
             
             if result.get('success'):
-                logger.info(f"✅ Kraken withdrawal successful")
+                logger.info("✅ Kraken withdrawal successful")
                 
                 # CRITICAL FIX: Invalidate balance cache after successful withdrawal (balance changed)
                 self.invalidate_balance_cache("kraken_withdrawal_success")

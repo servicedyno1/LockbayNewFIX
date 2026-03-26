@@ -6,12 +6,11 @@ Prevents duplicate external API calls (Kraken withdrawals, Fincra transfers) to 
 import logging
 import hashlib
 import json
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 from datetime import datetime
 from contextlib import contextmanager
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +189,7 @@ class ExternalAPIIdempotencyManager:
             
             return operation_log
             
-        except IntegrityError as e:
+        except IntegrityError:
             # Another process created the same operation
             session.rollback()
             logger.warning(

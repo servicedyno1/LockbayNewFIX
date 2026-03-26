@@ -12,12 +12,10 @@ across all payment providers (Fincra, Kraken, BlockBee).
 
 import logging
 import asyncio
-import time
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Dict, Any, Optional, Tuple, Callable, TypeVar
+from typing import Dict, Any, Optional, Callable, TypeVar
 from datetime import datetime
-from decimal import Decimal
 from dataclasses import dataclass
 from functools import wraps
 

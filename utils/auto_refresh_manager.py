@@ -4,9 +4,9 @@ Automatically refreshes UI components without manual refresh buttons
 """
 
 import logging
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable
 from datetime import datetime, timedelta
-from telegram import Update, Bot
+from telegram import Update
 from telegram.ext import ContextTypes
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ Determines whether cashout/exchange failures are technical (retryable) or user e
 import logging
 import re
 from typing import Tuple, Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime
 from models import OperationFailureType, CashoutFailureType, CashoutErrorCode
 
 logger = logging.getLogger(__name__)

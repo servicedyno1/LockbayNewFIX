@@ -174,7 +174,7 @@ class CleanStartupManager:
             # Payment services verification
             try:
                 from services.blockbee_service import BlockBeeService
-                blockbee = BlockBeeService()
+                BlockBeeService()
                 services_initialized.append("BlockBee service")
             except Exception as e:
                 logger.warning(f"⚠️ BlockBee service verification failed: {e}")

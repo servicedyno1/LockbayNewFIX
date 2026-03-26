@@ -7,8 +7,7 @@ Tests all fixes and implementations from today's work.
 import asyncio
 import sys
 import inspect
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import datetime
 
 print("=" * 80)
 print("🧪 RECENT FIXES REGRESSION TEST (Last 8 Hours)")
@@ -59,7 +58,7 @@ async def test_multi_wallet_handling():
                 wallets = wallet_result.scalars().all()
                 
                 wallet_count = len(wallets)
-                log_test("Multi-Wallet Fix", f"Query returns all wallets", 
+                log_test("Multi-Wallet Fix", "Query returns all wallets", 
                         wallet_count > 1, f"Found {wallet_count} wallets")
                 
                 # Test 2: Sum balances without error
@@ -101,7 +100,7 @@ async def test_wallet_attribute():
         
         # Test 3: Check all balance fields exist
         from database import async_managed_session
-        from sqlalchemy import select, inspect as sqla_inspect
+        from sqlalchemy import select
         
         async with async_managed_session() as session:
             wallet_result = await session.execute(select(Wallet).limit(1))
@@ -145,7 +144,7 @@ async def test_html_parse_mode():
         
         # Test 3: Message is compacted (not verbose)
         source_lines = source.split('\n')
-        message_lines = [line for line in source_lines if 'message =' in line or 
+        [line for line in source_lines if 'message =' in line or 
                         ('"""' in line and 'message' in ''.join(source_lines[source_lines.index(line)-5:source_lines.index(line)]))]
         
         log_test("HTML Parse Mode", "Message is compact", 

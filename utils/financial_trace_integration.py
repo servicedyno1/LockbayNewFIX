@@ -4,17 +4,14 @@ Provides comprehensive trace correlation for all financial operations including
 escrow, cashouts, payments, and external API integrations (Fincra, Kraken, etc.)
 """
 
-import logging
 import asyncio
-import json
 from functools import wraps
 from typing import Dict, Any, Optional, Callable, Union, List
 from datetime import datetime
 from decimal import Decimal
 
 from utils.trace_correlation import (
-    trace_manager, OperationType, TraceStatus, TraceContext,
-    traced_operation, with_trace_context, correlate_with_external_id
+    trace_manager, OperationType, TraceStatus, correlate_with_external_id
 )
 from utils.trace_logging_integration import (
     get_trace_logger, MonitoringIntegration, trace_external_api_call

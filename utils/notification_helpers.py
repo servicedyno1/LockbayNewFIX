@@ -4,7 +4,6 @@ Provides unified functions for sending Telegram messages and notifications
 """
 
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,6 @@ User Cache System
 Caches frequently accessed user data to reduce database queries
 """
 
-import time
 import logging
 from typing import Optional, Dict, Any
 from dataclasses import dataclass

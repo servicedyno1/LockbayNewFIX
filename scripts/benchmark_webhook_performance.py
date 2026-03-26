@@ -7,7 +7,7 @@ Measures JSON parsing, response time, and overall webhook latency
 import time
 import json
 import statistics
-from typing import List, Dict, Any
+from typing import Dict, Any
 import asyncio
 
 # Sample webhook payload (realistic Telegram message update)
@@ -42,7 +42,7 @@ def benchmark_json_parsing(iterations: int = 10000) -> Dict[str, float]:
     times_stdlib = []
     for _ in range(iterations):
         start = time.perf_counter()
-        data = json.loads(payload_str)
+        json.loads(payload_str)
         end = time.perf_counter()
         times_stdlib.append((end - start) * 1000)  # Convert to ms
     
@@ -52,7 +52,7 @@ def benchmark_json_parsing(iterations: int = 10000) -> Dict[str, float]:
         import orjson
         for _ in range(iterations):
             start = time.perf_counter()
-            data = orjson.loads(payload_str)
+            orjson.loads(payload_str)
             end = time.perf_counter()
             times_orjson.append((end - start) * 1000)
     except ImportError:
@@ -84,16 +84,13 @@ def benchmark_response_creation(iterations: int = 10000) -> Dict[str, float]:
     times_dynamic = []
     for _ in range(iterations):
         start = time.perf_counter()
-        response_data = {"ok": True, "processing_time_ms": 0.5}
         end = time.perf_counter()
         times_dynamic.append((end - start) * 1000)
     
     # Benchmark using pre-built response
-    STATIC_RESPONSE = {"ok": True}
     times_static = []
     for _ in range(iterations):
         start = time.perf_counter()
-        response_data = STATIC_RESPONSE
         end = time.perf_counter()
         times_static.append((end - start) * 1000)
     
@@ -222,33 +219,33 @@ async def main():
     if 'orjson_avg_ms' in json_results:
         json_savings = json_results['stdlib_avg_ms'] - json_results['orjson_avg_ms']
         potential_savings += json_savings
-        print(f"\n✅ Install orjson:")
+        print("\n✅ Install orjson:")
         print(f"   Savings: {json_savings:.4f} ms ({json_results['orjson_speedup']:.2f}x faster)")
-        print(f"   Impact: HIGH")
+        print("   Impact: HIGH")
     else:
-        print(f"\n⚠️  orjson not installed:")
-        print(f"   Potential savings: ~0.2-0.3 ms")
-        print(f"   Install with: pip install orjson")
+        print("\n⚠️  orjson not installed:")
+        print("   Potential savings: ~0.2-0.3 ms")
+        print("   Install with: pip install orjson")
     
     if response_results['static_speedup'] > 1.5:
         response_savings = response_results['dynamic_avg_ms'] - response_results['static_avg_ms']
         potential_savings += response_savings
-        print(f"\n✅ Use pre-built response:")
+        print("\n✅ Use pre-built response:")
         print(f"   Savings: {response_savings:.4f} ms ({response_results['static_speedup']:.2f}x faster)")
-        print(f"   Impact: LOW")
+        print("   Impact: LOW")
     
     if logging_results['overhead_ms'] > 0.05:
         potential_savings += logging_results['overhead_ms']
-        print(f"\n✅ Move logging to background:")
+        print("\n✅ Move logging to background:")
         print(f"   Savings: {logging_results['overhead_ms']:.4f} ms per log call")
-        print(f"   Impact: MEDIUM (2-3 log calls per webhook)")
+        print("   Impact: MEDIUM (2-3 log calls per webhook)")
     
     if task_results['speedup'] > 1.5:
         task_savings = task_results['three_tasks_avg_ms'] - task_results['one_task_avg_ms']
         potential_savings += task_savings
-        print(f"\n✅ Unified background task:")
+        print("\n✅ Unified background task:")
         print(f"   Savings: {task_savings:.4f} ms ({task_results['speedup']:.2f}x faster)")
-        print(f"   Impact: LOW")
+        print("   Impact: LOW")
     
     print(f"\n{'='*60}")
     print(f"  TOTAL POTENTIAL SAVINGS: {potential_savings:.4f} ms")

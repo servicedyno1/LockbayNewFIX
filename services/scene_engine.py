@@ -18,25 +18,18 @@ Architecture:
 """
 
 import logging
-import asyncio
-import json
-from typing import Dict, Any, Optional, List, Callable, Union
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta
-from decimal import Decimal
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import ContextTypes
 
 # Import existing infrastructure
-from database import SessionLocal
-from models import User
 from services.unified_transaction_engine import (
-    UnifiedTransactionEngine, TransactionRequest, UnifiedTransactionType
+    UnifiedTransactionEngine
 )
-from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
-from utils.message_utils import send_unified_message
 
 logger = logging.getLogger(__name__)
 
@@ -382,7 +375,7 @@ class SceneEngine:
                 return False
             
             # Create scene instance
-            scene_state = await self.state_manager.create_scene_instance(
+            await self.state_manager.create_scene_instance(
                 scene_id, user_id, scene_def.initial_step
             )
             

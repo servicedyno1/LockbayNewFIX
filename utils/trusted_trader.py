@@ -8,7 +8,6 @@ from models import Escrow, Rating
 from utils.branding import SecurityIcons
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-import inspect
 
 logger = logging.getLogger(__name__)
 

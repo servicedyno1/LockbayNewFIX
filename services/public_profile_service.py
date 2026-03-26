@@ -5,15 +5,12 @@ Aggregates user reputation data for public social proof pages
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any
-from decimal import Decimal
-from sqlalchemy.orm import Session
+from typing import Dict, Optional, Any
 from sqlalchemy import desc
 
 from database import SessionLocal
 from models import User, Rating, Escrow
 from services.enhanced_reputation_service import EnhancedReputationService
-from utils.branding import BrandColors
 from config import Config
 
 logger = logging.getLogger(__name__)

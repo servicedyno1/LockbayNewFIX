@@ -5,7 +5,7 @@ Ensures correct handler receives messages based on user state
 
 import logging
 import time
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Tuple
 from telegram.ext import ContextTypes
 
 from services.onboarding_service import OnboardingService
@@ -38,7 +38,7 @@ class RouteGuard:
             try:
                 from utils.performance_telemetry import telemetry
                 telemetry.record_cache_invalidation('route_guard')
-            except:
+            except Exception:
                 pass
     
     @staticmethod
@@ -296,7 +296,7 @@ class RouteGuard:
                     try:
                         from utils.performance_telemetry import telemetry
                         telemetry.record_cache_hit('route_guard')
-                    except:
+                    except Exception:
                         pass
                 else:
                     # Cache expired - will query database
@@ -317,7 +317,7 @@ class RouteGuard:
                 try:
                     from utils.performance_telemetry import telemetry
                     telemetry.record_cache_miss('route_guard')
-                except:
+                except Exception:
                     pass
                 try:
                     # CRITICAL FIX: Normalize telegram_id to int for database query
@@ -463,7 +463,7 @@ class RouteGuard:
                 decision_latency = (time.time() - decision_start_time) * 1000  # Convert to milliseconds
                 from utils.performance_telemetry import telemetry
                 telemetry.record_latency('route_decision', decision_latency)
-            except:
+            except Exception:
                 pass
 
 

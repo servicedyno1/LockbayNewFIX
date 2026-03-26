@@ -299,7 +299,6 @@ def _register_all_critical_handlers(application):
         handle_wal_history, handle_withdrawal_history, handle_exchange_crypto, handle_complete_trading,
         handle_quick_rating_access, handle_settings_verify_email, handle_start_email_verification
     )
-    from handlers.ux_improvements import handle_contact_support
     from handlers.messages_hub import show_trades_messages_hub, handle_start_dispute, handle_dispute_trade
     from handlers.escrow import (
         start_secure_trade, handle_payment_method_selection,
@@ -517,7 +516,6 @@ async def _start_background_systems(application):
 
 # Patch the lifespan to include bot initialization
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
 
 _original_lifespan = app.router.lifespan_context
 

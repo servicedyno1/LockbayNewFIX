@@ -4,19 +4,16 @@ Monitors API failures in background and provides admin alerts
 """
 
 import logging
-import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from enum import Enum
-from decimal import Decimal
 from collections import defaultdict, deque
 
 from database import SessionLocal
 from models import AuditLog
 from services.email import EmailService
 from services.circuit_breaker import circuit_breakers
-from config import Config
 
 logger = logging.getLogger(__name__)
 

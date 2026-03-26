@@ -6,18 +6,14 @@ User-friendly overpayment/underpayment handling with dynamic tolerance and walle
 import logging
 from decimal import Decimal
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from enum import Enum
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import User, Wallet, Escrow, Transaction
+from models import Transaction
 from services.crypto import CryptoServiceAtomic
-from services.consolidated_notification_service import consolidated_notification_service
-from utils.helpers import generate_transaction_id, generate_utid
-from utils.atomic_transactions import atomic_transaction
-from utils.background_task_runner import run_io_task
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -520,7 +516,6 @@ class EnhancedPaymentToleranceService:
         try:
             # Store self-service session with SECURE validation data
             from services.state_manager import StateManager
-            import json
             import hmac
             import hashlib
             
@@ -767,7 +762,7 @@ class EnhancedPaymentToleranceService:
                 escrow_amount = decision.action_options['proceed_partial']['escrow_amount']
                 refund_amount = decision.action_options['cancel_refund']['refund_amount']
                 
-                message = f"💳 Payment Update\n\n"
+                message = "💳 Payment Update\n\n"
                 message += f"{escrow_line}"
                 message += f"{decision.user_message}\n\n"
                 message += f"📉 Proceed: ${float(escrow_amount):.2f} escrow\n"

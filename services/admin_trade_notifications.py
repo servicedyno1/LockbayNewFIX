@@ -1,13 +1,12 @@
 """Admin Trade Notifications Service - Sends email alerts to admin for trade/exchange events"""
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from datetime import datetime
 from services.email import EmailService
 from config import Config
 from telegram import Bot
 from telegram.error import TelegramError
-from database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -2097,7 +2096,7 @@ class AdminTradeNotificationService:
                 return False
                 
             # Extract user information
-            user_id = user_data.get('user_id', 'Unknown')
+            user_data.get('user_id', 'Unknown')
             telegram_id = user_data.get('telegram_id', 'Unknown')
             username = user_data.get('username', 'N/A')
             first_name = user_data.get('first_name', 'Unknown')
@@ -2241,7 +2240,7 @@ class AdminTradeNotificationService:
                 return False
                 
             # Extract user information
-            user_id = user_data.get('user_id', 'Unknown')
+            user_data.get('user_id', 'Unknown')
             telegram_id = user_data.get('telegram_id', 'Unknown')
             username = user_data.get('username', 'N/A')
             first_name = user_data.get('first_name', 'Unknown')
@@ -3185,7 +3184,7 @@ class AdminTradeNotificationService:
             currency = cashout_data.get('currency', 'USD')
             usd_amount = cashout_data.get('usd_amount')  # Optional: Original USD amount before conversion
             crypto_amount = cashout_data.get('crypto_amount')  # Actual crypto amount sent
-            net_amount = cashout_data.get('net_amount')  # Net USD after fees
+            cashout_data.get('net_amount')  # Net USD after fees
             network_fee = cashout_data.get('network_fee', 0)  # Network fee in USD
             cashout_type = cashout_data.get('cashout_type', 'crypto')
             destination = cashout_data.get('destination', 'N/A')

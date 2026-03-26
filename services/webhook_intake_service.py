@@ -106,16 +106,16 @@ class WebhookIntakeService:
             
             if isinstance(result, dict):
                 if result.get('status') == 'success' or result.get('ok'):
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay payment webhook processed successfully")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay payment webhook processed successfully")
                     return {"status": "success", "result": result}
                 elif result.get('status') == 'already_processing':
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay payment webhook already processing - passing through")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay payment webhook already processing - passing through")
                     return {"status": "already_processing", "message": result.get('message')}
                 else:
                     logger.warning(f"⚠️ WEBHOOK_INTAKE: DynoPay payment webhook returned error: {result}")
                     return {"status": "retry", "message": result.get('message', 'Unknown error')}
             else:
-                logger.info(f"✅ WEBHOOK_INTAKE: DynoPay payment webhook processed (no specific result)")
+                logger.info("✅ WEBHOOK_INTAKE: DynoPay payment webhook processed (no specific result)")
                 return {"status": "success"}
                 
         except Exception as e:
@@ -146,16 +146,16 @@ class WebhookIntakeService:
             
             if isinstance(result, dict):
                 if result.get('status') == 'success' or result.get('ok'):
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay exchange webhook processed successfully")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay exchange webhook processed successfully")
                     return {"status": "success", "result": result}
                 elif result.get('status') == 'already_processing':
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay exchange webhook already processing - passing through")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay exchange webhook already processing - passing through")
                     return {"status": "already_processing", "message": result.get('message')}
                 else:
                     logger.warning(f"⚠️ WEBHOOK_INTAKE: DynoPay exchange webhook returned error: {result}")
                     return {"status": "retry", "message": result.get('message', 'Unknown error')}
             else:
-                logger.info(f"✅ WEBHOOK_INTAKE: DynoPay exchange webhook processed (no specific result)")
+                logger.info("✅ WEBHOOK_INTAKE: DynoPay exchange webhook processed (no specific result)")
                 return {"status": "success"}
                 
         except Exception as e:
@@ -186,16 +186,16 @@ class WebhookIntakeService:
             
             if isinstance(result, dict):
                 if result.get('status') == 'success' or result.get('ok'):
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay escrow webhook processed successfully")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay escrow webhook processed successfully")
                     return {"status": "success", "result": result}
                 elif result.get('status') == 'already_processing':
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay escrow webhook already processing - passing through")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay escrow webhook already processing - passing through")
                     return {"status": "already_processing", "message": result.get('message')}
                 else:
                     logger.warning(f"⚠️ WEBHOOK_INTAKE: DynoPay escrow webhook returned error: {result}")
                     return {"status": "retry", "message": result.get('message', 'Unknown error')}
             else:
-                logger.info(f"✅ WEBHOOK_INTAKE: DynoPay escrow webhook processed (no specific result)")
+                logger.info("✅ WEBHOOK_INTAKE: DynoPay escrow webhook processed (no specific result)")
                 return {"status": "success"}
                 
         except Exception as e:
@@ -226,16 +226,16 @@ class WebhookIntakeService:
             
             if isinstance(result, dict):
                 if result.get('status') == 'success' or result.get('ok'):
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay wallet webhook processed successfully")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay wallet webhook processed successfully")
                     return {"status": "success", "result": result}
                 elif result.get('status') == 'already_processing':
-                    logger.info(f"✅ WEBHOOK_INTAKE: DynoPay wallet webhook already processing - passing through")
+                    logger.info("✅ WEBHOOK_INTAKE: DynoPay wallet webhook already processing - passing through")
                     return {"status": "already_processing", "message": result.get('message')}
                 else:
                     logger.warning(f"⚠️ WEBHOOK_INTAKE: DynoPay wallet webhook returned error: {result}")
                     return {"status": "retry", "message": result.get('message', 'Unknown error')}
             else:
-                logger.info(f"✅ WEBHOOK_INTAKE: DynoPay wallet webhook processed (no specific result)")
+                logger.info("✅ WEBHOOK_INTAKE: DynoPay wallet webhook processed (no specific result)")
                 return {"status": "success"}
                 
         except Exception as e:
@@ -277,11 +277,11 @@ class WebhookIntakeService:
                 status = result.get('status')
                 
                 if status == 'success':
-                    logger.info(f"✅ WEBHOOK_INTAKE: Fincra payment webhook processed successfully")
+                    logger.info("✅ WEBHOOK_INTAKE: Fincra payment webhook processed successfully")
                     return {"status": "success", "result": result.get('result')}
                     
                 elif status == 'already_processing':
-                    logger.info(f"✅ WEBHOOK_INTAKE: Fincra payment webhook already processing - passing through")
+                    logger.info("✅ WEBHOOK_INTAKE: Fincra payment webhook already processing - passing through")
                     return {"status": "already_processing", "message": result.get('message')}
                     
                 elif status == 'retry':
@@ -292,7 +292,7 @@ class WebhookIntakeService:
                     logger.error(f"❌ WEBHOOK_INTAKE: Fincra payment webhook returned error: {result}")
                     return {"status": "error", "message": result.get('message', 'Unknown error')}
             else:
-                logger.info(f"✅ WEBHOOK_INTAKE: Fincra payment webhook processed (no specific result)")
+                logger.info("✅ WEBHOOK_INTAKE: Fincra payment webhook processed (no specific result)")
                 return {"status": "success"}
                 
         except Exception as e:

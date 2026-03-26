@@ -14,19 +14,17 @@ Key Features:
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Tuple, Union
+from typing import Dict, Any, Optional, List
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass, field
 from enum import Enum
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, desc, asc, text
-from sqlalchemy.exc import OperationalError
+from sqlalchemy import and_, or_, desc
 
 from models import (
-    User, Wallet, InternalWallet, Transaction, BalanceAuditLog,
-    WalletBalanceSnapshot, UnifiedTransaction, TransactionType
+    Wallet, InternalWallet, Transaction, BalanceAuditLog
 )
 from services.balance_audit_service import balance_audit_service
 
@@ -223,7 +221,7 @@ class BalanceValidator:
         start_time = datetime.now(timezone.utc)
         
         try:
-            logger.info(f"🔍 VALIDATE: Starting internal wallet validation")
+            logger.info("🔍 VALIDATE: Starting internal wallet validation")
             
             result = ValidationResult(
                 success=True,
@@ -247,7 +245,7 @@ class BalanceValidator:
             result.wallets_checked = len(internal_wallets)
             
             if not internal_wallets:
-                logger.warning(f"⚠️ VALIDATE: No internal wallets found for validation")
+                logger.warning("⚠️ VALIDATE: No internal wallets found for validation")
                 result.summary["status"] = "no_wallets_found"
                 return self._finalize_result(result, start_time)
             
@@ -308,7 +306,7 @@ class BalanceValidator:
         start_time = datetime.now(timezone.utc)
         
         try:
-            logger.info(f"🔍 VALIDATE: Starting comprehensive wallet validation")
+            logger.info("🔍 VALIDATE: Starting comprehensive wallet validation")
             
             result = ValidationResult(
                 success=True,
@@ -382,7 +380,7 @@ class BalanceValidator:
         start_time = datetime.now(timezone.utc)
         
         try:
-            logger.info(f"🔍 VALIDATE: Starting balance discrepancy detection")
+            logger.info("🔍 VALIDATE: Starting balance discrepancy detection")
             
             result = ValidationResult(
                 success=True,
@@ -459,7 +457,7 @@ class BalanceValidator:
         start_time = datetime.now(timezone.utc)
         
         try:
-            logger.info(f"🔍 VALIDATE: Starting audit trail validation")
+            logger.info("🔍 VALIDATE: Starting audit trail validation")
             
             result = ValidationResult(
                 success=True,
@@ -686,7 +684,7 @@ class BalanceValidator:
             # and compare it to actual wallet balance
             
             # Get transaction count for context
-            transaction_count = session.query(Transaction).filter(
+            session.query(Transaction).filter(
                 and_(
                     Transaction.user_id == wallet.user_id,
                     Transaction.currency == wallet.currency

@@ -6,10 +6,8 @@ Monitors bot activities, detects anomalies, and automatically fixes issues
 import logging
 import asyncio
 import time
-import json
-import psutil
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 import traceback
@@ -123,7 +121,7 @@ class RealTimeMonitor:
                     await self._handle_high_cpu(cpu_percent)
                 
                 # Log metrics every 30 seconds
-                current_time = datetime.now()
+                datetime.now()
                 logger.info(f"📊 Performance: Memory={memory_mb:.1f}MB, CPU={cpu_percent:.1f}%")
                 
                 await asyncio.sleep(30)
@@ -186,7 +184,6 @@ class RealTimeMonitor:
                 current_time = datetime.now()
                 
                 # Analyze activity patterns
-                recent_activities = []
                 for user_id, activities in self.user_activity.items():
                     recent = [a for a in activities if current_time - a['timestamp'] < timedelta(minutes=10)]
                     if len(recent) > 20:  # Suspicious rapid activity

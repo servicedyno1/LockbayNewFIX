@@ -4,9 +4,7 @@ Demonstrates proper usage patterns and PII redaction capabilities
 """
 
 import asyncio
-import json
 from decimal import Decimal
-from typing import Dict, Any
 
 # Import the audit logging framework
 from utils.comprehensive_audit_logger import (

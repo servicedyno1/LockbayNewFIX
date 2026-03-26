@@ -14,11 +14,8 @@ comprehensive reconciliation engine.
 """
 
 import logging
-import asyncio
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-from database import managed_session
-from decimal import Decimal
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +102,7 @@ class ReconciliationEngine:
                     f"⚠️ RECONCILIATION_ISSUES: Found {total_issues} issues requiring attention: {', '.join(issue_details)}"
                 )
             else:
-                logger.info(f"✅ RECONCILIATION_CLEAN: All systems reconciled successfully")
+                logger.info("✅ RECONCILIATION_CLEAN: All systems reconciled successfully")
             
             return results
             
@@ -193,8 +190,8 @@ class ReconciliationEngine:
             try:
                 # MIGRATION: Use unified balance checking instead of direct Kraken service
                 from services.migration_adapters import kraken_adapter
-                if hasattr(kraken_service, 'get_crypto_rates'):
-                    crypto_rates = await kraken_service.get_crypto_rates()
+                if hasattr(kraken_adapter, 'get_crypto_rates'):
+                    crypto_rates = await kraken_adapter.get_crypto_rates()
                     if crypto_rates:
                         results["validated"] += len(crypto_rates)
                         logger.debug(f"📊 Validated {len(crypto_rates)} crypto rates")

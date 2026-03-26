@@ -14,9 +14,8 @@ import logging
 import asyncio
 import time
 import uuid
-import json
-from contextvars import ContextVar, copy_context
-from typing import Dict, Any, Optional, List, Callable, Union
+from contextvars import ContextVar
+from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from enum import Enum

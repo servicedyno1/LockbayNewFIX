@@ -5,18 +5,14 @@ Provides GDPR-compliant handling of personally identifiable information
 
 import logging
 import json
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta, timezone
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 import os
 from dataclasses import dataclass
 from enum import Enum
 
-from config import Config
-from utils.secure_crypto import SecureCrypto
 from models import SecurityAudit
 from database import SessionLocal
 

@@ -10,7 +10,6 @@ import hashlib
 import os
 import time
 import hmac
-import secrets
 
 # Import Replit Key-Value Store
 try:
@@ -425,7 +424,7 @@ class ReplitCacheManager:
             return None
 
         try:
-            cache_key = self._generate_key(key, namespace)
+            self._generate_key(key, namespace)
             
             # Get current value
             current_value = await self.get(key, namespace, 0)

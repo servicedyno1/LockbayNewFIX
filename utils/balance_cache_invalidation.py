@@ -5,7 +5,7 @@ all balance-related caches when wallet operations occur
 """
 
 import logging
-from typing import Optional, List, Set
+from typing import List
 from threading import RLock
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class BalanceCacheInvalidationService:
                         except ImportError:
                             # Cache doesn't exist - this is fine, count as success
                             success_count += 1
-                            logger.debug(f"CACHE_INVALIDATION: FastWalletService cache not available (no cache to clear)")
+                            logger.debug("CACHE_INVALIDATION: FastWalletService cache not available (no cache to clear)")
                 except Exception as e:
                     logger.warning(f"Failed to invalidate FastWalletService cache for user {user_id}: {e}")
                 finally:
@@ -90,7 +90,7 @@ class BalanceCacheInvalidationService:
                 
                 # 4. Invalidate production cache balance-related entries
                 try:
-                    from utils.production_cache import delete_cached, clear_cache, get_cache_stats
+                    from utils.production_cache import delete_cached
                     
                     # Clear user-specific balance keys
                     balance_keys = [
@@ -112,7 +112,6 @@ class BalanceCacheInvalidationService:
                 
                 # 5. Clear any LRU caches that might contain balance data
                 try:
-                    from functools import lru_cache
                     # Force clear of any @lru_cache decorated functions that might cache balance
                     self._clear_lru_caches_for_user(user_id)
                     success_count += 1
@@ -179,7 +178,7 @@ class BalanceCacheInvalidationService:
                     logger.warning(f"Failed to clear WALLET_DISPLAY_CACHE: {e}")
                 
                 try:
-                    from utils.production_cache import delete_cached, clear_cache, get_cache_stats
+                    from utils.production_cache import clear_cache
                     clear_cache()
                     logger.info("Cleared ProductionCache")
                 except Exception as e:
@@ -221,7 +220,7 @@ class BalanceCacheInvalidationService:
         Returns:
             bool: True if all invalidations succeeded
         """
-        logger.warning(f"DEPRECATED: Using singular invalidate_user_balance_cache method - update to plural invalidate_user_balance_caches")
+        logger.warning("DEPRECATED: Using singular invalidate_user_balance_cache method - update to plural invalidate_user_balance_caches")
         return self.invalidate_user_balance_caches(user_id, operation_type)
     
     def get_cache_invalidation_stats(self) -> dict:

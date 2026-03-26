@@ -9,14 +9,14 @@ import time
 import uuid
 import contextvars
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List, Union, TypeVar, Generic
+from typing import Dict, Any, Optional
 from enum import Enum
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from functools import wraps
 from decimal import Decimal
 
 # Import existing PII protection
-from utils.pii_protection import PIIDataManager, PIIType
+from utils.pii_protection import PIIDataManager
 from config import Config
 
 # Set up module logger for debug messages
@@ -458,7 +458,7 @@ class PIISafeDataExtractor:
             if isinstance(callback_data, str) and isinstance(':', str) and ':' in callback_data:
                 return callback_data.split(':')[0]
             return callback_data[:20] if isinstance(callback_data, str) and len(callback_data) > 20 else callback_data
-        except (TypeError, AttributeError) as e:
+        except (TypeError, AttributeError):
             # Safe fallback for any unexpected callback_data types
             return f"callback_type_extraction_failed_{type(callback_data).__name__}"
 

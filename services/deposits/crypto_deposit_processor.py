@@ -13,16 +13,15 @@ Key Features:
 """
 
 import logging
-import asyncio
 from decimal import Decimal
 from datetime import datetime
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 from sqlalchemy import select, and_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from database import get_sync_db_session
-from models import CryptoDeposit, CryptoDepositStatus, Wallet, Transaction, User
+from models import CryptoDeposit, CryptoDepositStatus, Wallet, Transaction
 from utils.session_manager import SessionManager
 from services.consolidated_notification_service import (
     ConsolidatedNotificationService,
@@ -393,7 +392,6 @@ class CryptoDepositProcessor:
             # Import here to avoid circular imports
             from database import SessionLocal
             from models import NotificationQueue
-            import uuid
             
             # Create notification content
             amount_display = f"${deposit.amount_fiat:.2f}" if deposit.amount_fiat else f"{deposit.amount} {deposit.coin.upper()}"

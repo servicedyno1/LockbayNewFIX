@@ -5,7 +5,7 @@ Ensures a single database session is reused throughout the entire handler lifecy
 
 import logging
 from contextlib import contextmanager
-from typing import Optional, Dict, Any
+from typing import Optional
 from sqlalchemy.orm import Session
 from database import SyncSessionLocal
 from sqlalchemy.exc import OperationalError
@@ -154,7 +154,7 @@ class SessionReuseManager:
                                 continue
                             raise TimeoutError("Database connection timed out")
                         raise
-                except Exception as e:
+                except Exception:
                     # Check if timeout expired during exception handling
                     if timeout_expired.is_set():
                         logger.error(f"❌ Database connection timeout for {context_id}")

@@ -8,16 +8,16 @@ import logging
 import uuid
 import json
 import asyncio
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from enum import Enum
 
-from sqlalchemy import select, delete, update, and_, or_, text
+from sqlalchemy import select, delete, update, and_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import SessionLocal, engine
+from database import SessionLocal
 from models import DistributedLock, IdempotencyToken
 
 logger = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ class AtomicLockManager:
                 
                 return owner_token
                 
-            except IntegrityError as e:
+            except IntegrityError:
                 # Lock already exists - this is the atomic guarantee in action
                 await session.rollback()
                 self.metrics['lock_contentions'] += 1
@@ -504,8 +504,6 @@ class AtomicLockManager:
         """Initialize the atomic lock manager"""
         try:
             # Ensure database tables exist
-            from models import DistributedLock, IdempotencyToken
-            from database import engine
             
             # This will create tables if they don't exist - using async create_tables from database
             from database import create_tables

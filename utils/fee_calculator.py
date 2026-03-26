@@ -166,7 +166,7 @@ class FeeCalculator:
             # For AsyncSession, safely skip to prevent errors
             # Business logic preserved: async flows should use get_trader_fee_discount_async()
             if isinstance(session, AsyncSession):
-                logger.warning(f"AsyncSession detected in sync get_trader_fee_discount - returning 0% discount. Use get_trader_fee_discount_async() instead.")
+                logger.warning("AsyncSession detected in sync get_trader_fee_discount - returning 0% discount. Use get_trader_fee_discount_async() instead.")
                 return Decimal("0.0")
 
             level_info = TrustedTraderSystem.get_trader_level(user, session)

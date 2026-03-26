@@ -4,10 +4,8 @@ Handles trade communication callbacks between buyers and sellers
 """
 
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import ContextTypes
-from database import SessionLocal
-from models import User, Escrow
 from utils.callback_utils import safe_answer_callback_query
 
 logger = logging.getLogger(__name__)

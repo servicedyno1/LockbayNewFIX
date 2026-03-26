@@ -4,7 +4,6 @@ Runs every 5 minutes to clean up expired tokens for security
 """
 
 import logging
-from datetime import datetime
 from utils.cashout_token_security import CashoutTokenSecurity
 
 logger = logging.getLogger(__name__)

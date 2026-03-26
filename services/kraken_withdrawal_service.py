@@ -1,7 +1,7 @@
 """Enhanced Kraken withdrawal service with proper data structure handling"""
 
 import logging
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Any, Tuple
 from decimal import Decimal
 from services.kraken_service import get_kraken_service
 
@@ -323,7 +323,7 @@ class KrakenWithdrawalService:
             
             if not key_resolution.get('success'):
                 # CRITICAL: DO NOT PROCEED if key resolution fails
-                logger.error(f"❌ VALIDATION_BLOCKED: Key resolution failed, ABORTING withdrawal")
+                logger.error("❌ VALIDATION_BLOCKED: Key resolution failed, ABORTING withdrawal")
                 return {
                     'success': False,
                     'error': key_resolution.get('error'),
@@ -339,7 +339,7 @@ class KrakenWithdrawalService:
             is_verified = key_resolution.get('verified')
             
             if not validated_key or not is_verified:
-                logger.error(f"❌ VALIDATION_FAILED: Invalid key or unverified address")
+                logger.error("❌ VALIDATION_FAILED: Invalid key or unverified address")
                 return {
                     'success': False,
                     'error': 'Withdrawal key validation failed',
@@ -401,7 +401,7 @@ class KrakenWithdrawalService:
                     }
                 elif 'EFunding:Unknown withdraw key' in error_msg:
                     # This should be impossible now with proper validation
-                    logger.error(f"🚨 IMPOSSIBLE_ERROR: Unknown withdraw key despite validation!")
+                    logger.error("🚨 IMPOSSIBLE_ERROR: Unknown withdraw key despite validation!")
                     return {
                         'success': False,
                         'error': 'Withdrawal key validation bypass detected',

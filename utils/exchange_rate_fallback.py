@@ -6,7 +6,7 @@ Comprehensive multi-tier rate fetching with circuit breaker and stale data toler
 
 import logging
 import aiohttp
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Any, Tuple
 from decimal import Decimal
 from dataclasses import dataclass

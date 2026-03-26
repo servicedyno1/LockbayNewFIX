@@ -6,7 +6,7 @@ Reusable notification logic for sending payment confirmation to buyers
 import logging
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict, Any
+from typing import Optional
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from services.consolidated_notification_service import (
@@ -204,7 +204,7 @@ def create_payment_complete_message(
 {seller_time_msg}"""
 
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("📋 View Trade", callback_data=f"view_trade_0")],  # Will be updated with actual ID
+        [InlineKeyboardButton("📋 View Trade", callback_data="view_trade_0")],  # Will be updated with actual ID
         [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
     ])
     

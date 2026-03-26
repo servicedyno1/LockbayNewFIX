@@ -3,18 +3,15 @@ Auto-refresh service to replace manual refresh buttons across LockBay
 Handles automatic status updates for exchanges, trades, and wallets
 """
 
-import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set
+from typing import Dict
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from database import engine
 from models import User, ExchangeOrder, Escrow
-from utils.callback_utils import safe_edit_message_text
 # Removed imports - formatting done inline to avoid circular imports
 
 logger = logging.getLogger(__name__)

@@ -6,12 +6,10 @@ Centralized payment processing for all escrow and exchange operations with compr
 import logging
 from decimal import Decimal
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, Union, cast
-from datetime import datetime
+from typing import Dict, Any, Optional, cast
 
-from models import Escrow, EscrowStatus
+from models import Escrow
 from services.escrow_fund_manager import EscrowFundManager
-from services.overpayment_service import OverpaymentService
 from services.enhanced_payment_tolerance_service import enhanced_payment_tolerance
 from config import Config
 
@@ -71,7 +69,7 @@ class UnifiedPaymentProcessor:
             # Extract scalar values from escrow object for type safety
             escrow_amount = cast(Decimal, escrow.amount)
             escrow_buyer_id = cast(int, escrow.buyer_id)
-            escrow_seller_id = cast(int, escrow.seller_id)
+            cast(int, escrow.seller_id)
             escrow_currency = cast(str, escrow.currency)
             escrow_id = cast(str, escrow.escrow_id)
             escrow_buyer_fee = cast(Decimal, escrow.buyer_fee_amount)
@@ -249,7 +247,7 @@ class UnifiedPaymentProcessor:
             
             else:
                 # Fallback to original system if tolerance service fails
-                logger.warning(f"Enhanced tolerance system failed, falling back to original processing")
+                logger.warning("Enhanced tolerance system failed, falling back to original processing")
                 return await self._fallback_to_original_processing(
                     escrow, received_amount, received_usd, crypto_currency, tx_hash, price_usd, session
                 )
@@ -353,7 +351,7 @@ class UnifiedPaymentProcessor:
             
             else:
                 # Fallback to legacy system if tolerance service fails
-                logger.warning(f"Enhanced tolerance system failed for exchange, falling back to legacy processing")
+                logger.warning("Enhanced tolerance system failed for exchange, falling back to legacy processing")
                 return await self._fallback_exchange_processing(
                     order_id, user_id, received_amount, expected_amount, crypto_currency, usd_rate
                 )

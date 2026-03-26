@@ -9,11 +9,8 @@ import logging
 from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
-import json
-import time
 
 from services.advanced_state_management import advanced_state_manager, get_system_health, get_system_metrics
-from services.state_manager import state_manager
 from utils.admin_alert_system import send_admin_alert
 from config import Config
 

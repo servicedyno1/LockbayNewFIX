@@ -16,14 +16,13 @@ Into a single, unified error handling interface.
 """
 
 import logging
-from typing import Dict, Any, Optional, Union, Callable
+from typing import Dict, Any, Optional
 from decimal import Decimal
 from datetime import datetime
-from enum import Enum
 
 # Import the new unified error handling
 from services.core.unified_error_handler import (
-    unified_error_handler, UnifiedErrorCategory, ErrorClassification
+    unified_error_handler
 )
 
 # Import existing error handling for backward compatibility

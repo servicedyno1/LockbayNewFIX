@@ -4,22 +4,19 @@ Provides admins with ticket management, assignment, and analytics
 """
 
 import logging
-from typing import Optional, Dict, List
-from datetime import datetime, timedelta
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import desc, func, or_, and_
+from sqlalchemy import desc
 
 from database import SessionLocal
 from models import User, SupportTicket, SupportMessage
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
-from utils.helpers import get_user_display_name
 from utils.admin_security import is_admin_secure, is_admin_silent
 from utils.comprehensive_audit_logger import (
-    ComprehensiveAuditLogger, AuditEventType, AuditLevel, RelatedIDs, PayloadMetadata
+    ComprehensiveAuditLogger
 )
-from utils.handler_decorators import audit_handler, audit_admin_handler
+from utils.handler_decorators import audit_admin_handler
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +53,7 @@ async def admin_support_dashboard(update: Update, context: ContextTypes.DEFAULT_
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         
         # Ticket counts
-        total_tickets = session.query(SupportTicket).count()
+        session.query(SupportTicket).count()
         open_tickets = session.query(SupportTicket).filter(
             SupportTicket.status.in_(["open", "assigned"])
         ).count()
@@ -221,7 +218,7 @@ Your support request has been assigned to an admin. You'll receive faster respon
         finally:
             session.close()
 
-    except (ValueError, IndexError) as e:
+    except (ValueError, IndexError):
         logger.error(f"Invalid ticket assignment callback: {query.data}")
         await safe_answer_callback_query(query, "❌ Invalid request")
 
@@ -271,7 +268,7 @@ async def admin_support_chat(update: Update, context: ContextTypes.DEFAULT_TYPE)
             messages.reverse()
 
             # Build admin chat view
-            chat_text = f"🎫 **Admin Support Chat**\n\n"
+            chat_text = "🎫 **Admin Support Chat**\n\n"
             chat_text += f"📋 **Ticket:** {ticket.ticket_id}\n"
             chat_text += f"👤 **User:** {ticket.user.first_name or 'User'} (@{ticket.user.username or 'no username'})\n"
             chat_text += f"📧 **Email:** {ticket.user.email}\n"
@@ -280,7 +277,7 @@ async def admin_support_chat(update: Update, context: ContextTypes.DEFAULT_TYPE)
             if ticket.assigned_admin:
                 chat_text += f"🎯 **Assigned:** {ticket.assigned_admin.first_name or 'Admin'}\n"
             else:
-                chat_text += f"🎯 **Assigned:** Unassigned\n"
+                chat_text += "🎯 **Assigned:** Unassigned\n"
                 
             chat_text += f"🕐 **Created:** {ticket.created_at.strftime('%b %d, %H:%M')}\n\n"
 
@@ -328,7 +325,7 @@ async def admin_support_chat(update: Update, context: ContextTypes.DEFAULT_TYPE)
         finally:
             session.close()
 
-    except (ValueError, IndexError) as e:
+    except (ValueError, IndexError):
         logger.error(f"Invalid support chat callback: {query.data}")
         await safe_answer_callback_query(query, "❌ Invalid request")
 
@@ -548,7 +545,7 @@ Your next message will be sent to the user."""
         finally:
             session.close()
 
-    except (ValueError, IndexError) as e:
+    except (ValueError, IndexError):
         logger.error(f"Invalid admin reply callback: {query.data}")
         await safe_answer_callback_query(query, "❌ Invalid request")
 
@@ -608,7 +605,7 @@ async def admin_resolve_ticket(update: Update, context: ContextTypes.DEFAULT_TYP
         finally:
             session.close()
 
-    except (ValueError, IndexError) as e:
+    except (ValueError, IndexError):
         logger.error(f"Invalid admin resolve ticket callback: {query.data}")
         await safe_answer_callback_query(query, "❌ Invalid request")
 
@@ -674,7 +671,7 @@ async def admin_close_ticket(update: Update, context: ContextTypes.DEFAULT_TYPE)
         finally:
             session.close()
 
-    except (ValueError, IndexError) as e:
+    except (ValueError, IndexError):
         logger.error(f"Invalid admin close ticket callback: {query.data}")
         await safe_answer_callback_query(query, "❌ Invalid request")
 

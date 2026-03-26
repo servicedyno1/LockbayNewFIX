@@ -27,16 +27,13 @@ from decimal import Decimal
 from typing import Optional, Dict, Any, List, Tuple, Protocol
 from enum import Enum
 from dataclasses import dataclass, asdict
-import json
 
 from sqlalchemy import text
-from database import managed_session, sync_managed_session
+from database import sync_managed_session
 from config import Config
-from services.fincra_service import FincraService
 from services.kraken_service import get_kraken_service
 from services.email import EmailService
 from services.fastforex_service import FastForexService
-from utils.admin import get_admin_user_ids
 
 logger = logging.getLogger(__name__)
 

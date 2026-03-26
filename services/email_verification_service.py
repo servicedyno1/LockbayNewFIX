@@ -17,16 +17,15 @@ import secrets
 import string
 import hashlib
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, Tuple, Union
+from typing import Optional, Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy import func, and_, or_, select, update, delete
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, and_, select
 from sqlalchemy.dialects.postgresql import insert
 
 from models import EmailVerification, User
 from database import managed_session
 from services.email import EmailService
-from services.email_templates import create_unified_email_template
 from services.background_email_queue import background_email_queue
 from utils.helpers import validate_email
 from config import Config
@@ -136,7 +135,7 @@ class EmailVerificationService:
         """Check if IP has exceeded daily OTP sending limit"""
         # NOTE: EmailVerification model doesn't have ip_address field
         # Return True (allow) since we can't track by IP in current schema
-        logger.debug(f"IP rate limiting skipped - no ip_address field in EmailVerification model")
+        logger.debug("IP rate limiting skipped - no ip_address field in EmailVerification model")
         return True, 0
     
     @classmethod
@@ -211,7 +210,7 @@ class EmailVerificationService:
         """Sync version: Check if IP has exceeded daily OTP sending limit"""
         # NOTE: EmailVerification model doesn't have ip_address field
         # Return True (allow) since we can't track by IP in current schema
-        logger.debug(f"IP rate limiting skipped - no ip_address field in EmailVerification model")
+        logger.debug("IP rate limiting skipped - no ip_address field in EmailVerification model")
         return True, 0
     
     @classmethod
@@ -1139,7 +1138,6 @@ class EmailVerificationService:
                     # We're in an async context, need to handle this carefully
                     # Create a new event loop in a thread for the async call
                     import concurrent.futures
-                    import threading
                     
                     def run_async_verification():
                         # Create a new event loop for this thread

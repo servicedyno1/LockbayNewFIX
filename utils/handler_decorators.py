@@ -5,10 +5,9 @@ Provides decorators for comprehensive handler entry/exit logging with timing and
 
 import logging
 import time
-import asyncio
 import inspect
 from functools import wraps
-from typing import Any, Dict, Optional, Callable, Union, cast
+from typing import Any, Dict, Optional, Callable
 from datetime import datetime
 import traceback
 
@@ -496,7 +495,7 @@ def audit_callback_handler(action: Optional[str] = None):
                     audit_logger.log(
                         level=AuditLevel.DEBUG,
                         event_type=AuditEventType.USER_INTERACTION,
-                        action=f"callback_button_pressed",
+                        action="callback_button_pressed",
                         user_id=update.effective_user.id if update.effective_user else None,
                         chat_id=update.effective_chat.id if update.effective_chat else None,
                         payload_metadata={

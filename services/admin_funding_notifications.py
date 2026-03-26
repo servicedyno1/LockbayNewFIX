@@ -8,24 +8,19 @@ import logging
 import time
 import hashlib
 import hmac
-from typing import Dict, Any, Optional
+from typing import Optional
 from datetime import datetime
 
 from config import Config
-from models import User, Cashout, CashoutStatus, CashoutType
+from models import CashoutType
 from utils.helpers import format_amount
-from database import SessionLocal
 
 # Email service for admin notifications
 from services.email import EmailService
 
 # UNIFIED NOTIFICATION SYSTEM INTEGRATION
 from services.consolidated_notification_service import (
-    ConsolidatedNotificationService,
-    NotificationRequest,
-    NotificationCategory,
-    NotificationPriority,
-    NotificationChannel
+    ConsolidatedNotificationService
 )
 
 logger = logging.getLogger(__name__)
@@ -62,7 +57,7 @@ class AdminFundingNotificationService:
             secret_key = getattr(Config, 'ADMIN_EMAIL_SECRET')
             
             if not secret_key:
-                logger.error(f"🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for funding token generation")
+                logger.error("🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for funding token generation")
                 return "SECURITY_ERROR"
             
             # Token data includes action, cashout ID and timestamp
@@ -113,7 +108,7 @@ class AdminFundingNotificationService:
             # Validate signature
             secret_key = getattr(Config, 'ADMIN_EMAIL_SECRET')
             if not secret_key:
-                logger.error(f"🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for funding token validation")
+                logger.error("🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for funding token validation")
                 return False
             token_data = f"funding:{action}:{cashout_id}:{timestamp}"
             
@@ -432,7 +427,7 @@ class AdminFundingNotificationService:
             if service.lower() == "fincra":
                 service_icon = "🏦"
                 service_name = "Fincra NGN"
-                service_desc = f"Nigerian Naira bank transfer"
+                service_desc = "Nigerian Naira bank transfer"
                 conversion_info = f"${amount:.2f} USD → ₦{service_amount:,.0f} NGN" if service_amount else f"${amount:.2f} USD"
                 funding_instructions = "💡 <strong>How to Enable Auto-Success:</strong><br>• Log into your Fincra dashboard<br>• Add funds to your NGN wallet<br>• System will automatically retry and succeed"
             elif service.lower() == "kraken":
@@ -454,7 +449,6 @@ class AdminFundingNotificationService:
             
             # CRITICAL FIX: Always show emergency buttons for admin intervention capability
             # Admin should always have override options available regardless of auto-retry status
-            show_emergency_buttons = True  # Always enable emergency admin override
             show_auto_retry_guidance = is_auto_retryable and attempt_number < max_attempts
 
             # Build smart email content with both auto-retry info AND emergency controls

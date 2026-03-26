@@ -203,7 +203,7 @@ class AdminNotificationQueueService:
                         notification.email_sent = True
                         logger.info(f"✅ IMMEDIATE: Admin email sent for {notification_type} ({entity_id})")
                     else:
-                        logger.warning(f"⚠️ IMMEDIATE: Email send failed, will retry via background processor")
+                        logger.warning("⚠️ IMMEDIATE: Email send failed, will retry via background processor")
                 except Exception as e:
                     logger.error(f"❌ IMMEDIATE: Email send error: {e}")
             
@@ -229,7 +229,7 @@ class AdminNotificationQueueService:
                         notification.telegram_sent = True
                         logger.info(f"✅ IMMEDIATE: Admin Telegram sent for {notification_type} ({entity_id})")
                     else:
-                        logger.warning(f"⚠️ IMMEDIATE: Telegram send failed, will retry via background processor")
+                        logger.warning("⚠️ IMMEDIATE: Telegram send failed, will retry via background processor")
                 except Exception as e:
                     logger.error(f"❌ IMMEDIATE: Telegram send error: {e}")
             

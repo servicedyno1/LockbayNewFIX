@@ -11,10 +11,6 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
-    CommandHandler,
-    CallbackQueryHandler,
-    MessageHandler,
-    filters,
 )
 from database import SessionLocal
 from models import User, UserContact
@@ -67,13 +63,11 @@ class ContactManagementHandler:
             # PERFORMANCE OPTIMIZATION: Check wallet cache first for saved destinations
             cached_wallet = get_cached_wallet_data(context.user_data)
             if cached_wallet:
-                logger.info(f"✅ CONTACT_CACHE_HIT: Using cached wallet data for saved destinations (0 queries)")
-                saved_crypto_count = len(cached_wallet.get('saved_crypto_addresses', []))
-                saved_bank_count = len(cached_wallet.get('saved_bank_accounts', []))
+                logger.info("✅ CONTACT_CACHE_HIT: Using cached wallet data for saved destinations (0 queries)")
+                len(cached_wallet.get('saved_crypto_addresses', []))
+                len(cached_wallet.get('saved_bank_accounts', []))
             else:
                 logger.debug("ℹ️ CONTACT_CACHE_MISS: Wallet cache not available, will query database if needed")
-                saved_crypto_count = 0
-                saved_bank_count = 0
 
             # Get user's current contacts
             session = SessionLocal()

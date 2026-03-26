@@ -17,7 +17,7 @@ from models import User, Wallet, Cashout, CashoutType
 from sqlalchemy import select, update
 from services.auto_cashout import AutoCashoutService
 from decimal import Decimal
-from utils.constants import CASHOUT_STATUSES_WITH_HOLDS, CASHOUT_STATUSES_WITHOUT_HOLDS
+from utils.constants import CASHOUT_STATUSES_WITH_HOLDS
 
 logger = logging.getLogger(__name__)
 

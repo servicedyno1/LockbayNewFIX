@@ -6,11 +6,10 @@ Background service to process financial audit events from outbox table
 import logging
 import asyncio
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from sqlalchemy import func
 
 from utils.financial_audit_logger import financial_audit_relay
-from utils.atomic_transactions import atomic_transaction
 from models import AuditEvent
 from database import SessionLocal
 

@@ -6,7 +6,6 @@ Loads heavy wallet data in background after UI is displayed
 import logging
 import asyncio
 from telegram.ext import ContextTypes
-from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 

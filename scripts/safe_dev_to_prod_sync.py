@@ -6,9 +6,8 @@ Merges development data into production while preserving all production users
 
 import os
 import sys
-from datetime import datetime
 from sqlalchemy import create_engine, text
-from typing import Dict, List, Tuple
+from typing import Dict
 
 # Color output
 class Colors:
@@ -222,7 +221,7 @@ class SafeDevToProdSync:
                     
                     # Map sender_id
                     if sender_id not in user_mapping:
-                        log_warning(f"  Skipping message - sender not in mapping")
+                        log_warning("  Skipping message - sender not in mapping")
                         continue
                     
                     prod_sender_id = user_mapping[sender_id]
@@ -345,7 +344,7 @@ class SafeDevToProdSync:
         print("\n" + "="*60)
         print("✅ SYNC COMPLETED SUCCESSFULLY")
         print("="*60)
-        print(f"\n📊 Statistics:")
+        print("\n📊 Statistics:")
         print(f"   Users preserved: {self.stats['users_preserved']}")
         print(f"   Users updated: {self.stats['users_updated']}")
         print(f"   Tickets synced: {self.stats['tickets_synced']}")

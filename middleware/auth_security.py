@@ -7,15 +7,12 @@ import logging
 import time
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta, timezone
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import wraps
-import hashlib
-import hmac
 
 from utils.secure_crypto import SecureCrypto, rate_limiter
-from models import User, EmailVerification, FailedAuthentication
+from models import EmailVerification, FailedAuthentication
 from database import SessionLocal
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 

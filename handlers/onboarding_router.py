@@ -14,20 +14,18 @@ import logging
 import asyncio
 import html
 from typing import Optional, Dict, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import ContextTypes, CallbackQueryHandler
 from sqlalchemy.ext.asyncio import AsyncSession
-from models import User, OnboardingStep, EscrowStatus, OnboardingSession
+from models import User, OnboardingStep, EscrowStatus
 from sqlalchemy import select, func, text
 from database import get_async_session
 # Removed unsafe async_atomic_transaction - now using run_io_task pattern
 from services.onboarding_service import OnboardingService
-from services.email_verification_service import EmailVerificationService
 from services.admin_trade_notifications import admin_trade_notifications
 from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
-from utils.helpers import get_user_display_name
 from utils.keyboards import main_menu_keyboard
 from async_user_utils import get_or_create_user_async
 
@@ -107,9 +105,7 @@ async def safe_reply_text(update: Update, text: str, **kwargs) -> bool:
             logger.error(f"Unexpected reply error for user {user_id}: {error_msg}")
             return False
 
-from utils.helpers import validate_email, get_user_display_name
-from utils.keyboards import main_menu_keyboard
-from utils.user_cache import invalidate_user_cache
+from utils.helpers import validate_email
 from caching.enhanced_cache import EnhancedCache
 from config import Config
 
@@ -117,7 +113,7 @@ from config import Config
 from utils.onboarding_prefetch import invalidate_onboarding_cache
 
 # Clean async utilities
-from utils.completion_time_integration import track_onboarding_step, OperationType
+from utils.completion_time_integration import track_onboarding_step
 from utils.background_task_runner import run_background_task, run_io_task
 from database import managed_session, async_managed_session
 
@@ -1061,7 +1057,6 @@ async def _handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE,
         
         # Look up referrer's name for personalized welcome
         try:
-            from utils.referral import ReferralSystem
             
             async with get_async_session() as session:
                 result_query = await session.execute(
@@ -1968,16 +1963,16 @@ async def _send_error(update: Update, error_type: str, custom_message: Optional[
         
         # Enhanced telegram error handling with better recovery
         if "Chat not found" in error_msg:
-            logger.warning(f"Chat not found when sending error - user may have blocked bot")
+            logger.warning("Chat not found when sending error - user may have blocked bot")
             return
         elif "Bot was blocked" in error_msg:
-            logger.warning(f"Bot was blocked by user - cannot send error message")
+            logger.warning("Bot was blocked by user - cannot send error message")
             return
         elif "Message is not modified" in error_msg:
-            logger.debug(f"Message not modified - this is expected in some cases")
+            logger.debug("Message not modified - this is expected in some cases")
             return
         elif "Bad Request: message to edit not found" in error_msg:
-            logger.debug(f"Message to edit not found - user may have deleted it")
+            logger.debug("Message to edit not found - user may have deleted it")
             # Try sending a new message instead
             try:
                 await safe_reply_text(update, message, reply_markup=recovery_keyboard, parse_mode="HTML")
@@ -2281,7 +2276,7 @@ def register_onboarding_handlers(application) -> None:
     This function is called by main.py to register all onboarding-related handlers.
     It sets up the stateless onboarding router with proper priority and filtering.
     """
-    from telegram.ext import MessageHandler, CallbackQueryHandler, CommandHandler, filters
+    from telegram.ext import CommandHandler
     
     # Register command handlers for onboarding start - FIXED: Use main router for proper existing user handling
     application.add_handler(

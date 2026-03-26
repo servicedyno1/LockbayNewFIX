@@ -6,20 +6,17 @@ Comprehensive metrics, pattern analysis, and anomaly detection for refund operat
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple
-from decimal import Decimal
-from collections import defaultdict, Counter
-from dataclasses import dataclass, asdict
+from collections import Counter
+from dataclasses import dataclass
 from enum import Enum
 import statistics
-import json
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, desc, asc
+from sqlalchemy import func
 
-from models import Refund, RefundType, RefundStatus, User, Cashout, Escrow, Transaction
+from models import Refund, RefundStatus
 from database import SessionLocal
-from utils.refund_progress_tracker import real_time_refund_tracker, ProgressStage
-from utils.refund_status_tracking import refund_status_tracker
+from utils.refund_progress_tracker import real_time_refund_tracker
 from services.unified_refund_notification_service import UnifiedRefundNotificationService
 
 logger = logging.getLogger(__name__)
@@ -146,19 +143,19 @@ class RefundAnalyticsService:
                 end_time = datetime.utcnow()
                 if period == AnalyticsPeriod.HOUR:
                     start_time = end_time - timedelta(hours=lookback_periods)
-                    time_delta = timedelta(hours=1)
+                    timedelta(hours=1)
                 elif period == AnalyticsPeriod.DAY:
                     start_time = end_time - timedelta(days=lookback_periods)
-                    time_delta = timedelta(days=1)
+                    timedelta(days=1)
                 elif period == AnalyticsPeriod.WEEK:
                     start_time = end_time - timedelta(weeks=lookback_periods)
-                    time_delta = timedelta(weeks=1)
+                    timedelta(weeks=1)
                 elif period == AnalyticsPeriod.MONTH:
                     start_time = end_time - timedelta(days=lookback_periods * 30)
-                    time_delta = timedelta(days=30)
+                    timedelta(days=30)
                 else:
                     start_time = end_time - timedelta(days=lookback_periods)
-                    time_delta = timedelta(days=1)
+                    timedelta(days=1)
                 
                 # Get base query
                 base_query = session.query(Refund).filter(

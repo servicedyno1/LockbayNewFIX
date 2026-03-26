@@ -4,7 +4,6 @@ Processes pending admin notifications from database queue every 2 minutes.
 Prevents notification loss during rapid escrow state changes.
 """
 
-import asyncio
 import logging
 from services.admin_notification_queue import AdminNotificationQueueService
 

@@ -4,7 +4,7 @@ Prevents frozen balance issues by ensuring holds are always released when cashou
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from decimal import Decimal
 
 logger = logging.getLogger(__name__)

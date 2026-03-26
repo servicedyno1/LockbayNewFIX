@@ -7,10 +7,8 @@ import logging
 from datetime import datetime
 from enum import Enum
 from typing import Dict, Any, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
 
-from models import Refund, RefundStatus
+from models import Refund
 from database import SessionLocal
 
 logger = logging.getLogger(__name__)

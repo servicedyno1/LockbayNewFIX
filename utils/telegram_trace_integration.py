@@ -4,19 +4,17 @@ Provides automatic trace correlation for all Telegram bot operations including
 message handling, callback queries, and user interactions
 """
 
-import logging
 import asyncio
 import json
 from functools import wraps
-from typing import Dict, Any, Optional, Callable, Union
+from typing import Dict, Any, Optional, Callable
 from datetime import datetime
 
-from telegram import Update, Message, CallbackQuery, User
+from telegram import Update, Message
 from telegram.ext import ContextTypes
 
 from utils.trace_correlation import (
-    trace_manager, OperationType, TraceStatus, TraceContext,
-    traced_operation, with_trace_context
+    trace_manager, OperationType, TraceStatus
 )
 from utils.trace_logging_integration import (
     get_trace_logger, MonitoringIntegration
@@ -404,7 +402,7 @@ async def trace_telegram_api_call(api_method: str, api_params: Dict[str, Any]):
     return None
 
 # Enhanced TelegramTraceExtractor methods
-class TelegramTraceExtractor:
+class TelegramTraceExtractorV2:
     # ... (previous methods remain the same)
     
     @staticmethod

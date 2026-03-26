@@ -4,9 +4,8 @@ Last line of defense against configuration errors that could cause profit loss
 """
 
 import logging
-import os
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict
 from datetime import datetime
 
 logger = logging.getLogger(__name__)

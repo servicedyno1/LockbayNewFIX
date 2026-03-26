@@ -297,7 +297,7 @@ def demo_get_valid_transitions():
         entity_type="escrow",
         current_status=EscrowStatus.CREATED
     )
-    print(f"\nValid transitions from CREATED:")
+    print("\nValid transitions from CREATED:")
     for status in valid:
         print(f"  - {status.value}")
     
@@ -306,7 +306,7 @@ def demo_get_valid_transitions():
         entity_type="exchange",
         current_status=ExchangeStatus.PROCESSING
     )
-    print(f"\nValid transitions from PROCESSING:")
+    print("\nValid transitions from PROCESSING:")
     for status in valid:
         print(f"  - {status.value}")
 

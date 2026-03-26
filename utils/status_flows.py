@@ -19,7 +19,7 @@ This replaces the conflicting definitions that previously existed in:
 """
 
 import logging
-from typing import Dict, Set, List, Optional, Tuple, Any, Union
+from typing import Dict, List, Optional, Any, Union
 from enum import Enum
 from datetime import datetime
 
@@ -30,33 +30,7 @@ from datetime import datetime
 from models import (
     # Core transaction statuses
     UnifiedTransactionStatus,
-    UnifiedTransactionType,
-    UnifiedTransactionPriority,
-    
-    # Legacy system statuses (for compatibility)
-    EscrowStatus,          # Authoritative: models.py version (not utils/status_enums.py)
-    CashoutStatus,
-    ExchangeStatus,        # Authoritative: models.py version (not ExchangeOrderStatus)
-    
-    # Other entity statuses
-    UserStatus,
-    TransactionType,
-    DisputeStatus,
-    JobStatus,
-    OperationFailureType,
-    WalletHoldStatus,
-    FundMovementType,
-    
-    # Workflow and processing statuses
-    OutboxEventStatus,
-    InboxWebhookStatus,
-    SagaStepStatus,
-    
-    # Additional enums
-    AdminActionType,
-    RefundType,
-    RefundStatus,
-    AchievementType
+    UnifiedTransactionType
 )
 
 logger = logging.getLogger(__name__)

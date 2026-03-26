@@ -9,14 +9,10 @@ import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from contextlib import contextmanager
-from decimal import Decimal
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import Column, String, DateTime, Integer, Text, Boolean, func
-from sqlalchemy.ext.declarative import declarative_base
 
-from models import Base, DistributedLock
+from models import DistributedLock
 from database import SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -68,7 +64,6 @@ class DistributedLockService:
                 expires_at = datetime.now(timezone.utc) + timedelta(seconds=lock_timeout)
                 
                 # Create lock record (using actual database schema)
-                import json
                 lock_record = DistributedLock(
                     lock_name=lock_key,
                     locked_at=datetime.now(timezone.utc),  # FIXED: Use locked_at instead of acquired_at

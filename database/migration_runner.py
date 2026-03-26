@@ -10,7 +10,7 @@ import logging
 import os
 from pathlib import Path
 from sqlalchemy import text
-from database import SessionLocal, engine
+from database import SessionLocal
 
 logger = logging.getLogger(__name__)
 

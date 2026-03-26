@@ -3,8 +3,6 @@ Seller Invitation Service - Handle inviting sellers via username or email
 """
 
 import re
-import secrets
-import string
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 

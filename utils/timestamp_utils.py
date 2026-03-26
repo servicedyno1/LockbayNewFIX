@@ -5,7 +5,7 @@ Provides consistent timezone-aware datetime handling to prevent compatibility er
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional, Union
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

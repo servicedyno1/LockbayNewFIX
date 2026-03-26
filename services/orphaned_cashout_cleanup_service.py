@@ -7,8 +7,7 @@ Returns locked funds to users when cashouts are abandoned
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
-from decimal import Decimal
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from models import Cashout, CashoutStatus
 from database import SessionLocal
 from utils.constants import ORPHANABLE_CASHOUT_STATUSES, CANCELLABLE_CASHOUT_STATUSES

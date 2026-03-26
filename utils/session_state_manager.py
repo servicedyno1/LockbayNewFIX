@@ -4,7 +4,7 @@ Centralized session state cleanup to prevent cross-conversation contamination
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Set
+from typing import Dict, Optional, List, Set
 from telegram.ext import ContextTypes
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ from typing import Dict, Any
 from datetime import datetime
 
 from database import SessionLocal
-from models import Cashout, CashoutStatus, User, TransactionType
+from models import Cashout, CashoutStatus, User
 from services.crypto import CryptoServiceAtomic
 
 logger = logging.getLogger(__name__)
@@ -259,7 +259,7 @@ class AdminFundingActionService:
                 # Update cashout status to cancelled
                 cashout.status = CashoutStatus.CANCELLED.value
                 cashout.failed_at = datetime.utcnow()
-                cashout.error_message = f"Cancelled by admin - service funding issue resolved via refund"
+                cashout.error_message = "Cancelled by admin - service funding issue resolved via refund"
                 
                 session.commit()
                 

@@ -12,7 +12,6 @@ from datetime import datetime
 from typing import Dict, Any
 
 from config import Config
-from database import managed_session
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +67,7 @@ class UnifiedRetryProcessor:
                                "efficiency_per_second": stats['processed'] / max(processing_time, 0.001)
                            })
             else:
-                logger.debug(f"🔄 UNIFIED_RETRY_IDLE: No retries ready for processing")
+                logger.debug("🔄 UNIFIED_RETRY_IDLE: No retries ready for processing")
             
             return {
                 **stats,
@@ -139,7 +138,7 @@ class UnifiedRetryProcessor:
         
         try:
             from database import async_managed_session
-            from models import User, Wallet, UnifiedTransaction, Cashout
+            from models import User, Wallet
             
             # FIX: Use async session context manager
             async with async_managed_session() as db:

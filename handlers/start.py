@@ -1,30 +1,22 @@
 """Start and onboarding handlers with enhanced navigation and reliability"""
 
 import logging
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from datetime import datetime
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.constants import ChatAction
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
-    CommandHandler,
-    MessageHandler,
-    CallbackQueryHandler,
-    filters,
 )
 from telegram.error import TelegramError
 from sqlalchemy.exc import SQLAlchemyError
 from models import User, Escrow, EscrowStatus, Wallet
-from sqlalchemy import and_, or_, select, text
+from sqlalchemy import and_, or_, select
 from utils.keyboards import main_menu_keyboard
 from utils.helpers import (
-    validate_email,
     parse_start_parameter,
     update_user_from_telegram,
     get_user_display_name,
 )
-from utils.wallet_manager import get_or_create_wallet, get_user_wallet
 from utils.callback_utils import safe_answer_callback_query
 
 # Enhanced user interaction logging for anomaly detection
@@ -38,7 +30,7 @@ class OnboardingStates:
     # Onboarding showcase (still used by demo handlers)
     ONBOARDING_SHOWCASE = 104
 from config import Config
-from database import SessionLocal, SyncSessionLocal, get_async_session
+from database import SyncSessionLocal, get_async_session
 
 # Import enhanced navigation and reliability systems
 from utils.conversation_protection import (
@@ -46,17 +38,22 @@ from utils.conversation_protection import (
 )
 
 # Import per-update caching system
-from utils.update_cache import get_cached_user, invalidate_user_cache
 
 # PERFORMANCE OPTIMIZATION: Onboarding context prefetch (reduces 70 queries to 2)
 from utils.onboarding_prefetch import (
     prefetch_onboarding_context,
     get_cached_onboarding_data,
-    cache_onboarding_data,
-    invalidate_onboarding_cache
+    cache_onboarding_data
 )
 
 logger = logging.getLogger(__name__)
+
+
+async def _start_onboarding_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fallback function to route to onboarding when start_onboarding is called"""
+    from handlers.onboarding_router import onboarding_router
+    await onboarding_router(update, context)
+    return ConversationHandler.END
 
 async def process_existing_user_async(
     update: Update, 
@@ -87,10 +84,7 @@ async def process_existing_user_async(
     Returns:
         Conversation state or None
     """
-    from utils.helpers import async_update_user_from_telegram
     from utils.fast_user_lookup import async_fast_user_lookup
-    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-    from database import async_managed_session
     import time
     import asyncio
     
@@ -179,7 +173,7 @@ async def process_existing_user_async(
             # Extract user data BEFORE operations (needed for parallel execution)
             user_id_db = db_user.id
             user_email = db_user.email if db_user.email is not None else None
-            user_email_verified = getattr(db_user, 'email_verified', False) or False
+            getattr(db_user, 'email_verified', False) or False
             user_referral_code = getattr(db_user, 'referral_code', None)
             user_referred_by = getattr(db_user, 'referred_by_id', None)
             
@@ -238,7 +232,7 @@ async def process_existing_user_async(
             if pending_invitation and isinstance(pending_invitation, dict):
                 if context.user_data is not None:
                     context.user_data["pending_invitations"] = pending_invitation
-                    logger.info(f"📬 Stored pending invitations for main menu badge")
+                    logger.info("📬 Stored pending invitations for main menu badge")
             
             # EMAIL VERIFICATION REMOVED: OTP was removed from onboarding flow.
             # Users go directly to main menu regardless of email_verified status.
@@ -374,7 +368,6 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     # Users can just press /start again if needed without complex detection
 
     # PERFORMANCE FIX: Use centralized session management with async safety
-    from utils.session_manager import SessionManager
     import asyncio
 
     try:
@@ -391,8 +384,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         # OPTIMIZATION: Add performance monitoring and caching to user lookup
         import time
         db_query_start = time.time()
-        from utils.query_performance_monitor import QueryTimer, ConnectionTimer
-        from utils.user_cache import get_cached_user, cache_user
+        from utils.user_cache import get_cached_user
         from utils.connection_pool_monitor import pool_monitor
         from database import async_managed_session
         
@@ -603,11 +595,10 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         db_user = None
         
         # Import invalidate_user_cache at module level to avoid unbound reference
-        from utils.user_cache import invalidate_user_cache
         
         if cached_user_data:
             cache_start = time.time()
-            logger.info(f"⚡⚡⚡ CACHE_HIT: Complete bypass - skipping ALL DB lookups!")
+            logger.info("⚡⚡⚡ CACHE_HIT: Complete bypass - skipping ALL DB lookups!")
             
             # CRITICAL PERFORMANCE: Create user object from cache to completely skip DB
             from types import SimpleNamespace
@@ -617,7 +608,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             
             if needs_onboarding:
                 # Auto-complete onboarding - EMAIL VERIFICATION REMOVED
-                logger.info(f"🚀 Auto-completing onboarding for cached user - skipping onboarding flow")
+                logger.info("🚀 Auto-completing onboarding for cached user - skipping onboarding flow")
                 try:
                     from sqlalchemy import update as sql_update
                     from models import User as UserModel
@@ -626,7 +617,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                             sql_update(UserModel).where(UserModel.id == cached_user_data.get('id')).values(onboarding_completed=True)
                         )
                         await auto_session.commit()
-                    logger.info(f"✅ Auto-completed onboarding for cached user")
+                    logger.info("✅ Auto-completed onboarding for cached user")
                 except Exception as e:
                     logger.error(f"Error auto-completing onboarding: {e}")
                 
@@ -680,7 +671,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                     return ConversationHandler.END
                 else:
                     # Other deep links need DB access - fall through to DB path
-                    logger.info(f"🔗 Deep link requires DB - falling through to full lookup")
+                    logger.info("🔗 Deep link requires DB - falling through to full lookup")
                     cached_user_data = None  # Force cache MISS path
             else:
                 # FASTEST PATH: Show menu from cache WITHOUT any DB queries
@@ -715,12 +706,12 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
                 
                 # If helper successfully processed the user, return its result
                 if result is not None:
-                    logger.info(f"✅ Shared session helper completed successfully")
+                    logger.info("✅ Shared session helper completed successfully")
                     return result
                 
                 # If helper returned None (user not found), set db_user to None to trigger new user flow
                 db_user = None
-                logger.info(f"⚠️ Shared session helper returned None - treating as new user")
+                logger.info("⚠️ Shared session helper returned None - treating as new user")
                     
             except Exception as e:
                 pool_monitor.record_connection_acquisition(time.time() - connection_start, False)
@@ -1282,7 +1273,6 @@ async def show_help_from_onboarding_callback(
     await safe_answer_callback_query(query, "💡")
 
     # Simple help overview with fee info - COMPACT VERSION
-    from utils.fee_policy_messages import FeePolicyMessages
     help_text = f"""💡 Quick Guide
 
 🚀 Quick Exchange (under ${int(Config.SECURE_TRADE_THRESHOLD_USD)} USD)
@@ -1440,7 +1430,7 @@ async def show_main_menu_optimized(
         total_trades = int(result[2]) if result and len(result) > 2 and result[2] else 0
         pending_invitations = int(result[3]) if result and len(result) > 3 and result[3] else 0
         referral_count = int(result[4]) if result and len(result) > 4 and result[4] else 0
-        total_volume = float(result[5]) if result and len(result) > 5 and result[5] else 0.0
+        float(result[5]) if result and len(result) > 5 and result[5] else 0.0
         active_disputes = int(result[6]) if result and len(result) > 6 and result[6] else 0
 
         # Get trader level info in same session
@@ -1590,7 +1580,7 @@ async def show_main_menu_optimized_async(
         
         if cached_data and cache_timestamp and (current_time - cache_timestamp < cache_ttl):
             # CACHE HIT: Use cached menu data (0 queries)
-            logger.info(f"✅ MENU_CACHE_HIT: Using cached data (0 queries)")
+            logger.info("✅ MENU_CACHE_HIT: Using cached data (0 queries)")
             balance = cached_data.get('balance', 0.0)
             active_escrows = cached_data.get('active_escrows', 0)
             total_trades = cached_data.get('total_trades', 0)
@@ -1600,7 +1590,7 @@ async def show_main_menu_optimized_async(
             active_disputes = cached_data.get('active_disputes', 0)
         else:
             # CACHE MISS: Query database (1 query)
-            logger.info(f"ℹ️ MENU_CACHE_MISS: Fetching fresh data (1 query)")
+            logger.info("ℹ️ MENU_CACHE_MISS: Fetching fresh data (1 query)")
             from sqlalchemy import text
             
             query_start = time.time()
@@ -1881,8 +1871,7 @@ async def show_pending_invitation(
         # Note: CryptoService import removed as it's not being used
 
         # Get currency info
-        currency_emoji = CURRENCY_EMOJIS.get(str(escrow.currency), "💰")
-        network_info = f" ({escrow.network})" if escrow.network else ""
+        CURRENCY_EMOJIS.get(str(escrow.currency), "💰")
 
         text = f"""💰 Trade Invitation • #{escrow.escrow_id}
 
@@ -1997,7 +1986,7 @@ async def handle_view_pending_invitations(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> int:
     """Handle viewing pending invitations - redirects to My Trades (streamlined UX)"""
-    logger.info(f"🎯 handle_view_pending_invitations: Redirecting to My Trades")
+    logger.info("🎯 handle_view_pending_invitations: Redirecting to My Trades")
     
     # Redirect to My Trades instead of showing redundant invitations page
     from handlers.messages_hub import show_trades_messages_hub
@@ -2007,7 +1996,7 @@ async def handle_view_individual_invitation(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> int:
     """Handle viewing individual invitation from multiple invitations list"""
-    logger.info(f"🎯 handle_view_individual_invitation called!")
+    logger.info("🎯 handle_view_individual_invitation called!")
     
     query = update.callback_query
     if not query or not query.data:
@@ -2375,8 +2364,8 @@ async def handle_deep_link(
                         if not escrow:
                             logger.warning(f"🔒 SECURITY: User {db_user.id} attempted to rate non-existent escrow {escrow_id}")
                             await update.message.reply_text(
-                                f"❌ <b>Trade Not Found</b>\n\n"
-                                f"This trade does not exist or has been removed.",
+                                "❌ <b>Trade Not Found</b>\n\n"
+                                "This trade does not exist or has been removed.",
                                 parse_mode='HTML',
                                 reply_markup=InlineKeyboardMarkup([
                                     [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
@@ -2393,8 +2382,8 @@ async def handle_deep_link(
                                 f"escrow {escrow_id} but is NOT a participant (buyer: {escrow.buyer_id}, seller: {escrow.seller_id})"
                             )
                             await update.message.reply_text(
-                                f"❌ <b>Access Denied</b>\n\n"
-                                f"You can only rate trades you participated in.",
+                                "❌ <b>Access Denied</b>\n\n"
+                                "You can only rate trades you participated in.",
                                 parse_mode='HTML',
                                 reply_markup=InlineKeyboardMarkup([
                                     [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
@@ -2406,8 +2395,8 @@ async def handle_deep_link(
                         if escrow.status != EscrowStatus.COMPLETED:
                             logger.info(f"ℹ️ User {db_user.id} tried to rate incomplete escrow {escrow_id} (status: {escrow.status})")
                             await update.message.reply_text(
-                                f"❌ <b>Trade Not Completed</b>\n\n"
-                                f"You can only rate completed trades.",
+                                "❌ <b>Trade Not Completed</b>\n\n"
+                                "You can only rate completed trades.",
                                 parse_mode='HTML',
                                 reply_markup=InlineKeyboardMarkup([
                                     [InlineKeyboardButton("📋 View Trade", callback_data=f"view_trade_{escrow_id}")],
@@ -2434,8 +2423,8 @@ async def handle_deep_link(
                         if existing_rating:
                             logger.info(f"ℹ️ User {db_user.id} already rated escrow {escrow_id}")
                             await update.message.reply_text(
-                                f"ℹ️ <b>Already Rated</b>\n\n"
-                                f"You've already rated this trade. Thank you for your feedback!",
+                                "ℹ️ <b>Already Rated</b>\n\n"
+                                "You've already rated this trade. Thank you for your feedback!",
                                 parse_mode='HTML',
                                 reply_markup=InlineKeyboardMarkup([
                                     [InlineKeyboardButton("📋 View Trade", callback_data=f"view_trade_{escrow_id}")],
@@ -2532,7 +2521,7 @@ async def handle_continue_onboarding(
                 if db_user:
                     await show_main_menu(update, context, db_user)
                 else:
-                    await start_onboarding(update, context)
+                    await _start_onboarding_fallback(update, context)
             finally:
                 session.close()
 
@@ -2638,7 +2627,7 @@ async def handle_email_invitation_for_new_user(
             "email_invitation",
         ]:
             logger.info("Not an escrow invitation, proceeding with normal onboarding")
-            return await start_onboarding(update, context)
+            return await _start_onboarding_fallback(update, context)
 
         # Handle email invitation token format
         if parsed["type"] == "email_invitation":
@@ -2673,7 +2662,7 @@ async def handle_email_invitation_for_new_user(
                     "💡 Starting normal registration instead...",
                     parse_mode="Markdown",
                 )
-            return await start_onboarding(update, context)
+            return await _start_onboarding_fallback(update, context)
 
         # FIXED: Handle both email and phone invitations (not just email)
         escrow_seller_email = getattr(escrow, "seller_email", None)
@@ -2683,7 +2672,7 @@ async def handle_email_invitation_for_new_user(
             logger.error(
                 f"Escrow {getattr(escrow, 'escrow_id', 'unknown')} has no seller_email or seller_phone"
             )
-            return await start_onboarding(update, context)
+            return await _start_onboarding_fallback(update, context)
 
         seller_info = (
             getattr(escrow, "seller_email", None)
@@ -2750,7 +2739,7 @@ Ready to proceed?"""
 
     except Exception as e:
         logger.error(f"Error handling email invitation for new user: {e}")
-        return await start_onboarding(update, context)
+        return await _start_onboarding_fallback(update, context)
     finally:
         session.close()
 
@@ -3074,7 +3063,7 @@ async def handle_email_invitation_for_new_user_by_telegram(
         # Calculate seller's net amount and fee details
         base_amount = float(getattr(escrow, "amount", 0) or 0)
         seller_fee = float(getattr(escrow, "seller_fee_amount", 0) or 0)
-        buyer_fee = float(getattr(escrow, "buyer_fee_amount", 0) or 0)
+        float(getattr(escrow, "buyer_fee_amount", 0) or 0)
         fee_split = getattr(escrow, "fee_split_option", "split")
 
         # Determine fee text and seller payout

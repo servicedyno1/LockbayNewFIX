@@ -6,9 +6,8 @@ Replaces complex ConversationHandler with stateless database-driven approach
 import logging
 import hashlib
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from models import (
     User, OnboardingSession, OnboardingStep, EmailVerification, 
@@ -16,15 +15,12 @@ from models import (
 )
 from database import sync_managed_session
 from services.email import EmailService
-from utils.helpers import generate_utid
 from utils.helpers import validate_email
-from config import Config
 from caching.enhanced_cache import EnhancedCache
-from services.onboarding_performance_monitor import onboarding_perf_monitor, track_onboarding_performance
+from services.onboarding_performance_monitor import track_onboarding_performance
 
 # PERFORMANCE FIX: Initialize cache for onboarding operations
 _onboarding_cache = EnhancedCache(default_ttl=600, max_size=1000)
-from typing import Union
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +80,6 @@ class OnboardingService:
                 now = datetime.utcnow()
                 
                 # Single query to get both user status and active onboarding session
-                from sqlalchemy.orm import joinedload
                 from sqlalchemy import and_ as sql_and
                 
                 combined_query = session.query(User, OnboardingSession).outerjoin(

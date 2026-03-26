@@ -67,13 +67,13 @@ def require_financial_coordination(
                     logger.critical(f"   User ID: {user_id}")
                     logger.critical(f"   Redis Available: {state_manager.is_redis_available()}")
                     logger.critical(f"   Fallback Mode: {getattr(state_manager, '_fallback_mode', 'unknown')}")
-                    logger.critical(f"   Reason: Cannot safely coordinate financial operation")
+                    logger.critical("   Reason: Cannot safely coordinate financial operation")
                     
                     # Check if degraded mode is allowed
                     if enable_degraded_mode and state_manager._fallback_mode == "DB_BACKED":
                         logger.warning(f"🛡️ DEGRADED_MODE_ALLOWED: {operation_type} proceeding with database fallback")
                         logger.warning(f"   User ID: {user_id}")
-                        logger.warning(f"   Risk: Reduced coordination guarantees")
+                        logger.warning("   Risk: Reduced coordination guarantees")
                     else:
                         # Block the operation for safety
                         await _send_service_unavailable_message(update, context, operation_type, user_message)
@@ -112,7 +112,7 @@ def require_financial_coordination(
                 # Log unexpected errors but don't block (might be unrelated)
                 logger.error(f"❌ FINANCIAL_SECURITY_CHECK_ERROR: {operation_type} - {e}")
                 logger.error(f"   User ID: {user_id}")
-                logger.error(f"   Proceeding with operation (error unrelated to coordination)")
+                logger.error("   Proceeding with operation (error unrelated to coordination)")
                 
                 # Still execute the function - don't let security checks break unrelated functionality
                 return await func(*args, **kwargs)

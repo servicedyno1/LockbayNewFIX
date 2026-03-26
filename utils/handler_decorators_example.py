@@ -9,10 +9,7 @@ from telegram.ext import ContextTypes, ConversationHandler
 from utils.handler_decorators import (
     audit_handler,
     audit_admin_handler,
-    audit_escrow_handler,
-    audit_exchange_handler,
     audit_conversation_handler,
-    audit_wallet_handler,
     audit_dispute_handler,
     audit_callback_handler,
     audit_escrow_with_session,
@@ -29,7 +26,6 @@ from utils.handler_decorators import (
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start command handler with automatic logging"""
     user = update.effective_user
-    chat = update.effective_chat
     
     await update.message.reply_text(
         f"👋 Welcome to LockBay, {user.first_name}!\n"

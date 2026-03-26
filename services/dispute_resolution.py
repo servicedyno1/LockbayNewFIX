@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from models import Dispute, User, Escrow, EscrowStatus, DisputeStatus
 from services.crypto import CryptoServiceAtomic
-from utils.atomic_transactions import atomic_transaction, locked_escrow_operation, async_atomic_transaction, locked_escrow_operation_async
+from utils.atomic_transactions import locked_escrow_operation_async
 from utils.fee_calculator import FeeCalculator
 from utils.helpers import get_user_display_name
 from utils.escrow_state_validator import EscrowStateValidator
@@ -158,7 +158,7 @@ class DisputeResolutionService:
                     )
 
                 # Get seller name for description
-                seller_name = (
+                (
                     get_user_display_name(escrow.seller)
                     if escrow.seller
                     else "Unknown Seller"
@@ -387,7 +387,7 @@ class DisputeResolutionService:
                     )
 
                 # Get buyer name for description
-                buyer_name = (
+                (
                     get_user_display_name(escrow.buyer)
                     if escrow.buyer
                     else "Unknown Buyer"
@@ -638,12 +638,12 @@ class DisputeResolutionService:
                         seller_amount += difference
 
                 # Get names for descriptions
-                buyer_name = (
+                (
                     get_user_display_name(escrow.buyer)
                     if escrow.buyer
                     else "Unknown Buyer"
                 )
-                seller_name = (
+                (
                     get_user_display_name(escrow.seller)
                     if escrow.seller
                     else "Unknown Seller"

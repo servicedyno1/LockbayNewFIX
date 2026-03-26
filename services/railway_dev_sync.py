@@ -8,12 +8,10 @@ import os
 import asyncio
 import logging
 import subprocess
-import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
 from sqlalchemy import text, create_engine
-from database import get_async_session
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +199,7 @@ class RailwayDevSync:
                 'lock_timeout'
             ]
             
-            logger.info(f"🧹 Cleaning dump file to remove incompatible parameters...")
+            logger.info("🧹 Cleaning dump file to remove incompatible parameters...")
             
             with open(dump_file, 'r') as f_in:
                 with open(cleaned_file, 'w') as f_out:
@@ -228,7 +226,6 @@ class RailwayDevSync:
     async def restore_to_dev(self, dump_file: Path) -> bool:
         """Restore SQL dump to development database with automatic rollback on failure"""
         safety_backup = None
-        restore_failed = False
         
         try:
             logger.info(f"📥 Restoring {dump_file.name} to Development DB...")
@@ -295,7 +292,6 @@ class RailwayDevSync:
             if result.returncode != 0:
                 logger.error(f"❌ psql restore failed: {result.stderr}")
                 logger.error(f"📋 Restore stdout: {result.stdout}")
-                restore_failed = True
                 
                 # CRITICAL: Restore from safety backup to avoid empty database
                 if safety_backup and safety_backup.exists():
@@ -313,7 +309,6 @@ class RailwayDevSync:
             # Verify restore
             if not await self.verify_dev_restore():
                 logger.error("❌ Restore verification failed")
-                restore_failed = True
                 
                 # Restore from safety backup
                 if safety_backup and safety_backup.exists():
@@ -330,7 +325,6 @@ class RailwayDevSync:
             
         except Exception as e:
             logger.error(f"❌ Development restore failed with exception: {e}")
-            restore_failed = True
             
             # CRITICAL: Restore from safety backup
             if safety_backup and safety_backup.exists():

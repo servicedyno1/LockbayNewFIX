@@ -11,7 +11,6 @@ import signal
 import socket
 import psutil
 import logging
-from typing import Optional
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -111,7 +110,7 @@ class ProcessManager:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                result = sock.bind((host, port))
+                sock.bind((host, port))
                 logger.info(f"Port {port} is available")
                 return True
         except OSError as e:

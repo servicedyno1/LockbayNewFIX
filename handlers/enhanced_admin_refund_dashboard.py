@@ -4,20 +4,16 @@ Comprehensive real-time monitoring and analytics interface for refund operations
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from datetime import datetime
+from typing import Dict, Any
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from database import SessionLocal
-from models import Refund, RefundType, RefundStatus, User
 from services.refund_analytics_service import refund_analytics_service, AnalyticsPeriod
 from utils.refund_progress_tracker import real_time_refund_tracker
-from utils.refund_status_tracking import refund_status_tracker
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 from utils.admin_security import is_admin_secure
-from utils.markdown_escaping import escape_markdown
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -246,7 +242,7 @@ class EnhancedAdminRefundDashboard:
             if patterns:
                 analytics_text += "\n🔍 **Detected Patterns:**\n"
                 for pattern in patterns[:3]:  # Top 3 patterns
-                    pattern_type = pattern.get("pattern_type", "unknown")
+                    pattern.get("pattern_type", "unknown")
                     description = pattern.get("description", "")
                     impact_score = pattern.get("impact_score", 0)
                     
@@ -405,7 +401,7 @@ class EnhancedAdminRefundDashboard:
             summary = metrics.get("summary", {})
             
             # Build performance message
-            perf_text = f"""⚡ **Refund Performance Metrics (24 Hours)**
+            perf_text = """⚡ **Refund Performance Metrics (24 Hours)**
 
 🕐 **Processing Times:**
 """
@@ -583,7 +579,7 @@ class EnhancedAdminRefundDashboard:
                 component_display = component.replace("_", " ").title()
                 alerts_text += f"{status_emoji} {component_display}: {status.title()}\n"
             
-            alerts_text += f"\n🔄 **Auto-refresh:** Every 30 seconds"
+            alerts_text += "\n🔄 **Auto-refresh:** Every 30 seconds"
             
             # Create alerts keyboard
             keyboard = [

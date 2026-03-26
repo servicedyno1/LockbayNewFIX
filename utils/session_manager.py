@@ -5,9 +5,8 @@ Provides safe, async-ready session handling patterns
 
 import logging
 from contextlib import asynccontextmanager, contextmanager
-from typing import Generator, Optional, Any, Dict, List
+from typing import Generator, Optional, Any, Dict
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 from database import SessionLocal
 from utils.atomic_transactions import atomic_transaction
 

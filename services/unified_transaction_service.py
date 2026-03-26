@@ -15,62 +15,37 @@ Key distinctions:
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Union, Tuple
-from decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime, timedelta
-from enum import Enum
-import asyncio
-from dataclasses import dataclass, asdict
-from contextlib import asynccontextmanager
-import json
+from typing import Dict, Any, Optional, List, Union
+from decimal import Decimal
+from datetime import datetime
+from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, or_, func
 
-from database import managed_session, async_managed_session, get_db_session
+from database import managed_session, async_managed_session
 from models import (
-    Base, User, UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
-    UnifiedTransactionStatusHistory, UnifiedTransactionRetryLog, UnifiedTransactionPriority,
-    FundMovementType, TransactionType, CashoutStatus, EscrowStatus, ExchangeStatus,
-    Wallet, WalletHolds, WalletHoldStatus, Cashout, Escrow, ExchangeOrder
+    UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
+    UnifiedTransactionPriority,
+    CashoutStatus, EscrowStatus, ExchangeStatus,
+    Cashout, Escrow, ExchangeOrder
 )
 
 # Import existing services
 from services.conditional_otp_service import ConditionalOTPService
 from services.dual_write_adapter import DualWriteAdapter, DualWriteConfig, DualWriteMode, DualWriteStrategy
-from services.crypto import CryptoServiceAtomic
-from services.wallet_service import WalletService
-from services.fincra_service import fincra_service
-from services.kraken_service import kraken_service
-from services.fastforex_service import fastforex_service
 
 # Import utilities
-from utils.helpers import generate_utid
-from utils.atomic_transactions import atomic_transaction
-from utils.financial_audit_logger import (
-    financial_audit_logger,
-    FinancialEventType,
-    FinancialContext,
-    EntityType
-)
 
 # Import centralized status flows and validation
 from utils.status_flows import (
     unified_transition_validator,
-    unified_status_flows,
-    validate_unified_transition,
-    get_allowed_next_statuses,
-    is_terminal_transaction_status,
-    get_transaction_status_phase,
-    TransitionValidationResult
+    unified_status_flows
 )
 
 # Import StatusUpdateFacade for centralized status management
 from utils.status_update_facade import (
     StatusUpdateFacade,
     StatusUpdateRequest,
-    StatusUpdateResult,
     StatusUpdateContext
 )
 
@@ -667,7 +642,7 @@ class UnifiedTransactionService:
             logger.error(f"Error getting transaction status: {e}")
             return None
     
-    async def get_allowed_next_statuses(self, 
+    async def get_allowed_next_statuses_for_transaction(self, 
                                       transaction_id: str) -> List[str]:
         """Get allowed next statuses for a transaction"""
         try:

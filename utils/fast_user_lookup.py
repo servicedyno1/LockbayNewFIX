@@ -12,10 +12,9 @@ SECURITY POLICY:
 import logging
 import time
 import threading
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 from collections import OrderedDict
 from models import User
-from database import managed_session
 from utils.database_pool_manager import database_pool
 
 logger = logging.getLogger(__name__)

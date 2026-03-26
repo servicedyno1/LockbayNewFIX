@@ -5,7 +5,6 @@ Integrates all production-level monitoring components for comprehensive system o
 
 import logging
 import asyncio
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +48,7 @@ def _initialize_anomaly_detection():
     try:
         from utils.production_anomaly_detector import ProductionAnomalyDetector
         # Create global instance for anomaly detection
-        detector = ProductionAnomalyDetector()
+        ProductionAnomalyDetector()
         logger.info("✅ Production anomaly detection initialized")
     except Exception as e:
         logger.warning(f"Anomaly detection initialization failed: {e}")
@@ -69,7 +68,7 @@ def _initialize_production_validation():
     """Initialize production validation systems"""
     try:
         from utils.production_validator import ProductionValidator
-        validator = ProductionValidator()
+        ProductionValidator()
         logger.info("✅ Production validation systems initialized")
     except Exception as e:
         logger.warning(f"Production validation initialization failed: {e}")

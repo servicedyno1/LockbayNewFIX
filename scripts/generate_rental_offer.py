@@ -8,7 +8,6 @@ from reportlab.lib.enums import TA_LEFT, TA_JUSTIFY
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib import colors
 import os
 
 def create_rental_offer_pdf():

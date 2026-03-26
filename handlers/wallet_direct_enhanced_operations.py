@@ -5,23 +5,19 @@ for critical wallet operations like balance updates and cashout processing
 """
 
 import logging
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any
 from decimal import Decimal
-from datetime import datetime, timedelta
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from datetime import datetime
+from telegram import Update
 from telegram.ext import ContextTypes
 
 # Core imports
-from database import SessionLocal
-from models import User, Wallet, Cashout, CashoutStatus, TransactionType
-from config import Config
+from models import Cashout, CashoutStatus
 
 # Enhanced state management imports
 from utils.session_migration_helper import session_migration_helper
 from utils.financial_operation_locker import financial_locker, FinancialLockType
 from utils.enhanced_db_session_manager import enhanced_db_session_manager
-from utils.callback_utils import safe_edit_message_text
-from utils.branding_utils import make_header, format_branded_amount
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +62,7 @@ async def process_wallet_cashout_enhanced(
         async with enhanced_db_session_manager.managed_session(
             operation_name=f"wallet_cashout_{operation_id}",
             timeout_seconds=30
-        ) as db_session:
+        ):
             
             # Use financial operation locker for atomic operations
             async with financial_locker.atomic_financial_operation(

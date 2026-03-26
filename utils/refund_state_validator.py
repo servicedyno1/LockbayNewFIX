@@ -8,7 +8,6 @@ Validates all status changes to prevent invalid transitions like COMPLETED -> PE
 
 import logging
 from typing import Dict, Set, Optional, Tuple
-from enum import Enum
 from models import RefundStatus
 
 logger = logging.getLogger(__name__)

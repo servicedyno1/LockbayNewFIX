@@ -293,8 +293,6 @@ class AdminEmailActionService:
         """Resolve dispute from email button click"""
         try:
             from services.dispute_resolution import DisputeResolutionService
-            from database import SessionLocal
-            from models import Dispute
             
             # Validate and consume token atomically
             token_result = await cls.atomic_consume_admin_token(
@@ -365,7 +363,7 @@ class AdminEmailActionService:
     async def complete_cashout_from_email(cls, cashout_id: str, admin_email: str = "admin@lockbay.com", admin_user_id: Optional[int] = None) -> Dict[str, Any]:
         """Complete a cashout that was triggered from admin email button using atomic transactions"""
         try:
-            from utils.atomic_transactions import AtomicAdminActionManager, IdempotencyManager
+            from utils.atomic_transactions import AtomicAdminActionManager
             from models import CashoutStatus
             
             # Use atomic admin action transaction
@@ -612,7 +610,7 @@ class AdminEmailActionService:
                 
                 # Create unified transaction record for audit trail
                 # NOTE: UnifiedTransactionService.create_transaction not available, using wallet transaction instead
-                logger.info(f"✅ Cashout cancellation completed - transaction logged via wallet credit operation")
+                logger.info("✅ Cashout cancellation completed - transaction logged via wallet credit operation")
                 
                 logger.info(f"✅ ATOMIC_ADMIN_CANCEL_SUCCESS: Successfully cancelled cashout {cashout_id} via email and processed refund")
                 
@@ -720,7 +718,7 @@ class AdminEmailActionService:
                     logger.info(f"🔄 NGN_REFUND_CONVERSION: {original_amount} NGN -> {float(original_crypto_amount)} {source_currency} (rate: {locked_rate})")
                     
                     # Refund in original crypto currency
-                    with context.lock_user_wallet(source_currency) as crypto_wallet:
+                    with context.lock_user_wallet(source_currency):
                         refund_success = await CryptoServiceAtomic.credit_user_wallet_atomic(
                             user_id=cashout.user_id,
                             amount=float(original_crypto_amount),
@@ -763,7 +761,7 @@ class AdminEmailActionService:
                         logger.error(f"Error getting current exchange rate: {e}")
                         usd_equivalent = original_amount / 1520  # Emergency fallback
                     
-                    with context.lock_user_wallet("USD") as usd_wallet:
+                    with context.lock_user_wallet("USD"):
                         refund_success = await CryptoServiceAtomic.credit_user_wallet_atomic(
                             user_id=cashout.user_id,
                             amount=usd_equivalent,
@@ -797,7 +795,7 @@ class AdminEmailActionService:
                 # Determine refund currency (cashout currency for crypto)
                 refund_currency = cashout_currency
                 
-                with context.lock_user_wallet(refund_currency) as crypto_wallet:
+                with context.lock_user_wallet(refund_currency):
                     refund_success = await CryptoServiceAtomic.credit_user_wallet_atomic(
                         user_id=cashout.user_id,
                         amount=original_amount,
@@ -826,7 +824,7 @@ class AdminEmailActionService:
                 # Unknown cashout type - default to USD
                 logger.warning(f"⚠️ UNKNOWN_CASHOUT_TYPE: Unknown type '{cashout_type}' for {cashout_id}, defaulting to USD refund")
                 
-                with context.lock_user_wallet("USD") as usd_wallet:
+                with context.lock_user_wallet("USD"):
                     refund_success = await CryptoServiceAtomic.credit_user_wallet_atomic(
                         user_id=cashout.user_id,
                         amount=original_amount,
@@ -887,7 +885,6 @@ class AdminEmailActionService:
     async def _send_enhanced_user_notification(cls, cashout_id: str, user, cashout, refund_amount: float, refund_currency: str):
         """Send enhanced user notification using wallet_notification_service.py"""
         try:
-            from services.wallet_notification_service import WalletNotificationService
             from config import Config
             
             # Format the refund message based on cashout type
@@ -927,7 +924,7 @@ class AdminEmailActionService:
                 )
                 logger.info(f"✅ Enhanced Telegram notification sent to user {user.id} for {cashout_id}")
             else:
-                logger.warning(f"⚠️ No bot application available for Telegram notification")
+                logger.warning("⚠️ No bot application available for Telegram notification")
             
             # Send email notification if user has email
             if user.email and user.email.strip():
@@ -1240,10 +1237,8 @@ Funds returned to wallet successfully.
             try:
                 user = session.query(User).filter_by(id=user_id).first()
                 if user:
-                    user_name = user.first_name or user.username or f"User #{user_id}"
                     user_email = user.email
                 else:
-                    user_name = f"User #{user_id}"
                     user_email = None
             finally:
                 session.close()
@@ -1622,7 +1617,6 @@ Manual intervention required. Check system logs and user account state.
         """Send emergency alert to admin for critical failures"""
         try:
             from services.email import EmailService
-            from config import Config
             
             email_service = EmailService()
             admin_email = "moxxcompany@gmail.com"
@@ -1677,10 +1671,9 @@ class AdminDisputeEmailService:
         """Send comprehensive dispute resolution email to admin"""
         try:
             from database import SessionLocal
-            from models import Dispute, Escrow, User, DisputeMessage
+            from models import Dispute, User, DisputeMessage
             from services.email import EmailService
             from config import Config
-            from sqlalchemy import desc
             
             session = SessionLocal()
             try:
@@ -1918,7 +1911,7 @@ class AdminDisputeEmailService:
                 
                 # Send email
                 email_service = EmailService()
-                result = email_service.send_email(
+                email_service.send_email(
                     to_email=admin_email,
                     subject=subject,
                     html_content=html_content,
@@ -2003,8 +1996,6 @@ class AdminDisputeEmailService:
                     return {"success": False, "error": "No admin user found"}
                 
                 # Get buyer and seller IDs for notifications
-                buyer_id = dispute.escrow.buyer_id
-                seller_id = dispute.escrow.seller_id
                 
             # Process resolution using existing atomic service (creates its own session)
             result = await DisputeResolutionService.resolve_refund_to_buyer(
@@ -2117,8 +2108,6 @@ class AdminDisputeEmailService:
                     return {"success": False, "error": "No admin user found"}
                 
                 # Get buyer and seller IDs for notifications
-                buyer_id = dispute.escrow.buyer_id
-                seller_id = dispute.escrow.seller_id
                 
             # Process resolution using existing atomic service (creates its own session)
             result = await DisputeResolutionService.resolve_release_to_seller(
@@ -2222,7 +2211,7 @@ class AdminDisputeEmailService:
                                        amount: float, buyer_id: int, seller_id: int):
         """Notify both parties about dispute resolution with unified rating flow"""
         try:
-            from models import User, Dispute, Escrow
+            from models import User, Dispute
             from database import SessionLocal
             
             session = SessionLocal()
@@ -2294,9 +2283,7 @@ class AdminDisputeEmailService:
             
             from database import async_managed_session
             from models import Dispute, User, EscrowStatus, DisputeStatus
-            from services.dispute_resolution import DisputeResolutionService
             from services.crypto import CryptoServiceAtomic
-            from models import TransactionType
             from datetime import datetime
             from sqlalchemy import select
             from sqlalchemy.orm import selectinload
@@ -2995,8 +2982,6 @@ class AdminDisputeEmailService:
     @classmethod
     def generate_auto_resolution_token(cls, dispute_id: str) -> str:
         """Generate a special token for auto-resolution that bypasses normal validation"""
-        import hmac
-        import time
         
         # Create special auto-resolution token with extended validity
         timestamp = int(time.time())
@@ -3339,7 +3324,6 @@ class AdminDisputeEmailService:
                 # Send user notification (bot + email) for successful admin retry
                 try:
                     from services.withdrawal_notification_service import WithdrawalNotificationService
-                    from decimal import Decimal
                     
                     notification_service = WithdrawalNotificationService()
                     

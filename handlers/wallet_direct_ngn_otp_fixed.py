@@ -2,13 +2,11 @@
 Fixed NGN OTP Verification Handler with all critical correctness gaps addressed
 """
 
-from decimal import Decimal
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from database import SessionLocal
 from models import User, SavedBankAccount, Cashout, CashoutType
 from utils.decimal_precision import MonetaryDecimal
-from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 import logging
 
 logger = logging.getLogger(__name__)

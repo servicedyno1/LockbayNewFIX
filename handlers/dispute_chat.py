@@ -5,18 +5,17 @@ Restoration of the full-featured dispute management interface
 
 import logging
 import html
-from typing import Optional, Dict, Set, TYPE_CHECKING
+from typing import Dict
 from datetime import datetime, timedelta
 from decimal import Decimal
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.error import TelegramError
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import desc, func, or_
+from sqlalchemy import desc, or_
 
-from database import SessionLocal, engine, async_managed_session
+from database import SessionLocal, async_managed_session
 from models import (
-    Dispute, DisputeMessage, DisputeStatus, Escrow, EscrowMessage,
+    Dispute, DisputeMessage, Escrow, EscrowMessage,
     User, EscrowStatus
 )
 from utils.dispute_prefetch import (
@@ -26,13 +25,12 @@ from utils.dispute_prefetch import (
     invalidate_dispute_cache
 )
 from utils.admin_security import is_admin_secure, is_admin_silent
-from utils.helpers import get_user_display_name
 from utils.exception_handler import ValidationError
 from handlers.multi_dispute_manager import dispute_manager
 from utils.comprehensive_audit_logger import (
-    ComprehensiveAuditLogger, AuditEventType, AuditLevel, RelatedIDs, PayloadMetadata
+    ComprehensiveAuditLogger, AuditEventType, RelatedIDs, PayloadMetadata
 )
-from utils.handler_decorators import audit_handler, audit_dispute_handler
+from utils.handler_decorators import audit_dispute_handler
 from utils.callback_utils import safe_answer_callback_query
 
 # Initialize communication audit logger
@@ -47,7 +45,6 @@ async def safe_edit_message_text(query, text, parse_mode=None, reply_markup=None
         logger.error(f"Failed to edit message: {e}")
 
 
-from services.dispute_resolution import DisputeResolutionService
 
 logger = logging.getLogger(__name__)
 
@@ -961,7 +958,7 @@ async def process_dispute_message(update: Update, context: ContextTypes.DEFAULT_
                             )
                             
                             # Build admin notification with full context
-                            admin_text = f"⚖️ New Dispute Message\n\n"
+                            admin_text = "⚖️ New Dispute Message\n\n"
                             admin_text += f"📋 Dispute: #{dispute.id}\n"
                             admin_text += f"💰 Trade: #{escrow.escrow_id[:12]} (${float(escrow.amount):.2f})\n"
                             admin_text += f"👤 Latest From: {sender_role}\n\n"
@@ -998,7 +995,7 @@ async def process_dispute_message(update: Update, context: ContextTypes.DEFAULT_
                             # FIX: Log completion summary
                             logger.info(f"📊 ADMIN_TELEGRAM_COMPLETE: Sent {telegram_notification_count}/{len(admin_ids)} Telegram notifications successfully")
                         else:
-                            logger.error(f"❌ TELEGRAM_BOT_UNAVAILABLE: Application or bot instance not available for admin notifications")
+                            logger.error("❌ TELEGRAM_BOT_UNAVAILABLE: Application or bot instance not available for admin notifications")
                     except Exception as e:
                         logger.error(f"❌ ADMIN_TELEGRAM_CRITICAL_ERROR: Failed to notify admins via Telegram: {e}", exc_info=True)
                     
@@ -1071,7 +1068,7 @@ async def process_dispute_message(update: Update, context: ContextTypes.DEFAULT_
                             else:
                                 logger.error(f"❌ ADMIN_EMAIL_QUEUE_FAILED: Failed to queue admin email: {queue_result.get('error')}")
                         else:
-                            logger.info(f"ℹ️ ADMIN_EMAIL_DISABLED: Admin email alerts disabled in configuration")
+                            logger.info("ℹ️ ADMIN_EMAIL_DISABLED: Admin email alerts disabled in configuration")
                             
                     except Exception as email_error:
                         logger.error(f"❌ ADMIN_EMAIL_CRITICAL_ERROR: Failed to queue admin email notification: {email_error}", exc_info=True)
@@ -1406,7 +1403,7 @@ async def handle_admin_resolve_buyer(update: Update, context: ContextTypes.DEFAU
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("✅ Confirm Refund", callback_data=f"admin_confirm_refund:{dispute_id}"),
-                    InlineKeyboardButton("❌ Cancel", callback_data=f"admin_dispute_chat_live")
+                    InlineKeyboardButton("❌ Cancel", callback_data="admin_dispute_chat_live")
                 ]
             ])
         )
@@ -1446,7 +1443,7 @@ async def handle_admin_resolve_seller(update: Update, context: ContextTypes.DEFA
         
         await query.edit_message_text(
             f"⚖️ Dispute Resolution: Release to Seller\n\n"
-            f"🆔 ID: {dispute.id}\n"
+            f"🆔 ID: {dispute_id}\n"
             f"💰 Action: Releasing escrow amount to seller\n"
             f"👤 Resolved by: Admin {user.first_name}\n\n"
             f"⚠️ This action is irreversible\n"
@@ -1455,7 +1452,7 @@ async def handle_admin_resolve_seller(update: Update, context: ContextTypes.DEFA
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("✅ Confirm Release", callback_data=f"admin_confirm_release:{dispute_id}"),
-                    InlineKeyboardButton("❌ Cancel", callback_data=f"admin_dispute_chat_live")
+                    InlineKeyboardButton("❌ Cancel", callback_data="admin_dispute_chat_live")
                 ]
             ])
         )
@@ -1515,7 +1512,7 @@ async def handle_admin_full_chat(update: Update, context: ContextTypes.DEFAULT_T
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("🔙 Back to Chat", callback_data=f"admin_dispute_chat_live"),
+                    InlineKeyboardButton("🔙 Back to Chat", callback_data="admin_dispute_chat_live"),
                     InlineKeyboardButton("⚖️ Disputes", callback_data="admin_disputes")
                 ]
             ])
@@ -1610,7 +1607,7 @@ async def handle_admin_confirm_refund(update: Update, context: ContextTypes.DEFA
         await safe_answer_callback_query(query, "⚡ Executing refund...")
         
         from database import SessionLocal
-        from models import Dispute, Escrow, EscrowStatus
+        from models import Dispute, Escrow
         
         session = SessionLocal()
         try:
@@ -1735,7 +1732,7 @@ async def handle_admin_confirm_release(update: Update, context: ContextTypes.DEF
         await safe_answer_callback_query(query, "⚡ Executing release...")
         
         from database import SessionLocal
-        from models import Dispute, Escrow, EscrowStatus
+        from models import Dispute, Escrow
         
         session = SessionLocal()
         try:
@@ -1811,7 +1808,7 @@ async def handle_admin_confirm_release(update: Update, context: ContextTypes.DEF
                 ])
             )
             
-        except Exception as e:
+        except Exception:
             # Handle any session cleanup if needed
             pass
         
@@ -2052,7 +2049,7 @@ async def handle_admin_split_confirm(update: Update, context: ContextTypes.DEFAU
         dispute_internal_id = int(parts[2])
         seller_percent = 100 - buyer_percent
         
-        await safe_answer_callback_query(query, f"⚖️ Preparing split confirmation...")
+        await safe_answer_callback_query(query, "⚖️ Preparing split confirmation...")
         
         # Get dispute and escrow details
         session = SessionLocal()

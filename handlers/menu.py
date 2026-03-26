@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 from database import get_session
 from models import User, Escrow
-from sqlalchemy import or_, and_, text, select
+from sqlalchemy import or_, text, select
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,6 @@ async def show_hamburger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE
             logger.warning(f"Could not clear universal sessions in hamburger menu: {e}")
 
     # IMPROVED: Context-aware menu message based on user state
-    from database import get_session
     from models import User
     from utils.session_reuse_manager import get_reusable_session
     
@@ -98,7 +97,6 @@ async def show_hamburger_menu(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def handle_main_menu_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle main menu navigation with onboarding protection - shows normal main menu instead of hamburger menu"""
-    from database import get_session
     from models import User
     from handlers.start import show_main_menu_optimized
     from utils.session_reuse_manager import get_reusable_session

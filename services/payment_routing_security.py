@@ -4,12 +4,19 @@ Addresses Issue #6: Sequential Table Checking - prevents same payment matching m
 """
 
 import logging
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Optional, Tuple
+from datetime import datetime
 from decimal import Decimal
 from database import SessionLocal
 from models import ExchangeOrder, ExpectedPayment
 
 logger = logging.getLogger(__name__)
+
+# Try to import DirectExchange, but gracefully handle if it doesn't exist
+try:
+    from models import DirectExchange
+except ImportError:
+    DirectExchange = None
 
 class PaymentRoutingSecurityService:
     """Service to securely route payments to correct order types without double-matching"""

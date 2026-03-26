@@ -5,18 +5,15 @@ Ensures data consistency and proper error recovery in distributed transactions
 """
 
 import asyncio
-import json
 import logging
 import uuid
-from typing import Any, Dict, List, Optional, Callable, Tuple, Union
+from typing import Any, Dict, List, Optional
 from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 from enum import Enum
-import traceback
 
 from services.state_manager import state_manager
 from services.idempotency_service import IdempotencyService, OperationType
-from utils.atomic_transactions import atomic_transaction
 from config import Config
 
 logger = logging.getLogger(__name__)

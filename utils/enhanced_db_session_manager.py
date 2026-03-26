@@ -7,22 +7,16 @@ Provides connection pooling, session tracking, and automatic recovery
 import logging
 import time
 import asyncio
-from typing import Optional, Dict, Any, List, Callable, AsyncContextManager
+from typing import Optional, Dict, Any, AsyncContextManager
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import Enum
 
-from sqlalchemy import create_engine, text, event
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import QueuePool, NullPool
-from sqlalchemy.exc import (
-    SQLAlchemyError, DisconnectionError, OperationalError, 
-    DatabaseError, TimeoutError as SQLTimeoutError
-)
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 # ASYNC FIX: Remove direct sync engine import
 # from database import engine
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +217,7 @@ class EnhancedDBSessionManager:
                 test_session.execute(text("SELECT 1"))
                 test_session.commit()
             
-            logger.debug(f"🏢 Connection pool health check passed")
+            logger.debug("🏢 Connection pool health check passed")
             return True
             
         except Exception as e:
@@ -341,9 +335,9 @@ class EnhancedDBSessionManager:
             from database import managed_session as sync_managed_session
             with sync_managed_session() as session:
                 # Simple sync test query
-                result = session.execute(text("SELECT 1 as test"))
+                session.execute(text("SELECT 1 as test"))
                 session.commit()
-                logger.debug(f"🟢 Database health check passed")
+                logger.debug("🟢 Database health check passed")
                 return True
             
         except Exception as e:

@@ -4,16 +4,14 @@ Comprehensive observability and control for the cashout retry system
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
-from typing import Optional, Dict, Any
 
 from utils.admin_security import is_admin_secure
 from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
 from services.cashout_retry_metrics import RetryMetricsService
-from services.cashout_retry_service import cashout_retry_service
 from database import managed_session
 from models import Cashout, CashoutStatus, CashoutFailureType
 

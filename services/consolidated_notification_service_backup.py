@@ -4,7 +4,6 @@ Provides unified notification functionality for the escrow platform
 """
 
 import logging
-from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -91,11 +90,11 @@ class ConsolidatedNotificationService:
             if Config.BOT_TOKEN and user_data['buyer_telegram_id']:
                 try:
                     # Create compact mobile-friendly notification message
-                    message = f"📦 **Item Delivered**\n\n"
+                    message = "📦 **Item Delivered**\n\n"
                     message += f"**Trade #{user_data['escrow_id'][-6:]}** • ${user_data['amount']:.2f} USD\n"
                     message += f"Seller: {user_data['seller_name']}\n\n"
-                    message += f"✅ Item marked as delivered\n"
-                    message += f"Please release funds to complete"
+                    message += "✅ Item marked as delivered\n"
+                    message += "Please release funds to complete"
                     
                     # Create compact mobile-responsive action buttons
                     keyboard = [

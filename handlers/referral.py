@@ -12,8 +12,7 @@ from utils.callback_utils import safe_answer_callback_query, safe_edit_message_t
 from utils.referral_prefetch import (
     prefetch_referral_context,
     get_cached_referral_data,
-    cache_referral_data,
-    invalidate_referral_cache
+    cache_referral_data
 )
 
 logger = logging.getLogger(__name__)

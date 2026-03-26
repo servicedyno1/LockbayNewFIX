@@ -560,14 +560,17 @@ Your escrow payment is confirmed successfully!"""
                 parse_mode="Markdown",
             )
 
-        except (ValueError, AmountValidationError) as e:
+        except ValueError:
             # Provide specific error message for invalid amounts
-            error_msg = str(e) if isinstance(e, AmountValidationError) else "Invalid amount format"
+            error_msg = "Invalid amount format"
             
-            await update.message.reply_text(
-                f"❌ {error_msg}\n\n{SecureAmountParser.get_format_examples()}",
-                parse_mode='Markdown'
-            )
+            try:
+                await query.edit_message_text(
+                    f"❌ {error_msg}",
+                    parse_mode='Markdown'
+                )
+            except Exception:
+                pass
             return
             
         except Exception as e:
@@ -600,7 +603,7 @@ Your escrow payment is confirmed successfully!"""
 
         try:
             # SECURITY FIX: Use secure parser instead of dangerous .replace(",", "")
-            from utils.secure_amount_parser import SecureAmountParser, AmountValidationError
+            from utils.secure_amount_parser import SecureAmountParser
             
             input_text = update.message.text.strip()
             amount_decimal, validation_msg = SecureAmountParser.validate_and_parse(input_text, "$")
@@ -645,9 +648,9 @@ Your escrow payment is confirmed successfully!"""
                 "purpose": "wallet_funding",
             }
 
-            markup_amount = Decimal(str(markup_info['markup_amount'] or 0))
-            markup_percentage = Decimal(str(markup_info['markup_percentage'] or 0))
-            final_amount = Decimal(str(markup_info['final_amount'] or 0))
+            Decimal(str(markup_info['markup_amount'] or 0))
+            Decimal(str(markup_info['markup_percentage'] or 0))
+            Decimal(str(markup_info['final_amount'] or 0))
             
             text = f"""💰 Confirm NGN Wallet Funding
 

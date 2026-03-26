@@ -5,16 +5,14 @@ Real-time monitoring and management interface for refund operations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from utils.refund_monitor import refund_monitor
-from utils.refund_status_tracking import refund_status_tracker
 from utils.callback_utils import safe_answer_callback_query
-from models import RefundType, RefundStatus
-from database import SessionLocal, async_managed_session
-from sqlalchemy import func, and_, select
+from models import RefundStatus
+from database import async_managed_session
+from sqlalchemy import select
 from models import Refund
 
 logger = logging.getLogger(__name__)
@@ -40,7 +38,7 @@ class AdminRefundDashboard:
             total_refunds = sum(metrics.get("refund_counts", {}).values())
             total_amount = sum(metrics.get("refund_amounts", {}).values())
             
-            dashboard_text += f"📊 **Last 24 Hours Overview:**\n"
+            dashboard_text += "📊 **Last 24 Hours Overview:**\n"
             dashboard_text += f"• Total Refunds: {total_refunds}\n"
             dashboard_text += f"• Total Amount: ${total_amount:,.2f}\n\n"
             
@@ -57,7 +55,7 @@ class AdminRefundDashboard:
                 dashboard_text += "✅ **Success Rates:**\n"
                 for refund_type, rates in metrics["success_rates"].items():
                     completed_rate = rates.get("completed", 0)
-                    failed_rate = rates.get("failed", 0)
+                    rates.get("failed", 0)
                     dashboard_text += f"• {refund_type}: {completed_rate:.1f}% success\n"
                 dashboard_text += "\n"
             
@@ -138,7 +136,6 @@ class AdminRefundDashboard:
                 weekly_stats = weekly_stats_result.fetchall()
                 
                 # Processing time stats (if we had this data)
-                avg_processing_times = {}  # Would calculate from metrics
                 
                 stats_text = "📊 **DETAILED REFUND STATISTICS**\n\n"
                 stats_text += "📅 **Last 7 Days Breakdown:**\n\n"

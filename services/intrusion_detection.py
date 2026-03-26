@@ -12,7 +12,6 @@ import json
 from collections import defaultdict, deque
 from telegram import Update
 from telegram.ext import ContextTypes
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, func
 from database import async_managed_session
@@ -212,9 +211,9 @@ class IntrusionDetectionSystem:
             text_to_check.append(update.callback_query.data)
 
         # Check for injection patterns
-        for text in text_to_check:
+        for check_text in text_to_check:
             for pattern in self.injection_patterns:
-                if re.search(pattern, text, re.IGNORECASE):
+                if re.search(pattern, check_text, re.IGNORECASE):
                     return SecurityEvent(
                         event_id=f"injection_{int(datetime.utcnow().timestamp())}",
                         timestamp=datetime.utcnow(),

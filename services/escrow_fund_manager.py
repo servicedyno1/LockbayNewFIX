@@ -7,7 +7,6 @@ import asyncio
 import logging
 from decimal import Decimal
 from models import Wallet, PlatformRevenue
-from utils.financial_operation_locker import simple_locker
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ class EscrowFundManager:
             dict with success status and cleanup details
         """
         from models import EscrowHolding, Escrow, Wallet
-        from sqlalchemy import select, update
+        from sqlalchemy import select
         from sqlalchemy.ext.asyncio import AsyncSession
         from datetime import datetime
         
@@ -146,11 +145,7 @@ class EscrowFundManager:
         5. Verifies holding creation
         6. Returns proper success/failure based on verification
         """
-        from models import EscrowHolding, Escrow, Transaction, TransactionType, Wallet
-        from services.escrow_holding_verifier import EscrowHoldingVerifier
         from database import async_managed_session
-        from sqlalchemy import select
-        from datetime import datetime
         
         logger.info(
             f"🔄 PROCESSING_ESCROW_PAYMENT: {escrow_id} - "
@@ -360,7 +355,7 @@ class EscrowFundManager:
                     f"💰 EXTERNAL_CRYPTO_PAYMENT: Recording ${total_received_usd} from external source (no wallet freeze) for user {escrow.buyer_id}"
                 )
         else:
-            logger.info(f"⏭️ SKIP_WALLET: Skipping wallet operations on retry (transaction already exists)")
+            logger.info("⏭️ SKIP_WALLET: Skipping wallet operations on retry (transaction already exists)")
         
         # 2. CREATE/REUSE TRANSACTION RECORD for ledger
         if existing_transaction:

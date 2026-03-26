@@ -2,11 +2,7 @@
 
 import logging
 import os
-from typing import Dict, Any, Optional
-from enum import Enum
-from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import User
+from typing import Dict, Any
 from services.payment_processor_manager import PaymentProvider
 
 logger = logging.getLogger(__name__)
@@ -73,7 +69,7 @@ class PaymentConfigManager:
     def toggle_failover(self, enabled: bool, admin_user_id: int) -> Dict[str, Any]:
         """Enable or disable automatic failover"""
         try:
-            old_state = self._config_cache.get('failover_enabled')
+            self._config_cache.get('failover_enabled')
             self._config_cache['failover_enabled'] = enabled
             self._apply_config()
             

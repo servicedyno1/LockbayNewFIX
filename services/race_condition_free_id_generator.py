@@ -6,8 +6,8 @@ Eliminates ID generation race conditions using atomic database operations and di
 import logging
 import asyncio
 import time
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
+from datetime import datetime
+from typing import Optional, Dict, Any
 from enum import Enum
 from dataclasses import dataclass
 import secrets
@@ -503,7 +503,6 @@ class RaceConditionFreeIDGenerator:
         """Verify ID uniqueness in the database"""
         try:
             from models import Escrow, ExchangeOrder
-            from sqlalchemy import func
             
             # Check uniqueness based on entity type
             if entity_type == EntityType.ESCROW:

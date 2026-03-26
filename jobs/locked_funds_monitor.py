@@ -172,7 +172,7 @@ async def _send_locked_funds_alert(detection_results: Dict[str, Any]) -> bool:
         for issue_type, count in issue_types.items():
             alert_message += f"• {issue_type.replace('_', ' ').title()}: {count}\n"
         
-        alert_message += f"\n🎯 ACTION REQUIRED: Review locked funds issues in admin dashboard or use locked funds management tools."
+        alert_message += "\n🎯 ACTION REQUIRED: Review locked funds issues in admin dashboard or use locked funds management tools."
         
         # Send alert via admin email system
         await admin_email_alerts.send_system_alert(

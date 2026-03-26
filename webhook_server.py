@@ -21,15 +21,13 @@ from typing import Optional
 from utils.webhook_audit_logger import (
     audit_payment_webhook, 
     audit_twilio_webhook, 
-    audit_telegram_webhook,
     log_webhook_request
 )
 
 # Import completion time monitoring
 from utils.completion_time_integration import (
     track_webhook_processing,
-    completion_time_monitor,
-    OperationType
+    completion_time_monitor
 )
 
 # WEBHOOK PERFORMANCE MONITORING: Track processing times for optimization
@@ -82,9 +80,6 @@ else:
         WebhookEventPriority
     )
 
-from utils.database_circuit_breaker import (
-    CircuitBreakerOpenError
-)
 
 # SIMPLIFIED ARCHITECTURE: webhook_memory_optimizer removed for direct processing
 
@@ -613,7 +608,7 @@ try:
         try:
             from database import get_async_session
             from models import PartnerApplication
-            from sqlalchemy import select, or_
+            from sqlalchemy import select
             import time
             from collections import defaultdict
             
@@ -1056,8 +1051,6 @@ async def warmup_endpoint():
     
     try:
         # Simulate typical webhook processing without actual work
-        from telegram import Update
-        from models import User
         from utils.database_pool_manager import database_pool
         
         # Warm database connection
@@ -1171,7 +1164,7 @@ async def webhook(request: Request):
             
             # FAST PATH: Basic validation only
             if not isinstance(data, dict) or "update_id" not in data:
-                logger.error(f"❌ Invalid webhook data structure")
+                logger.error("❌ Invalid webhook data structure")
                 return JSONResponse(
                     content={"error": "Invalid webhook data"}, 
                     status_code=400
@@ -1212,7 +1205,7 @@ async def webhook(request: Request):
         try:
             from utils.performance_telemetry import telemetry
             telemetry.record_latency('webhook_request', processing_time)
-        except:
+        except Exception:
             pass
         
         # Log slow validation only
@@ -1394,7 +1387,7 @@ async def dynopay_escrow_webhook(request: Request):
             if success:
                 logger.info(f"✅ DYNOPAY_ESCROW: Webhook enqueued successfully (ID: {event_id[:8]}, {duration_ms:.1f}ms)")
             else:
-                logger.error(f"❌ DYNOPAY_ESCROW: Failed to enqueue webhook (circuit breaker may be open)")
+                logger.error("❌ DYNOPAY_ESCROW: Failed to enqueue webhook (circuit breaker may be open)")
                 
         except Exception as enqueue_error:
             logger.error(f"❌ DYNOPAY_ESCROW: Error enqueueing webhook: {enqueue_error}")
@@ -1481,7 +1474,7 @@ async def dynopay_wallet_webhook(request: Request):
             if success:
                 logger.info(f"✅ DYNOPAY_WALLET: Webhook enqueued successfully (ID: {event_id[:8]}, {duration_ms:.1f}ms)")
             else:
-                logger.error(f"❌ DYNOPAY_WALLET: Failed to enqueue webhook (circuit breaker may be open)")
+                logger.error("❌ DYNOPAY_WALLET: Failed to enqueue webhook (circuit breaker may be open)")
                 
         except Exception as enqueue_error:
             logger.error(f"❌ DYNOPAY_WALLET: Error enqueueing webhook: {enqueue_error}")
@@ -1567,7 +1560,7 @@ async def dynopay_exchange_webhook(request: Request):
             if success:
                 logger.info(f"✅ DYNOPAY_EXCHANGE: Webhook enqueued successfully (ID: {event_id[:8]}, {duration_ms:.1f}ms)")
             else:
-                logger.error(f"❌ DYNOPAY_EXCHANGE: Failed to enqueue webhook (circuit breaker may be open)")
+                logger.error("❌ DYNOPAY_EXCHANGE: Failed to enqueue webhook (circuit breaker may be open)")
                 
         except Exception as enqueue_error:
             logger.error(f"❌ DYNOPAY_EXCHANGE: Error enqueueing webhook: {enqueue_error}")
@@ -1768,7 +1761,7 @@ async def fincra_webhook_endpoint(request: Request):
             if success:
                 logger.info(f"✅ FINCRA_PAYMENT: Webhook enqueued successfully (ID: {event_id[:8]}, {duration_ms:.1f}ms)")
             else:
-                logger.error(f"❌ FINCRA_PAYMENT: Failed to enqueue webhook (circuit breaker may be open)")
+                logger.error("❌ FINCRA_PAYMENT: Failed to enqueue webhook (circuit breaker may be open)")
                 
         except Exception as enqueue_error:
             logger.error(f"❌ FINCRA_PAYMENT: Error enqueueing webhook: {enqueue_error}")
@@ -2909,7 +2902,7 @@ async def admin_retry_after_address_config(cashout_id: str, token: str):
             )
         
         # Process retry action
-        from database import SessionLocal, async_managed_session
+        from database import async_managed_session
         async with async_managed_session() as session:
             try:
                 from models import Cashout, CashoutStatus
@@ -2954,7 +2947,6 @@ async def admin_retry_after_address_config(cashout_id: str, token: str):
                         metadata_match = re.search(r"Metadata: (\{.+\})", cashout.admin_notes, re.DOTALL)  # type: ignore[attr-defined]
                         if metadata_match:
                             try:
-                                import json
                                 import ast
                                 metadata_str = metadata_match.group(1)
                                 # Use ast.literal_eval for Python dict syntax
@@ -3215,7 +3207,7 @@ async def admin_retry_after_address_config(cashout_id: str, token: str):
             except Exception as e:
                 logger.error(f"Error in database operation for {cashout_id}: {e}")
                 return HTMLResponse(
-                    content=f"""
+                    content="""
                     <html><body style="font-family: Arial, sans-serif; margin: 40px; background: #f8f9fa;">
                         <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                             <h1 style="color: #dc3545;">❌ Database Error</h1>
@@ -3230,7 +3222,7 @@ async def admin_retry_after_address_config(cashout_id: str, token: str):
     except Exception as e:
         logger.error(f"Error in admin address config retry for {cashout_id}: {e}")
         return HTMLResponse(
-            content=f"""
+            content="""
             <html><body style="font-family: Arial, sans-serif; margin: 40px; background: #f8f9fa;">
                 <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                     <h1 style="color: #dc3545;">❌ Server Error</h1>
@@ -3301,7 +3293,7 @@ async def admin_cancel_address_config(cashout_id: str, token: str):
     except Exception as e:
         logger.error(f"Error in admin address config cancel for {cashout_id}: {e}")
         return HTMLResponse(
-            content=f"""
+            content="""
             <html><body style="font-family: Arial, sans-serif; margin: 40px; background: #f8f9fa;">
                 <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                     <h1 style="color: #dc3545;">❌ Server Error</h1>
@@ -3381,7 +3373,7 @@ async def resolve_dispute_from_email(
 async def auto_resolve_dispute(dispute_id: str, token: str):
     """Auto-resolve dispute using AI analysis"""
     try:
-        from services.admin_email_actions import AdminDisputeEmailService
+        from services.admin_email_actions import AdminDisputeEmailService, AdminEmailActionService
         import config
         
         # Check if auto-resolution is enabled in config
@@ -3582,7 +3574,7 @@ async def match_orphaned_payment(
         # Validate admin token (simple check - enhance with proper auth in production)
         expected_token = getattr(Config, 'ADMIN_EMAIL_SECRET', 'fallback_secret_key_change_me')
         if admin_token != expected_token:
-            logger.warning(f"❌ ADMIN_RECOVERY: Invalid admin token")
+            logger.warning("❌ ADMIN_RECOVERY: Invalid admin token")
             raise HTTPException(status_code=401, detail="Invalid admin token")
         
         # Update escrow with deposit address
@@ -3814,7 +3806,6 @@ async def match_payment_form():
 async def handle_support_email_reply(request: Request):
     """Handle admin email replies and send them to users in bot with audit logging and webhook authentication"""
     try:
-        from datetime import datetime
         from database import SessionLocal
         from models import SupportTicket, SupportMessage, User
         from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
@@ -3828,7 +3819,7 @@ async def handle_support_email_reply(request: Request):
         if webhook_token:
             request_token = request.headers.get("X-Webhook-Token") or request.headers.get("X-Brevo-Token")
             if not request_token or request_token != webhook_token:
-                logger.error(f"❌ Unauthorized webhook attempt - invalid or missing token")
+                logger.error("❌ Unauthorized webhook attempt - invalid or missing token")
                 raise HTTPException(status_code=401, detail="Unauthorized")
         else:
             logger.warning("⚠️ BREVO_WEBHOOK_SECRET not set - webhook authentication disabled (SECURITY RISK)")
@@ -4351,7 +4342,6 @@ async def webhook_queue_status():
         
         # Calculate overall health (simplified - no legacy queue health checks)
         circuit_breaker_health = resilience_status['overall_status']
-        simplified_health = "healthy"  # Direct processing is always healthy
         
         overall_health = "healthy"
         if circuit_breaker_health == "critical":

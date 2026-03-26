@@ -3,17 +3,13 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from telegram.constants import ChatAction
 from models import User, Wallet, Escrow, Rating
 from database import SessionLocal, async_managed_session
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
 from utils.keyboards import main_menu_keyboard
 from utils.branding import UserRetentionElements
-from utils.wallet_manager import get_or_create_wallet, get_user_wallet
 from utils.markdown_escaping import (
     escape_markdown,
-    safe_user_mention,
 )
 from utils.data_sanitizer import safe_error_log
 from config import Config
@@ -21,7 +17,7 @@ from utils.user_access_control import require_onboarding
 from utils.callback_utils import safe_answer_callback_query
 
 # Enhanced branding imports
-from utils.branding_utils import BrandingUtils, make_header, make_trust_footer, get_social_proof_text
+from utils.branding_utils import BrandingUtils, make_header, make_trust_footer
 from utils.trusted_trader import TrustedTraderSystem
 
 logger = logging.getLogger(__name__)
@@ -163,7 +159,7 @@ async def create_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         update,
         context,
         user,
-        f"🚀 Ready to trade? Tap 'Create New Trade' below!",
+        "🚀 Ready to trade? Tap 'Create New Trade' below!",
     )
     return 0
 
@@ -373,7 +369,7 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         
         # Get wallet balance
         wallet = session.query(Wallet).filter(Wallet.user_id == user.id, Wallet.currency == "USD").first()
-        balance = (
+        (
             float(getattr(wallet, "balance", 0))
             if wallet and getattr(wallet, "balance", None) is not None
             else 0.0

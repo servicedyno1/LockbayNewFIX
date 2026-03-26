@@ -6,7 +6,7 @@ optimistic locking in financial operations to prevent race conditions.
 """
 
 from sqlalchemy import text
-from database import sync_engine, SessionLocal
+from database import sync_engine
 import logging
 
 logger = logging.getLogger(__name__)

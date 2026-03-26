@@ -55,7 +55,7 @@ class GitDeployer:
             print("❌ No git remotes configured. Add with: git remote add origin <url>")
             return False
         
-        print(f"✅ Git repository detected with remotes:")
+        print("✅ Git repository detected with remotes:")
         print(remotes)
         return True
     

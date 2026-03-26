@@ -6,18 +6,13 @@ Comprehensive testing framework for validating enhanced database connection pool
 import logging
 import asyncio
 import time
-import threading
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple, Callable
-from collections import defaultdict, deque
+from datetime import datetime
+from typing import Dict, List, Optional, Any, Tuple
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 import statistics
-import json
 import concurrent.futures
-import random
-import psutil
-from contextlib import contextmanager
 from sqlalchemy import text
 import numpy as np
 
@@ -530,7 +525,6 @@ class ConnectionPoolTestSuite:
     async def _test_concurrent_connections(self, test_case: TestCase) -> Dict[str, Any]:
         """Test concurrent connection performance"""
         concurrent_tasks = 20
-        connection_times = []
         
         async def concurrent_connection_test(task_id: int):
             start_time = time.time()

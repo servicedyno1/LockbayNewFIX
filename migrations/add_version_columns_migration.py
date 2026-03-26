@@ -4,7 +4,6 @@ Adds version columns to critical models for concurrency control
 """
 
 import logging
-from datetime import datetime
 from sqlalchemy import text
 import sys
 import os

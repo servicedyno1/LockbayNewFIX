@@ -11,10 +11,9 @@ This replaces the complex 29+ job system with 5 streamlined core jobs:
 Maintains 100% functionality while reducing complexity by 83%.
 """
 
-import asyncio
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -31,7 +30,6 @@ from jobs.core.trend_calculation import run_trend_calculation
 from jobs.crypto_rate_background_refresh import run_crypto_rate_background_refresh
 from jobs.database_keepalive import run_database_keepalive
 from jobs.webhook_cleanup import cleanup_old_webhook_events
-from services.universal_welcome_bonus_service import UniversalWelcomeBonusService
 from services.railway_neon_sync import RailwayNeonSync
 
 # Import configuration
@@ -421,18 +419,6 @@ class ConsolidatedScheduler:
         logger.warning("✅ AUTO_CANCELLATION: Cleanup & Expiry jobs now running to cancel expired trades")
         logger.warning("✅ PAYMENT_FLOW: Using immediate webhook confirmation (Provider → Credit → Notify)")
         logger.warning("🔒 FINANCIAL_SAFETY: Idempotent direct handlers prevent double-processing")
-        return  # Early return - no background jobs started
-        
-        # Log all registered jobs
-        job_names = [f"{job.name} ({job.id})" for job in jobs]
-        logger.info(f"📋 Active jobs: {job_names}")
-        
-        # Log next 5 upcoming runs
-        logger.info("🔮 Upcoming job runs:")
-        from datetime import datetime as dt_max
-        for job in sorted(jobs, key=lambda x: x.next_run_time or dt_max.max)[:5]:
-            if job.next_run_time:
-                logger.info(f"   - {job.name}: {job.next_run_time}")
 
     def stop(self):
         """Stop the consolidated scheduler"""

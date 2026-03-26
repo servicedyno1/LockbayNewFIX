@@ -98,11 +98,11 @@ def main():
         print(f"   URL: {result['url_masked']}")
         
         if result['accessible']:
-            print(f"   ✅ Status: Accessible")
+            print("   ✅ Status: Accessible")
             print(f"   Database: {result['database_name']}")
             print(f"   Users: {result['user_count']}")
         else:
-            print(f"   ❌ Status: Not accessible")
+            print("   ❌ Status: Not accessible")
             print(f"   Error: {result['error']}")
         print()
     

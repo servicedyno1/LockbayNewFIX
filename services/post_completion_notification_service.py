@@ -4,14 +4,14 @@ Handles comprehensive notifications to buyers and sellers after escrow completio
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 from datetime import datetime
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import TelegramError
 
 from services.email import EmailService
 from config import Config
-from database import SessionLocal, async_managed_session
+from database import async_managed_session
 from models import User, Escrow, Rating
 from sqlalchemy import select
 

@@ -4,16 +4,11 @@ Handles user contact methods and notification preferences with database state tr
 """
 
 import logging
-import re
-import phonenumbers
-from datetime import datetime, timedelta
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
-from models import User, UserContact
+from models import User
 from database import SessionLocal
-from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
-from utils.helpers import generate_unique_id, validate_email
-from services.contact_detection_service import contact_detection_service
+from utils.callback_utils import safe_answer_callback_query
 from utils.conversation_state_helper import set_conversation_state_db_sync
 
 logger = logging.getLogger(__name__)

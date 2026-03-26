@@ -4,10 +4,9 @@ Comprehensive Telegram bot notification templates with inline keyboards for all 
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +62,8 @@ class RefundBotTemplates:
         """Generate bot template for failed cashout refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
-        cashout = context.get("cashout", {})
+        context["platform"]
+        context.get("cashout", {})
         
         # Create compact, mobile-friendly message
         message = f"""{self.emoji_map['error']} Cashout Failed - Refund Processed
@@ -94,8 +93,8 @@ The refund is available for immediate use!"""
                 InlineKeyboardButton(f"{self.emoji_map['processing']} Try Cashout", callback_data="start_cashout")
             ],
             [
-                InlineKeyboardButton(f"📊 Transaction History", callback_data=f"view_transactions_{user['id']}"),
-                InlineKeyboardButton(f"💬 Contact Support", callback_data="start_support_chat")
+                InlineKeyboardButton("📊 Transaction History", callback_data=f"view_transactions_{user['id']}"),
+                InlineKeyboardButton("💬 Contact Support", callback_data="start_support_chat")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} Got it!", callback_data=f"confirm_notification_{refund['refund_id']}")
@@ -112,7 +111,7 @@ The refund is available for immediate use!"""
         """Generate bot template for escrow timeout refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         escrow = context.get("escrow", {})
         
         message = f"""{self.emoji_map['clock']} Escrow Timeout - Refund Issued
@@ -142,8 +141,8 @@ You can start a new escrow trade anytime!"""
                 InlineKeyboardButton(f"{self.emoji_map['money']} Check Wallet", callback_data=f"view_wallet_{user['id']}")
             ],
             [
-                InlineKeyboardButton(f"📋 View Trade History", callback_data=f"view_escrows_{user['id']}"),
-                InlineKeyboardButton(f"💡 Trading Tips", callback_data="escrow_tips")
+                InlineKeyboardButton("📋 View Trade History", callback_data=f"view_escrows_{user['id']}"),
+                InlineKeyboardButton("💡 Trading Tips", callback_data="escrow_tips")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} Understood", callback_data=f"confirm_notification_{refund['refund_id']}")
@@ -160,7 +159,7 @@ You can start a new escrow trade anytime!"""
         """Generate bot template for dispute resolution refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         dispute_details = context.get("dispute_details", {})
         
         message = f"""{self.emoji_map['scales']} Dispute Resolved - You Won!
@@ -187,11 +186,11 @@ Thank you for your patience during the review process!"""
         keyboard = [
             [
                 InlineKeyboardButton(f"{self.emoji_map['money']} View Wallet", callback_data=f"view_wallet_{user['id']}"),
-                InlineKeyboardButton(f"📊 Transaction History", callback_data=f"view_transactions_{user['id']}")
+                InlineKeyboardButton("📊 Transaction History", callback_data=f"view_transactions_{user['id']}")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['scales']} Dispute Details", callback_data=f"view_dispute_{dispute_details.get('dispute_id', '')}"),
-                InlineKeyboardButton(f"📋 Resolution Report", callback_data=f"dispute_report_{refund['refund_id']}")
+                InlineKeyboardButton("📋 Resolution Report", callback_data=f"dispute_report_{refund['refund_id']}")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['heart']} Thank You!", callback_data=f"confirm_notification_{refund['refund_id']}")
@@ -208,7 +207,7 @@ Thank you for your patience during the review process!"""
         """Generate bot template for post-timeout payment refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         payment_details = context.get("payment_details", {})
         
         message = f"""{self.emoji_map['fire']} URGENT: Post-Timeout Payment Refund
@@ -247,8 +246,8 @@ Network delays, payment processing delays, or wallet sync issues can cause timin
                 InlineKeyboardButton(f"{self.emoji_map['money']} Check Wallet", callback_data=f"view_wallet_{user['id']}")
             ],
             [
-                InlineKeyboardButton(f"📚 Prevention Tips", callback_data="payment_timing_tips"),
-                InlineKeyboardButton(f"💬 Report Issue", callback_data="start_support_chat")
+                InlineKeyboardButton("📚 Prevention Tips", callback_data="payment_timing_tips"),
+                InlineKeyboardButton("💬 Report Issue", callback_data="start_support_chat")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} I Understand", callback_data=f"confirm_notification_{refund['refund_id']}")
@@ -265,7 +264,7 @@ Network delays, payment processing delays, or wallet sync issues can cause timin
         """Generate bot template for system error refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         
         message = f"""{self.emoji_map['tools']} **System Error - We're Making It Right**
 
@@ -297,14 +296,14 @@ We appreciate your patience and continued trust!"""
         keyboard = [
             [
                 InlineKeyboardButton(f"{self.emoji_map['money']} Check Wallet", callback_data=f"view_wallet_{user['id']}"),
-                InlineKeyboardButton(f"💬 Contact Support", callback_data="start_support_chat")
+                InlineKeyboardButton("💬 Contact Support", callback_data="start_support_chat")
             ],
             [
-                InlineKeyboardButton(f"🎁 Discuss Compensation", callback_data=f"compensation_inquiry_{refund['refund_id']}"),
-                InlineKeyboardButton(f"📊 View Transactions", callback_data=f"view_transactions_{user['id']}")
+                InlineKeyboardButton("🎁 Discuss Compensation", callback_data=f"compensation_inquiry_{refund['refund_id']}"),
+                InlineKeyboardButton("📊 View Transactions", callback_data=f"view_transactions_{user['id']}")
             ],
             [
-                InlineKeyboardButton(f"📋 Error Report", callback_data=f"error_report_{refund['refund_id']}"),
+                InlineKeyboardButton("📋 Error Report", callback_data=f"error_report_{refund['refund_id']}"),
                 InlineKeyboardButton(f"{self.emoji_map['heart']} Thank You", callback_data=f"confirm_notification_{refund['refund_id']}")
             ]
         ]
@@ -319,7 +318,7 @@ We appreciate your patience and continued trust!"""
         """Generate bot template for admin manual refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         
         message = f"""{self.emoji_map['tools']} **Manual Refund Processed**
 
@@ -344,10 +343,10 @@ The refunded amount is ready for use in new transactions or cashouts!"""
         keyboard = [
             [
                 InlineKeyboardButton(f"{self.emoji_map['money']} Check Wallet", callback_data=f"view_wallet_{user['id']}"),
-                InlineKeyboardButton(f"📊 Transaction History", callback_data=f"view_transactions_{user['id']}")
+                InlineKeyboardButton("📊 Transaction History", callback_data=f"view_transactions_{user['id']}")
             ],
             [
-                InlineKeyboardButton(f"💬 Thank Admin Team", callback_data="thank_admin"),
+                InlineKeyboardButton("💬 Thank Admin Team", callback_data="thank_admin"),
                 InlineKeyboardButton(f"{self.emoji_map['rocket']} Start Trading", callback_data="main_menu")
             ],
             [
@@ -365,7 +364,7 @@ The refunded amount is ready for use in new transactions or cashouts!"""
         """Generate bot template for overpayment refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         
         message = f"""{self.emoji_map['money']} **Overpayment Refund Processed**
 
@@ -394,11 +393,11 @@ Great attention to detail by our automated systems!"""
         keyboard = [
             [
                 InlineKeyboardButton(f"{self.emoji_map['money']} View Wallet", callback_data=f"view_wallet_{user['id']}"),
-                InlineKeyboardButton(f"📊 Order Details", callback_data=f"view_order_{refund.get('transaction_id', '')}")
+                InlineKeyboardButton("📊 Order Details", callback_data=f"view_order_{refund.get('transaction_id', '')}")
             ],
             [
-                InlineKeyboardButton(f"💡 Payment Tips", callback_data="payment_accuracy_tips"),
-                InlineKeyboardButton(f"💬 Ask Questions", callback_data="start_support_chat")
+                InlineKeyboardButton("💡 Payment Tips", callback_data="payment_accuracy_tips"),
+                InlineKeyboardButton("💬 Ask Questions", callback_data="start_support_chat")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} Thanks!", callback_data=f"confirm_notification_{refund['refund_id']}")
@@ -415,7 +414,7 @@ Great attention to detail by our automated systems!"""
         """Generate bot template for rate lock expired refunds"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         
         message = f"""{self.emoji_map['clock']} **Rate Lock Expired - Refund Issued**
 
@@ -445,12 +444,12 @@ Rate protection working as designed!"""
         
         keyboard = [
             [
-                InlineKeyboardButton(f"📈 Check Current Rates", callback_data="view_exchange_rates"),
+                InlineKeyboardButton("📈 Check Current Rates", callback_data="view_exchange_rates"),
                 InlineKeyboardButton(f"{self.emoji_map['processing']} New Order", callback_data="start_exchange")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['money']} Check Wallet", callback_data=f"view_wallet_{user['id']}"),
-                InlineKeyboardButton(f"💡 Rate Lock Tips", callback_data="rate_lock_help")
+                InlineKeyboardButton("💡 Rate Lock Tips", callback_data="rate_lock_help")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} Understood", callback_data=f"confirm_notification_{refund['refund_id']}")
@@ -467,7 +466,7 @@ Rate protection working as designed!"""
         """Generate bot template for refund processing confirmation"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         
         message = f"""{self.emoji_map['processing']} **Refund Being Processed**
 
@@ -494,12 +493,12 @@ Please allow up to 24 hours for processing."""
         
         keyboard = [
             [
-                InlineKeyboardButton(f"📊 Check Status", callback_data=f"refund_status_{refund['refund_id']}"),
+                InlineKeyboardButton("📊 Check Status", callback_data=f"refund_status_{refund['refund_id']}"),
                 InlineKeyboardButton(f"{self.emoji_map['money']} View Wallet", callback_data=f"view_wallet_{user['id']}")
             ],
             [
-                InlineKeyboardButton(f"💬 Contact Support", callback_data="start_support_chat"),
-                InlineKeyboardButton(f"📋 Transaction History", callback_data=f"view_transactions_{user['id']}")
+                InlineKeyboardButton("💬 Contact Support", callback_data="start_support_chat"),
+                InlineKeyboardButton("📋 Transaction History", callback_data=f"view_transactions_{user['id']}")
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} OK", callback_data=f"confirm_notification_{refund['refund_id']}")
@@ -516,7 +515,7 @@ Please allow up to 24 hours for processing."""
         """Generate bot template for refund completion confirmation"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         wallet = context.get("wallet", {})
         
         message = f"""{self.emoji_map['success']} **Refund Completed Successfully!**
@@ -549,10 +548,10 @@ Your refunded funds are ready for action!"""
             ],
             [
                 InlineKeyboardButton(f"{self.emoji_map['processing']} Request Cashout", callback_data="start_cashout"),
-                InlineKeyboardButton(f"🔄 Exchange Currency", callback_data="start_exchange")
+                InlineKeyboardButton("🔄 Exchange Currency", callback_data="start_exchange")
             ],
             [
-                InlineKeyboardButton(f"📊 Transaction History", callback_data=f"view_transactions_{user['id']}"),
+                InlineKeyboardButton("📊 Transaction History", callback_data=f"view_transactions_{user['id']}"),
                 InlineKeyboardButton(f"{self.emoji_map['heart']} Awesome!", callback_data=f"confirm_notification_{refund['refund_id']}")
             ]
         ]
@@ -567,7 +566,7 @@ Your refunded funds are ready for action!"""
         """Generate generic refund template as fallback"""
         refund = context["refund"]
         user = context["user"]
-        platform = context["platform"]
+        context["platform"]
         
         message = f"""{self.emoji_map['processing']} **Refund Processed**
 
@@ -589,10 +588,10 @@ If you have any questions about this refund, please contact our support team."""
         keyboard = [
             [
                 InlineKeyboardButton(f"{self.emoji_map['money']} Check Wallet", callback_data=f"view_wallet_{user['id']}"),
-                InlineKeyboardButton(f"💬 Contact Support", callback_data="start_support_chat")
+                InlineKeyboardButton("💬 Contact Support", callback_data="start_support_chat")
             ],
             [
-                InlineKeyboardButton(f"📊 Transaction History", callback_data=f"view_transactions_{user['id']}"),
+                InlineKeyboardButton("📊 Transaction History", callback_data=f"view_transactions_{user['id']}"),
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} OK", callback_data=f"confirm_notification_{refund['refund_id']}")
             ]
         ]
@@ -625,8 +624,8 @@ If you have any questions, please contact our support team.
         
         keyboard = [
             [
-                InlineKeyboardButton(f"📱 View Dashboard", callback_data="main_menu"),
-                InlineKeyboardButton(f"💬 Contact Support", callback_data="start_support_chat")
+                InlineKeyboardButton("📱 View Dashboard", callback_data="main_menu"),
+                InlineKeyboardButton("💬 Contact Support", callback_data="start_support_chat")
             ]
         ]
         
@@ -743,15 +742,15 @@ If you have any questions, please contact our support team.
         """Create keyboard for support escalation scenarios"""
         keyboard = [
             [
-                InlineKeyboardButton(f"💬 Live Chat", callback_data="start_support_chat"),
-                InlineKeyboardButton(f"📧 Email Support", callback_data="email_support")
+                InlineKeyboardButton("💬 Live Chat", callback_data="start_support_chat"),
+                InlineKeyboardButton("📧 Email Support", callback_data="email_support")
             ],
             [
-                InlineKeyboardButton(f"📞 Request Callback", callback_data=f"callback_request_{refund_id}"),
-                InlineKeyboardButton(f"🎫 Create Ticket", callback_data=f"create_ticket_{refund_id}")
+                InlineKeyboardButton("📞 Request Callback", callback_data=f"callback_request_{refund_id}"),
+                InlineKeyboardButton("🎫 Create Ticket", callback_data=f"create_ticket_{refund_id}")
             ],
             [
-                InlineKeyboardButton(f"📋 FAQ", callback_data="refund_faq"),
+                InlineKeyboardButton("📋 FAQ", callback_data="refund_faq"),
                 InlineKeyboardButton(f"{self.emoji_map['thumbs_up']} Resolved", callback_data=f"confirm_notification_{refund_id}")
             ]
         ]
@@ -776,12 +775,12 @@ If you have any questions, please contact our support team.
         
         if "support" in primary_actions:
             keyboard.append([
-                InlineKeyboardButton(f"💬 Support", callback_data="start_support_chat")
+                InlineKeyboardButton("💬 Support", callback_data="start_support_chat")
             ])
         
         if "transactions" in primary_actions:
             keyboard.append([
-                InlineKeyboardButton(f"📊 Transactions", callback_data=f"view_transactions_{user_id}")
+                InlineKeyboardButton("📊 Transactions", callback_data=f"view_transactions_{user_id}")
             ])
         
         # Always include confirmation

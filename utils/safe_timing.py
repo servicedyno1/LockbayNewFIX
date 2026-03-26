@@ -7,7 +7,7 @@ and handle edge cases like clock drift, timezone issues, and precision errors.
 import time
 import logging
 from datetime import datetime, timezone
-from typing import Optional, Union
+from typing import Optional
 from contextlib import asynccontextmanager
 from functools import wraps
 

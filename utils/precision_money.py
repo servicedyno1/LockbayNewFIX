@@ -50,7 +50,6 @@ assert safe_multiply(Decimal('10'), Decimal('1.05'), 2) == Decimal('10.50')
 
 from decimal import Decimal, ROUND_HALF_UP, getcontext, InvalidOperation
 import logging
-from typing import Union
 
 logger = logging.getLogger(__name__)
 

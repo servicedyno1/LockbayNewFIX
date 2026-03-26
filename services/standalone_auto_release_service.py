@@ -12,11 +12,8 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import List, Optional
 
 # Database imports
-from sqlalchemy.orm import Session
-from database import SessionLocal
 from models import Escrow, EscrowStatus
 from utils.atomic_transactions import atomic_transaction
 from utils.atomic_transactions import locked_escrow_operation

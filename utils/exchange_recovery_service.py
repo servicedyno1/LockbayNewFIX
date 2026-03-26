@@ -7,7 +7,7 @@ import logging
 from datetime import datetime, timedelta
 from database import SessionLocal
 from models import ExchangeOrder
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ class ExchangeRecoveryService:
         session = SessionLocal()
         
         try:
-            from sqlalchemy import func, and_
+            from sqlalchemy import func
             
             # Count orders by status
             status_counts = (

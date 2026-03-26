@@ -5,7 +5,7 @@ Provides smart fee calculations for crypto cashouts with configurable percentage
 
 import logging
 from decimal import Decimal
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from config import Config
 
 logger = logging.getLogger(__name__)

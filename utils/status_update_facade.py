@@ -28,26 +28,20 @@ This replaces direct status updates in:
 """
 
 import logging
-from typing import Dict, Optional, Any, List, Union, Tuple
-from datetime import datetime, timedelta
+from typing import Dict, Optional, Any, List, Union
+from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass, asdict
 from decimal import Decimal
-import asyncio
-import json
-from contextlib import asynccontextmanager
 
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, or_, func
 
-from database import managed_session, async_managed_session, get_db_session
+from database import managed_session, async_managed_session
 from models import (
-    Base, User, UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
-    UnifiedTransactionStatusHistory, UnifiedTransactionRetryLog, UnifiedTransactionPriority,
-    EscrowStatus, CashoutStatus, ExchangeStatus,
-    Cashout, Escrow, ExchangeOrder, Wallet, WalletHolds
+    UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
+    UnifiedTransactionStatusHistory, EscrowStatus, CashoutStatus, ExchangeStatus,
+    Cashout, Escrow, ExchangeOrder, Wallet, WalletHolds, WalletHoldStatus
 )
 
 # Import existing validation and mapping services
@@ -56,7 +50,6 @@ from utils.status_flows import (
     validate_unified_transition,
     get_allowed_next_statuses,
     is_terminal_transaction_status,
-    get_transaction_status_phase,
     TransitionValidationResult,
     log_status_transition_metrics
 )
@@ -70,7 +63,6 @@ from utils.financial_audit_logger import (
     FinancialContext,
     EntityType
 )
-from utils.atomic_transactions import atomic_transaction
 
 logger = logging.getLogger(__name__)
 
@@ -261,7 +253,7 @@ class StatusUpdateFacade:
                 return dual_write_result
             
             # Step 4: Record status history
-            history_result = await self._record_status_history(
+            await self._record_status_history(
                 request, dual_write_result, operation_id, db_session
             )
             
@@ -366,7 +358,7 @@ class StatusUpdateFacade:
                 return dual_write_result
             
             # Step 6: Record status history
-            history_result = await self._record_status_history(
+            await self._record_status_history(
                 request, dual_write_result, operation_id, db_session
             )
             
@@ -471,7 +463,7 @@ class StatusUpdateFacade:
                 return dual_write_result
             
             # Step 6: Record status history
-            history_result = await self._record_status_history(
+            await self._record_status_history(
                 request, dual_write_result, operation_id, db_session
             )
             
@@ -552,7 +544,7 @@ class StatusUpdateFacade:
                 return update_result
             
             # Step 4: Record status history
-            history_result = await self._record_status_history(
+            await self._record_status_history(
                 request, update_result, operation_id, db_session
             )
             
@@ -911,7 +903,7 @@ class StatusUpdateFacade:
                     dual_write_successful=False
                 )
             
-            logger.info(f"💰 CASHOUT_DUAL_WRITE_SUCCESS: Updated both legacy and unified systems")
+            logger.info("💰 CASHOUT_DUAL_WRITE_SUCCESS: Updated both legacy and unified systems")
             
             return StatusUpdateResult(
                 success=True,
@@ -980,7 +972,7 @@ class StatusUpdateFacade:
                     dual_write_successful=False
                 )
             
-            logger.info(f"🔒 ESCROW_DUAL_WRITE_SUCCESS: Updated both legacy and unified systems")
+            logger.info("🔒 ESCROW_DUAL_WRITE_SUCCESS: Updated both legacy and unified systems")
             
             return StatusUpdateResult(
                 success=True,
@@ -1049,7 +1041,7 @@ class StatusUpdateFacade:
                     dual_write_successful=False
                 )
             
-            logger.info(f"🔄 EXCHANGE_DUAL_WRITE_SUCCESS: Updated both legacy and unified systems")
+            logger.info("🔄 EXCHANGE_DUAL_WRITE_SUCCESS: Updated both legacy and unified systems")
             
             return StatusUpdateResult(
                 success=True,

@@ -20,20 +20,17 @@ import socket
 import os
 import threading
 from enum import Enum
-from typing import Dict, Any, Optional, List, Union, Tuple
+from typing import Dict, Any, Optional, List
 from decimal import Decimal
 from datetime import datetime, timezone
-from contextlib import contextmanager
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, func
+from sqlalchemy import and_, desc
 from sqlalchemy.exc import IntegrityError
 
-from database import managed_session
 from models import (
-    User, Wallet, InternalWallet, BalanceAuditLog, WalletBalanceSnapshot,
-    BalanceReconciliationLog, IdempotencyToken
+    Wallet, InternalWallet, BalanceAuditLog, WalletBalanceSnapshot
 )
 from utils.database_locking import DatabaseLockingService
 from utils.financial_audit_logger import financial_audit_logger, FinancialEventType, FinancialContext, EntityType

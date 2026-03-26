@@ -4,21 +4,19 @@ Manages atomic dual-write operations during legacy-to-unified status migration
 Ensures data consistency between legacy and unified transaction systems
 """
 
-from typing import Dict, Optional, Any, List, Union, Tuple
-from datetime import datetime, timedelta
+from typing import Dict, Optional, Any, Union, Tuple
+from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass
 import logging
 import contextlib
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, or_
+from sqlalchemy import or_
 
-from database import managed_session, get_db_session
+from database import managed_session
 from models import (
-    Base, UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
-    UnifiedTransactionStatusHistory, UnifiedTransactionRetryLog,
-    EscrowStatus, CashoutStatus, ExchangeStatus,
+    UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
+    UnifiedTransactionStatusHistory, EscrowStatus, CashoutStatus, ExchangeStatus,
     Cashout, Escrow, ExchangeOrder  # Assuming these models exist
 )
 from services.legacy_status_mapper import LegacyStatusMapper, LegacySystemType
@@ -242,7 +240,7 @@ class DualWriteAdapter:
         # FINANCIAL SAFETY: Final validation before returning
         if not result.overall_success(self.config.mode, self.config.strategy):
             logger.error(f"🚨 FINANCIAL SAFETY: Dual-write operation reported failure [Op: {operation_id}] mode={self.config.mode.value}, strategy={self.config.strategy.value}")
-            raise Exception(f"Dual-write transaction creation failed according to configured mode/strategy")
+            raise Exception("Dual-write transaction creation failed according to configured mode/strategy")
         
         # Log audit trail
         if self.config.audit_logging:
@@ -802,7 +800,6 @@ class DualWriteAdapter:
     def _find_linked_legacy_entity(self, session: Session, unified_tx: UnifiedTransaction) -> Optional[Any]:
         """Find legacy entity linked to unified transaction (using reference_id)"""
         # Extract entity type from metadata or transaction_type
-        metadata = unified_tx.transaction_metadata or {}
         entity_id = unified_tx.reference_id  # reference_id stores the cashout_id/escrow_id/exchange_id
         
         if not entity_id:

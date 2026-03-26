@@ -5,15 +5,13 @@ Comprehensive refund tracking and history interface for users via bot commands
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
-from decimal import Decimal
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes, ConversationHandler
 
 from database import SessionLocal
-from models import User, Refund, RefundType, RefundStatus
+from models import User, Refund, RefundStatus
 from utils.refund_status_tracking import refund_status_tracker
 from utils.refund_progress_tracker import real_time_refund_tracker
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
@@ -45,7 +43,7 @@ class UserRefundDashboard:
         
         user = await get_user_from_update(update)
         if not user:
-            message_text = f"👋 Welcome! You'll need to register first.\n\nJust type /start to get set up!"
+            message_text = "👋 Welcome! You'll need to register first.\n\nJust type /start to get set up!"
             if update.message:
                 await update.message.reply_text(message_text)
             return ConversationHandler.END
@@ -115,7 +113,7 @@ class UserRefundDashboard:
                     menu_text += f"{status_emoji} `{refund_id}` - ${amount:.2f} ({date_str})\n"
                 menu_text += "\n"
             
-            menu_text += f"🛠️ Choose an option below or type a refund ID to check status."
+            menu_text += "🛠️ Choose an option below or type a refund ID to check status."
             
             # Create main menu keyboard
             keyboard = [

@@ -5,7 +5,7 @@ Automatically releases holds when cashouts complete successfully
 
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from decimal import Decimal
 from database import SessionLocal
 from models import Cashout, CashoutStatus
@@ -246,7 +246,7 @@ async def process_failed_cashout_hold_lifecycle(
     work_session = session if use_provided_session else SessionLocal()
     
     try:
-        from models import WalletHolds, WalletHoldStatus, Cashout
+        from models import WalletHolds, WalletHoldStatus
         
         # Find the wallet hold record for this cashout
         hold_record = work_session.query(WalletHolds).filter(

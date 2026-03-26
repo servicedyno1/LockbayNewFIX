@@ -4,19 +4,16 @@ Advanced monitoring, analytics, and optimization for database connection pools
 """
 
 import logging
-import time
 import asyncio
 import threading
 from datetime import datetime, timedelta
 from collections import deque, defaultdict
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field, asdict
+from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, field
 import statistics
-import json
 from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
 import psutil
-import weakref
 
 logger = logging.getLogger(__name__)
 

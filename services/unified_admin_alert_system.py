@@ -4,7 +4,7 @@ Integrates all alerts with email, priorities, and consolidation
 """
 
 import logging
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from enum import Enum

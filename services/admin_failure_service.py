@@ -6,20 +6,16 @@ Core logic for managing failed transactions requiring admin intervention
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_, or_
 
 from models import (
     Cashout, CashoutStatus, User, AdminActionToken, AdminActionType,
-    UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
-    WalletHolds, WalletHoldStatus
+    UnifiedTransaction, WalletHolds, WalletHoldStatus
 )
-from config import Config
 from utils.helpers import format_amount
 from services.crypto import CryptoServiceAtomic
-from services.auto_cashout import AutoCashoutService
-from utils.database_pool_manager import database_pool
 
 logger = logging.getLogger(__name__)
 

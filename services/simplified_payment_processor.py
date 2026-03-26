@@ -8,7 +8,6 @@ Handles: BlockBee, DynoPay, Fincra payment confirmations
 """
 
 import logging
-import json
 from decimal import Decimal
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 from sqlalchemy.exc import IntegrityError
 
-from models import User, Wallet, CryptoDeposit, Transaction, CryptoDepositStatus
+from models import Wallet, CryptoDeposit, Transaction, CryptoDepositStatus
 from services.fastforex_service import fastforex_service
 from database import get_sync_db_session
 

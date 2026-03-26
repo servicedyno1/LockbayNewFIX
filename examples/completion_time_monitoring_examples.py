@@ -17,7 +17,6 @@ from utils.completion_time_integration import (
     track_onboarding_operation,
     track_api_call_operation,
     record_onboarding_completion_time,
-    record_webhook_processing_time,
     completion_time_integration
 )
 

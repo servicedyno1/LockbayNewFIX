@@ -116,7 +116,7 @@ This service is designed for future enhancements:
 """
 
 import logging
-from typing import Optional, Tuple, Dict, Type, Any
+from typing import Optional, Dict, Type
 from enum import Enum
 
 # Import validators
@@ -127,10 +127,6 @@ from utils.unified_transaction_state_validator import UnifiedTransactionStateVal
 
 # Import enums
 from models import (
-    EscrowStatus,
-    ExchangeStatus,
-    CashoutStatus,
-    UnifiedTransactionStatus,
     UserStatus,
     DisputeStatus
 )

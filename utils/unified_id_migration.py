@@ -13,8 +13,7 @@ Usage:
 import logging
 import argparse
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
-from sqlalchemy import text, func
+from typing import Dict
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Escrow, Transaction, Cashout, Refund, Wallet, PaymentAddress, SavedAddress
@@ -353,16 +352,16 @@ class UnifiedIDMigration:
             total_updated += stats['updated']
             total_skipped += stats['skipped']
         
-        print(f"\nOVERALL SUMMARY:")
+        print("\nOVERALL SUMMARY:")
         print(f"  Total Records: {total_records}")
         print(f"  Successfully Updated: {total_updated}")
         print(f"  Skipped (Errors): {total_skipped}")
         print(f"  Success Rate: {(total_updated/total_records*100):.1f}%" if total_records > 0 else "  Success Rate: N/A")
         
         if self.dry_run:
-            print(f"\n⚠️  DRY RUN MODE - No changes were committed to database")
+            print("\n⚠️  DRY RUN MODE - No changes were committed to database")
         else:
-            print(f"\n✅ MIGRATION COMPLETED - All changes committed to database")
+            print("\n✅ MIGRATION COMPLETED - All changes committed to database")
         
         print("="*60)
 

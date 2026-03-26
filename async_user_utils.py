@@ -3,11 +3,9 @@ High-performance async user utilities for OnboardingRouter
 Replaces sync run_io_task patterns with pure async implementations
 """
 
-import asyncio
 import logging
 from typing import Dict, Any, Optional, Tuple
 from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from database import async_managed_session
 from models import User, Wallet, Escrow, EscrowStatus
 
@@ -130,7 +128,6 @@ async def get_or_create_user_async(telegram_user) -> Tuple[Optional[dict], bool]
             
             # Generate profile slug for new user
             try:
-                from utils.profile_slug_generator import generate_profile_slug
                 
                 # Convert async session to sync for profile_slug_generator
                 # We'll use a direct SQL approach to avoid session type mismatch

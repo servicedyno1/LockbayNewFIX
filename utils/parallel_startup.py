@@ -6,9 +6,8 @@ Runs independent startup operations concurrently to reduce startup time
 import asyncio
 import logging
 import time
-from typing import List, Dict, Any, Callable, Optional
+from typing import List, Dict, Any, Callable
 from concurrent.futures import ThreadPoolExecutor
-import threading
 
 logger = logging.getLogger(__name__)
 

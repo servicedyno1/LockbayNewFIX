@@ -15,10 +15,10 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, Union, cast
+from typing import Optional, Dict, Any, Union
 from sqlalchemy.orm import Session  
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, and_ as sql_and, func
 
 from models import (
@@ -27,25 +27,15 @@ from models import (
 )
 from database import managed_session, async_managed_session
 # Legacy welcome email service replaced with unified notification system
-from utils.helpers import generate_utid, validate_email
+from utils.helpers import validate_email
 from services.background_email_queue import background_email_queue
-from utils.enhanced_db_session_manager import EnhancedDBSessionManager
 from utils.background_task_runner import run_io_task
-from config import Config
 
 # UNIFIED NOTIFICATION SYSTEM INTEGRATION
-from services.consolidated_notification_service import (
-    ConsolidatedNotificationService,
-    NotificationRequest,
-    NotificationCategory,
-    NotificationPriority,
-    NotificationChannel
-)
 from services.admin_trade_notifications import admin_trade_notifications
 from caching.enhanced_cache import EnhancedCache
 from services.onboarding_performance_monitor import track_onboarding_performance
 # Import ORM typing helpers for Column[Type] vs Type compatibility
-from utils.orm_typing_helpers import as_int, as_str, as_decimal, as_bool, as_datetime
 
 # Bot commands management for user-specific command visibility
 from utils.bot_commands import BotCommandsManager
@@ -106,7 +96,6 @@ class OnboardingService:
             return result
         else:
             # Self-managed session - full transaction policy using sync approach
-            from services.background_email_queue import background_email_queue
             import asyncio
             
             def sync_session_work():
@@ -273,7 +262,6 @@ class OnboardingService:
         try:
             # CRITICAL FIX: Create OTP record and get actual OTP code (not PLACEHOLDER)
             from services.email_verification_service import EmailVerificationService
-            from utils.enhanced_db_session_manager import EnhancedDBSessionManager
             
             async def _create_otp_and_queue():
                 # Fix: Use proper async managed session pattern
@@ -421,7 +409,7 @@ class OnboardingService:
         except Exception as e:
             # Don't let welcome email errors affect onboarding completion
             logger.error(f"❌ Error queueing welcome email to {user_email} for user {user_id}: {e}")
-            logger.info(f"🔄 Background email queue will retry failed welcome emails automatically")
+            logger.info("🔄 Background email queue will retry failed welcome emails automatically")
             return False
 
     @classmethod
@@ -464,7 +452,7 @@ class OnboardingService:
                 pool_status = getattr(async_engine.pool, 'status', lambda: 'unavailable')()
                 logger.info(f"📊 POOL_STATUS: {pool_status} | Starting onboarding for user {user_id}")
             else:
-                logger.debug(f"📊 POOL_STATUS: Not available")
+                logger.debug("📊 POOL_STATUS: Not available")
         except Exception as e:
             # Don't fail onboarding if pool monitoring fails
             logger.debug(f"Could not retrieve pool status: {e}")
@@ -573,7 +561,7 @@ class OnboardingService:
                     )
                     active_count = active_count_query.scalar()
                     logger.info(f"📈 CONCURRENT_SESSIONS: {active_count} active onboarding sessions")
-                except IntegrityError as e:
+                except IntegrityError:
                     # Task 3: Enhanced race condition logging
                     logger.warning(f"⚠️ RACE_CONDITION_DETECTED: Duplicate session attempt for user {user_id} - recovering gracefully")
                     await session.rollback()
@@ -677,7 +665,7 @@ class OnboardingService:
                                 async_session.add(onboarding_session)
                                 await async_session.flush()
                                 logger.info(f"Created new onboarding session for user {user_id}")
-                            except IntegrityError as e:
+                            except IntegrityError:
                                 # Task 3: Enhanced race condition logging
                                 logger.warning(f"⚠️ RACE_CONDITION_DETECTED: Duplicate session attempt for user {user_id} - recovering gracefully")
                                 await async_session.rollback()
@@ -767,7 +755,6 @@ class OnboardingService:
                 logger.info(f"✅ Updated user {user_id} email from temp to real email immediately: {email}")
             
             # PERFORMANCE OPTIMIZATION: Send OTP in background to avoid blocking webhook
-            from services.email_verification_service import EmailVerificationService
             try:
                 # Immediately update state and respond fast
                 onboarding_session.current_step = OnboardingStep.VERIFY_OTP.value
@@ -1345,8 +1332,6 @@ class OnboardingService:
     @classmethod
     async def resend_otp(cls, user_id: int, session: Optional[AsyncSession] = None, db_session: Optional[AsyncSession] = None) -> Dict[str, Any]:
         """Resend OTP for current onboarding session - ASYNC end-to-end"""
-        from datetime import datetime, timezone
-        from services.email_verification_service import EmailVerificationService
         from database import async_managed_session
         
         try:
@@ -1386,7 +1371,7 @@ class OnboardingService:
                 "retry_after": timestamp (Unix timestamp)
             }
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
         from services.email_verification_service import EmailVerificationService
         
         # Get onboarding session (async query)
@@ -1530,7 +1515,6 @@ class OnboardingService:
                 return await _get_step_logic(effective_session)
             else:
                 # Use sync approach with run_io_task to avoid async context manager issues
-                from services.background_email_queue import background_email_queue
                 
                 def sync_step_work():
                     with managed_session() as sync_session:
@@ -1598,7 +1582,6 @@ class OnboardingService:
                 return await _has_session_logic(effective_session)
             else:
                 # Use sync approach with run_io_task to avoid async context manager issues
-                from services.background_email_queue import background_email_queue
                 
                 def sync_session_check():
                     with managed_session() as sync_session:
@@ -1653,7 +1636,6 @@ class OnboardingService:
                 return await _get_info_logic(effective_session)
             else:
                 # Use sync approach with run_io_task to avoid async context manager issues
-                from services.background_email_queue import background_email_queue
                 
                 def sync_info_work():
                     with managed_session() as sync_session:
@@ -2053,7 +2035,7 @@ class OnboardingService:
                 NotificationCategory
             )
             from database import async_managed_session
-            logger.debug(f"🔔 _notify_seller_pending_escrows: Imports successful")
+            logger.debug("🔔 _notify_seller_pending_escrows: Imports successful")
             
             # Get buyer information for escrow details
             buyer_info = {}
@@ -2118,7 +2100,7 @@ Tap /start to view and accept them."""
             logger.info(f"🔔 _notify_seller_pending_escrows: About to notify {len(set([e['buyer_id'] for e in escrow_details]))} buyer(s) about seller registration")
             try:
                 await cls._notify_buyers_seller_registered(escrow_details, username, user_id)
-                logger.info(f"✅ _notify_seller_pending_escrows: Successfully notified buyers about seller registration")
+                logger.info("✅ _notify_seller_pending_escrows: Successfully notified buyers about seller registration")
             except Exception as buyer_notif_error:
                 logger.error(f"❌ _notify_seller_pending_escrows: Failed to notify buyers: {buyer_notif_error}", exc_info=True)
                 # Don't fail seller notification if buyer notification fails
@@ -2186,7 +2168,7 @@ Tap /start to view and accept them."""
             )
             from models import User
             from database import async_managed_session
-            logger.debug(f"🔔 _notify_buyers_seller_registered: Imports successful")
+            logger.debug("🔔 _notify_buyers_seller_registered: Imports successful")
             
             # Get seller's display name for consolidated notification
             seller_display_name = seller_username

@@ -9,7 +9,7 @@ functionality for the LockBay Telegram Escrow Bot.
 import logging
 import asyncio
 from contextlib import contextmanager, asynccontextmanager
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import QueuePool
@@ -144,20 +144,6 @@ def create_tables():
         
         # CRITICAL FIX: Import all models to register them with Base.metadata
         # This ensures all table definitions are available for creation
-        from models import (
-            User, Wallet, Escrow, Transaction, Cashout, Refund, EscrowRefundOperation, DistributedLock,
-            IdempotencyToken, WebhookEventLedger, PaymentAddress, NotificationQueue,
-            AuditLog, SystemConfig, UserSession, SavedAddress, SavedBankAccount,
-            EmailVerification, PendingCashout, ExchangeOrder, IdempotencyKey,
-            EscrowMessage, Dispute, DisputeMessage, UnifiedTransaction, Rating,
-            UnifiedTransactionStatusHistory, UnifiedTransactionRetryLog, EscrowHolding,
-            SecurityAudit, SupportTicket, SupportMessage, OutboxEvent, AdminActionToken,
-            InboxWebhook, SagaStep, WalletHolds, TransactionEngineEvent, AuditEvent,
-            InternalWallet, BalanceAuditLog, WalletBalanceSnapshot, BalanceReconciliationLog,
-            OnboardingSession, UserContact, NotificationActivity, NotificationPreference,
-            CryptoDeposit, UserAchievement, UserStreakTracking,
-            AdminOperationOverride, BalanceProtectionLog, PartnerApplication
-        )
         
         # Create a fresh engine specifically for table creation to avoid transaction conflicts
         from sqlalchemy import create_engine
@@ -355,7 +341,6 @@ async def async_managed_session():
     If the database endpoint is suspended (Neon, Railway), this will reset
     the connection pool and retry, avoiding the need for a full bot restart.
     """
-    import asyncio
     max_retries = 2
     last_error = None
     
@@ -413,7 +398,7 @@ def test_connection():
     """Test database connection"""
     try:
         with engine.connect() as connection:
-            result = connection.execute(text("SELECT 1"))
+            connection.execute(text("SELECT 1"))
             logger.info("✅ Database connection test successful")
             return True
     except Exception as e:

@@ -56,7 +56,7 @@ async def handle_wallet_text_input(update: Update, context: ContextTypes.DEFAULT
         # CRITICAL FIX: Use unified state management system instead of legacy context.user_data
         from handlers.wallet_direct import get_wallet_state
         wallet_state = await get_wallet_state(user_id, context)
-        current_state = context.user_data.get('current_state', '')
+        context.user_data.get('current_state', '')
         
         logger.info(f"🎯 WALLET_TEXT_INPUT: User {user_id} in state '{wallet_state}' sent: '{text[:50]}...'")
         

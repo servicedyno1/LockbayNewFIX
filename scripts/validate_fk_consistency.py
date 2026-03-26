@@ -65,20 +65,20 @@ def validate_foreign_keys():
                     
                     print(f"  ❌ {severity}: {issue['column']} - {issue['current_type']} should be {issue['required_type']}")
                 
-                print(f"  📝 Recommendations:")
+                print("  📝 Recommendations:")
                 for rec in audit_result["recommendations"]:
                     print(f"    • {rec}")
             else:
-                print(f"  ✅ No foreign key issues found")
+                print("  ✅ No foreign key issues found")
         
         print("\n" + "=" * 50)
-        print(f"📈 SUMMARY:")
+        print("📈 SUMMARY:")
         print(f"  Total Issues Found: {total_issues}")
         print(f"  Critical/High Priority: {critical_count}")
         print(f"  Tables Audited: {len(tables_to_audit)}")
         
         if critical_issues:
-            print(f"\n🚨 CRITICAL ISSUES REQUIRING IMMEDIATE ATTENTION:")
+            print("\n🚨 CRITICAL ISSUES REQUIRING IMMEDIATE ATTENTION:")
             for issue in critical_issues:
                 print(f"  • {issue['table']}.{issue['column']}: {issue['issue']}")
         
@@ -96,10 +96,9 @@ def check_telegram_id_patterns():
     """
     Check for remaining string conversion patterns in Telegram ID handling
     """
-    print(f"\n🔍 Checking for remaining Telegram ID string conversion patterns...")
+    print("\n🔍 Checking for remaining Telegram ID string conversion patterns...")
     
     import subprocess
-    import glob
     
     # Search for problematic patterns
     problematic_patterns = [
@@ -131,7 +130,7 @@ def check_telegram_id_patterns():
         if len(found_issues) > 10:
             print(f"    ... and {len(found_issues) - 10} more")
     else:
-        print(f"  ✅ No problematic Telegram ID string conversion patterns found")
+        print("  ✅ No problematic Telegram ID string conversion patterns found")
     
     return found_issues
 

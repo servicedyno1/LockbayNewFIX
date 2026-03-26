@@ -4,22 +4,17 @@ Idempotent Refund Service - Prevents double refunds and provides audit trail
 
 import hashlib
 import logging
-import time
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, Dict, Any
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import and_
 
 from models import (
-    User, Cashout, Refund, RefundType, RefundStatus, 
-    CashoutStatus, TransactionType
+    Cashout, Refund, RefundStatus
 )
 from services.wallet_service import WalletService
-from utils.helpers import generate_utid
-from utils.refund_monitor import refund_monitor
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,6 @@ from functools import wraps
 from typing import Any, Callable, TypeVar
 from contextlib import asynccontextmanager
 from database import SessionLocal
-from utils.atomic_transactions import atomic_transaction
 
 logger = logging.getLogger(__name__)
 

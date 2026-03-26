@@ -5,17 +5,16 @@ Addresses Issues: #3, #4, #5, #14, #15
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, List, Dict
+from datetime import datetime
+from typing import Dict
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, select
 
 from database import SessionLocal, async_managed_session
 from models import User, Rating, Escrow, EscrowStatus
 from services.enhanced_reputation_service import EnhancedReputationService, ReputationScore
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
-from utils.helpers import escape_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -231,7 +230,7 @@ async def handle_seller_reviews(update: Update, context: ContextTypes.DEFAULT_TY
                         comment = review.comment[:150] + "..." if len(review.comment) > 150 else review.comment
                         message += f"💭 \"{comment}\"\n"
                     else:
-                        message += f"💭 No comment provided\n"
+                        message += "💭 No comment provided\n"
                     
                     message += "\n"
             
@@ -328,13 +327,13 @@ async def handle_seller_rating_history(update: Update, context: ContextTypes.DEF
                     message += f"• {month_name}: {avg:.1f}/5.0 {stars} ({count} reviews)\n"
                 
                 # Add performance insights
-                message += f"\n🎯 Performance Insights:\n"
+                message += "\n🎯 Performance Insights:\n"
                 if reputation.reputation_trend == 'improving':
-                    message += f"• 📈 Rating trend is improving\n"
+                    message += "• 📈 Rating trend is improving\n"
                 elif reputation.reputation_trend == 'declining':
-                    message += f"• 📉 Recent ratings have declined\n"
+                    message += "• 📉 Recent ratings have declined\n"
                 else:
-                    message += f"• 📊 Consistent performance\n"
+                    message += "• 📊 Consistent performance\n"
                 
                 # Recent activity
                 recent_30_days = len([r for r in ratings if (datetime.utcnow() - r.created_at).days <= 30])
@@ -432,12 +431,12 @@ async def handle_seller_badges(update: Update, context: ContextTypes.DEFAULT_TYP
                     message += f"• Average: {reputation.overall_rating:.1f}/{next_requirements[1]} ✅\n" if reputation.overall_rating >= next_requirements[1] else f"• Average: {reputation.overall_rating:.1f}/{next_requirements[1]} ❌\n"
                     message += f"• Volume: ${float(reputation.total_volume):,.0f}/${next_requirements[2]} ✅\n" if float(reputation.total_volume) >= next_requirements[2] else f"• Volume: ${float(reputation.total_volume):,.0f}/${next_requirements[2]} ❌\n"
                 else:
-                    message += f"\n🎯 Maximum level achieved!\n"
+                    message += "\n🎯 Maximum level achieved!\n"
             except ValueError:
                 pass
             
             # Achievement opportunities
-            message += f"\n🎯 Achievement Opportunities:\n"
+            message += "\n🎯 Achievement Opportunities:\n"
             
             # Potential badges they can earn
             potential_badges = []
@@ -458,7 +457,7 @@ async def handle_seller_badges(update: Update, context: ContextTypes.DEFAULT_TYP
                 for badge in potential_badges[:3]:  # Show top 3
                     message += f"• {badge}\n"
             else:
-                message += f"• Keep trading to unlock more achievements!\n"
+                message += "• Keep trading to unlock more achievements!\n"
             
             keyboard = [
                 [
@@ -514,7 +513,7 @@ async def handle_browse_sellers(update: Update, context: ContextTypes.DEFAULT_TY
             
             keyboard = []
             for i, seller in enumerate(top_sellers[:10], 1):  # Show top 10
-                stars = "⭐" * min(5, max(1, int(round(seller['rating']))))
+                "⭐" * min(5, max(1, int(round(seller['rating']))))
                 trust_emoji = {'diamond': '💎', 'platinum': '🏆', 'gold': '🥇', 'silver': '🥈', 'bronze': '🥉', 'new': '🆕'}.get(seller['trust_level'], '📊')
                 
                 message += f"{i}. {seller['display_name']}\n"
@@ -623,7 +622,7 @@ async def _build_seller_profile_message(user: User, reputation: ReputationScore,
         ).order_by(desc(Rating.created_at)).limit(3).all()
         
         if recent_ratings:
-            message += f"💬 Recent Reviews:\n"
+            message += "💬 Recent Reviews:\n"
             for rating in recent_ratings:
                 rater = session.query(User).filter(User.id == rating.rater_id).first()
                 rater_name = rater.first_name if rater else "Anonymous"
@@ -635,9 +634,9 @@ async def _build_seller_profile_message(user: User, reputation: ReputationScore,
                     comment = rating.comment[:80] + "..." if len(rating.comment) > 80 else rating.comment
                     message += f"  💭 \"{comment}\"\n"
     else:
-        message += f"🆕 New Seller - No ratings yet\n\n"
+        message += "🆕 New Seller - No ratings yet\n\n"
         message += f"📅 Joined: {user.created_at.strftime('%B %Y') if user.created_at else 'Recently'}\n"
-        message += f"💡 Tip: Consider starting with smaller trades\n"
+        message += "💡 Tip: Consider starting with smaller trades\n"
     
     return message
 

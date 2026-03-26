@@ -8,10 +8,9 @@ optimization recommendations for the LockBay platform.
 
 import logging
 import time
-import json
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime
 from sqlalchemy import event, text
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal

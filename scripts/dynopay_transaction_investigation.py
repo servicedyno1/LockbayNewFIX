@@ -16,9 +16,8 @@ import asyncio
 import logging
 import sys
 import os
-from decimal import Decimal
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 # Add the project root to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -31,8 +30,7 @@ from utils.financial_audit_logger import (
     EntityType,
     FinancialContext
 )
-from database import managed_session
-from models import User, Wallet, UnifiedTransaction
+from models import User, Wallet
 
 # Configure logging
 logging.basicConfig(
@@ -83,7 +81,7 @@ class DynoPayInvestigator:
                 return investigation_result
             
             # Method 1: Try to get transaction details by reference ID
-            logger.info(f"📡 Querying DynoPay for transaction details...")
+            logger.info("📡 Querying DynoPay for transaction details...")
             
             # CRITICAL: We need to search by reference ID since that's how DynoPay tracks our transactions
             # The transaction_id format is WALLET-20250919-085239-5590563715 which should be the reference_id
@@ -96,7 +94,7 @@ class DynoPayInvestigator:
             # WALLET-20250919-085239-5590563715
             # Date: 2025-09-19, Time: 08:52:39
             
-            logger.info(f"🕐 Transaction timestamp extracted: 2025-09-19 08:52:39")
+            logger.info("🕐 Transaction timestamp extracted: 2025-09-19 08:52:39")
             
             # Since DynoPay API doesn't provide search by reference_id directly,
             # we'll need to check multiple methods to find this transaction
@@ -257,7 +255,7 @@ class DynoPayInvestigator:
         Returns:
             Complete investigation report with recommendations
         """
-        logger.info(f"📋 GENERATING comprehensive investigation report")
+        logger.info("📋 GENERATING comprehensive investigation report")
         
         report = {
             "investigation_timestamp": datetime.now(timezone.utc).isoformat(),

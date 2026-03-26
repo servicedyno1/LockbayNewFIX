@@ -82,7 +82,6 @@ from contextlib import asynccontextmanager
 from telegram import Update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import Config
 from database import get_async_session
 from utils.fast_user_lookup import async_fast_user_lookup
 from models import User

@@ -16,10 +16,8 @@ Into a single, clean interface that uses the PaymentProcessor architecture.
 import logging
 from typing import Dict, Any, Optional, List
 from decimal import Decimal
-from datetime import datetime
 
 # Import the new unified architecture
-from services.core.payment_processor import PaymentProcessor
 from services.migration_adapters import payment_adapter, check_unified_balance
 
 logger = logging.getLogger(__name__)

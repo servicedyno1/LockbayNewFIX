@@ -5,11 +5,9 @@ Ensures clean startup by removing stale processes and locks
 """
 
 import os
-import sys
 import time
 import psutil
 import logging
-from pathlib import Path
 from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)

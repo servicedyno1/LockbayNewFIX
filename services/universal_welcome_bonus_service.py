@@ -6,7 +6,7 @@ Processes $3 welcome bonus for ALL users 30 minutes after onboarding completion
 import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from sqlalchemy import and_
 from database import SessionLocal

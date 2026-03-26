@@ -24,7 +24,7 @@ async def check_redis_status():
     
     # Check environment variables
     redis_url = os.getenv("REDIS_URL")
-    print(f"📋 Environment Configuration:")
+    print("📋 Environment Configuration:")
     print(f"   REDIS_URL: {'✅ Set' if redis_url else '❌ Not Set'}")
     if redis_url and redis_url != "redis://localhost:6379/0":
         print(f"   Redis Host: {redis_url.split('@')[-1] if '@' in redis_url else redis_url}")
@@ -40,7 +40,7 @@ async def check_redis_status():
         
         if health.get('healthy'):
             print("   ✅ Redis is CONNECTED and healthy")
-            print(f"   📊 Queue Stats:")
+            print("   📊 Queue Stats:")
             print(f"      • Total pending: {stats.get('total_pending', 0)}")
             print(f"      • Avg enqueue time: {stats.get('avg_enqueue_time_ms', 0):.2f}ms")
             print(f"      • Metrics: {stats.get('metrics', {})}")

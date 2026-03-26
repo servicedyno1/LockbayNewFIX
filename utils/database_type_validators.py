@@ -6,7 +6,6 @@ database constraint violations and performance issues.
 """
 
 from typing import Union, Optional, Type, Any
-from decimal import Decimal
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import BigInteger, Integer, String

@@ -6,18 +6,17 @@ technical failures (retry) and user errors (refund)
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, Tuple, List
+from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 
 from database import managed_session
-from models import Cashout, CashoutStatus, OperationFailureType, CashoutFailureType, CashoutErrorCode, ExchangeOrder, Escrow, EscrowStatus, Transaction, WalletHolds, WalletHoldStatus, ExchangeStatus
+from models import Cashout, CashoutStatus, OperationFailureType, CashoutFailureType, CashoutErrorCode, ExchangeOrder, Escrow, ExchangeStatus
 from services.cashout_error_classifier import UnifiedErrorClassifier, classify_cashout_error, classify_escrow_error, classify_deposit_error
 from services.kraken_service import KrakenService
-from services.crypto import CryptoServiceAtomic
 from utils.error_handler import handle_error
-from utils.constants import CASHOUT_STATUSES_WITH_HOLDS, CASHOUT_STATUSES_WITHOUT_HOLDS
-from utils.exchange_state_validator import ExchangeStateValidator, StateTransitionError
+from utils.constants import CASHOUT_STATUSES_WITHOUT_HOLDS
+from utils.exchange_state_validator import ExchangeStateValidator
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +276,7 @@ class UnifiedRetryService:
     async def _legacy_trigger_cashout_refund(self, cashout: Cashout):
         """DEPRECATED: Legacy method that automatically credited wallets - violates frozen funds policy"""
         logger.warning(f"🚨 DEPRECATED_REFUND_CALL: Attempted to call legacy automatic refund for {cashout.cashout_id}")
-        logger.warning(f"⚠️ POLICY_VIOLATION: Automatic wallet credits are not allowed - funds must stay frozen for admin review")
+        logger.warning("⚠️ POLICY_VIOLATION: Automatic wallet credits are not allowed - funds must stay frozen for admin review")
         
         # Instead of automatic refund, trigger admin notification
         await self._notify_admin_failed_cashout(
@@ -776,7 +775,8 @@ class UnifiedRetryService:
             with managed_session() as db:
                 # Fetch exchange record based on type
                 if exchange_type == "direct_exchange":
-                    exchange = db.query(DirectExchange).filter_by(exchange_id=exchange_id).first()
+                    # DirectExchange model not yet implemented - use ExchangeOrder as fallback
+                    exchange = db.query(ExchangeOrder).filter_by(exchange_order_id=exchange_id).first()
                 else:
                     exchange = db.query(ExchangeOrder).filter_by(exchange_order_id=exchange_id).first()
                 
@@ -1210,7 +1210,7 @@ class UnifiedRetryService:
         Returns:
             bool: True if retry was scheduled, False if alternative action was taken
         """
-        with managed_session() as db:
+        with managed_session():
             try:
                 # For deposit operations, we might need to create/update a transaction retry record
                 # This is a simplified approach - in a full implementation, you'd want to store

@@ -10,16 +10,11 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from datetime import datetime, timedelta
 
-from config import Config
-from services.enhanced_payment_tolerance_service import enhanced_payment_tolerance
-from services.state_manager import StateManager
 from services.crypto import CryptoServiceAtomic
 # from services.payment_address_service import PaymentAddressService  # Will be available when needed
 # from utils.helpers import generate_qr_code_base64  # Will be available when needed
-from utils.atomic_transactions import async_atomic_transaction
-from models import User, Escrow
-from database import async_managed_session
-from sqlalchemy import select, update as sqlalchemy_update
+from models import Escrow
+from sqlalchemy import update as sqlalchemy_update
 from utils.callback_utils import safe_answer_callback_query
 
 logger = logging.getLogger(__name__)
@@ -42,9 +37,9 @@ class PaymentRecoveryHandler:
             action_options = decision_data["action_options"]
             
             # Create user-friendly message
-            message = f"💰 **Payment Recovery Options**\n\n"
+            message = "💰 **Payment Recovery Options**\n\n"
             message += f"Your payment was ${float(variance_usd):.2f} short of the required amount.\n\n"
-            message += f"**Choose your preferred option:**"
+            message += "**Choose your preferred option:**"
             
             # Create inline keyboard with options
             keyboard = []
@@ -123,8 +118,6 @@ class PaymentRecoveryHandler:
             
             # SECURITY: Validate session and get server-side amounts
             from services.state_manager import StateManager
-            import hmac
-            import hashlib
             
             state_manager = StateManager()
             session_key = f"payment_recovery_{user_id}_{transaction_id}"
@@ -147,12 +140,12 @@ class PaymentRecoveryHandler:
             # For now, show a message that payment completion will be available soon
             # TODO: Integrate with payment address service when available
             
-            message = f"💳 **Complete Payment Feature**\n\n"
+            message = "💳 **Complete Payment Feature**\n\n"
             message += f"**Amount Needed**: ${float(amount_needed):.2f}\n\n"
-            message += f"🔧 **This feature will be available soon!**\n"
-            message += f"For now, please choose one of the other options below:\n\n"
-            message += f"• **Proceed with partial amount**\n"
-            message += f"• **Cancel and get refund to wallet**"
+            message += "🔧 **This feature will be available soon!**\n"
+            message += "For now, please choose one of the other options below:\n\n"
+            message += "• **Proceed with partial amount**\n"
+            message += "• **Cancel and get refund to wallet**"
             
             await query.edit_message_text(message, parse_mode='Markdown')
                 
@@ -323,18 +316,18 @@ class PaymentRecoveryHandler:
                         buyer_fee = Decimal(str(confirm_escrow.buyer_fee_amount or 0))
                         total_paid = escrow_amount + buyer_fee
                         
-                        message = f"🎉 Payment Confirmed!\n\n"
-                        message += f"✅ Status: Escrow Active\n"
+                        message = "🎉 Payment Confirmed!\n\n"
+                        message += "✅ Status: Escrow Active\n"
                         message += f"💰 Amount: ${float(escrow_amount):.2f}\n"
                         message += f"💸 Total Paid: ${float(total_paid):.2f} (inc. ${float(buyer_fee):.2f} fee)\n"
                         message += f"🆔 Trade ID: #{display_id}\n"
                         message += f"👤 Seller: {seller_display}\n"
                         message += f"⏰ Delivery: {delivery_text}\n\n"
-                        message += f"Next Steps:\n"
-                        message += f"• Wait for seller confirmation\n"
-                        message += f"• Seller will deliver within deadline\n"
-                        message += f"• Your funds are secured in escrow\n\n"
-                        message += f"💡 Use /orders to track your trade"
+                        message += "Next Steps:\n"
+                        message += "• Wait for seller confirmation\n"
+                        message += "• Seller will deliver within deadline\n"
+                        message += "• Your funds are secured in escrow\n\n"
+                        message += "💡 Use /orders to track your trade"
                         
                         # Add buttons
                         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -345,20 +338,20 @@ class PaymentRecoveryHandler:
                         reply_markup = InlineKeyboardMarkup(keyboard)
                     else:
                         # Fallback if escrow not found
-                        message = f"✅ Escrow Confirmed\n\n"
+                        message = "✅ Escrow Confirmed\n\n"
                         message += f"Amount: ${float(escrow_amount):.2f}\n"
                         message += f"Escrow ID: {transaction_id}\n\n"
-                        message += f"🔒 Your escrow is now active!\n"
-                        message += f"💡 Use /orders to view details"
+                        message += "🔒 Your escrow is now active!\n"
+                        message += "💡 Use /orders to view details"
                         reply_markup = None
             except Exception as msg_error:
                 logger.error(f"Error formatting buyer confirmation: {msg_error}")
                 # Fallback message
-                message = f"✅ Escrow Confirmed\n\n"
+                message = "✅ Escrow Confirmed\n\n"
                 message += f"Amount: ${float(escrow_amount):.2f}\n"
                 message += f"Escrow ID: {transaction_id}\n\n"
-                message += f"🔒 Your escrow is now active!\n"
-                message += f"💡 Use /orders to view details"
+                message += "🔒 Your escrow is now active!\n"
+                message += "💡 Use /orders to view details"
                 reply_markup = None
             
             await query.edit_message_text(message, reply_markup=reply_markup)
@@ -437,11 +430,11 @@ class PaymentRecoveryHandler:
                 )
                 await session.execute(stmt)
             
-            message = f"💰 **Refund Processed**\n\n"
+            message = "💰 **Refund Processed**\n\n"
             message += f"**Amount**: ${float(refund_amount):.2f}\n"
-            message += f"**Destination**: Your LockBay wallet\n\n"
-            message += f"✅ Funds are now available in your wallet balance!\n"
-            message += f"💡 You can use them for other transactions or withdraw to bank/crypto."
+            message += "**Destination**: Your LockBay wallet\n\n"
+            message += "✅ Funds are now available in your wallet balance!\n"
+            message += "💡 You can use them for other transactions or withdraw to bank/crypto."
             
             # Add keyboard to view wallet or create new escrow
             keyboard = [

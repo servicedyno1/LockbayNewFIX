@@ -12,13 +12,10 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import Enum
-from decimal import Decimal
 
 from sqlalchemy import select, update, delete, func, and_, or_
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
 
-from config import Config
 from database import async_engine, AsyncSessionLocal
 from models import WebhookEventLedger
 
@@ -197,7 +194,7 @@ class PostgresAsyncWebhookQueue:
                     index_elements=['event_provider', 'event_id']
                 )
                 
-                result = await session.execute(stmt)
+                await session.execute(stmt)
                 await session.commit()
                 
                 # Update metrics

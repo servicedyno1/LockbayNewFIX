@@ -4,12 +4,12 @@ Provides safe row-level locking with SELECT FOR UPDATE and SKIP LOCKED for concu
 """
 
 import logging
-from typing import Optional, Any, Dict, List, Union
+from typing import Optional, Any, Dict
 from contextlib import contextmanager
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
-from models import Cashout, User, Wallet, WalletHolds, UnifiedTransaction
+from models import Cashout, Wallet, WalletHolds
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +250,7 @@ class DatabaseLockingService:
                     yield []
                     return
             elif not results and skip_locked:
-                logger.info(f"🔒 SKIP_LOCKED: Wallet holds locked by another process")
+                logger.info("🔒 SKIP_LOCKED: Wallet holds locked by another process")
                 yield []
                 return
             
@@ -269,7 +269,7 @@ class DatabaseLockingService:
             
         except OperationalError as e:
             if "lock_timeout" in str(e).lower():
-                logger.error(f"🕐 HOLDS_LOCK_TIMEOUT: Failed to lock wallet holds")
+                logger.error("🕐 HOLDS_LOCK_TIMEOUT: Failed to lock wallet holds")
                 raise WalletHoldLockTimeoutError("Wallet holds lock timeout")
             else:
                 logger.error(f"❌ HOLDS_LOCK_ERROR: Database error locking wallet holds: {e}")

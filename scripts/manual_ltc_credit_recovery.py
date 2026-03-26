@@ -27,7 +27,7 @@ import sys
 import os
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 # Add the project root to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -45,8 +45,6 @@ from models import (
 )
 from services.unified_transaction_service import create_unified_transaction_service
 from services.dual_write_adapter import DualWriteMode
-from services.crypto import CryptoServiceAtomic
-from database import managed_session
 from utils.universal_id_generator import UniversalIDGenerator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -81,7 +79,7 @@ class ManualLTCCreditRecovery:
         # Generate deterministic idempotency key for this recovery operation (replay-safe)
         self.idempotency_key = f"MANUAL_CREDIT_RECOVERY_{self.transaction_id}_{self.user_db_id}_{self.currency}"
         
-        logger.info(f"🔧 Initialized Manual LTC Credit Recovery")
+        logger.info("🔧 Initialized Manual LTC Credit Recovery")
         logger.info(f"👤 Target User: DB ID {self.user_db_id}, Telegram ID {self.user_telegram_id}, Username: {self.username}")
         logger.info(f"🆔 Idempotency Key: {self.idempotency_key}")
     
@@ -283,7 +281,7 @@ class ManualLTCCreditRecovery:
         Returns:
             Dict containing operation results
         """
-        logger.info(f"🚀 EXECUTING manual LTC credit recovery")
+        logger.info("🚀 EXECUTING manual LTC credit recovery")
         logger.info(f"💰 Amount: {ltc_amount} {self.currency}")
         logger.info(f"🔗 Blockchain TxID: {blockchain_txid or 'Not provided'}")
         logger.info(f"📝 Admin Note: {confirmation_note or 'Not provided'}")
@@ -410,7 +408,7 @@ class ManualLTCCreditRecovery:
                     }
                 )
                 
-                logger.info(f"✅ Manual credit completed successfully!")
+                logger.info("✅ Manual credit completed successfully!")
                 logger.info(f"📊 Transaction ID: {unified_tx_id}")
                 logger.info(f"💰 Amount credited: {ltc_amount} {self.currency}")
                 logger.info(f"🏦 New balance: {new_balance} {self.currency}")
@@ -612,13 +610,13 @@ async def interactive_manual_credit():
             print(f"❌ Invalid amount format: {e}. Please enter a valid decimal number.")
     
     # Optional blockchain txid
-    blockchain_txid = input(f"\n🔗 Enter blockchain transaction hash (optional): ").strip() or None
+    blockchain_txid = input("\n🔗 Enter blockchain transaction hash (optional): ").strip() or None
     
     # Admin confirmation note
-    confirmation_note = input(f"\n📝 Enter admin confirmation note: ").strip() or f"Manual recovery confirmed by admin on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    confirmation_note = input("\n📝 Enter admin confirmation note: ").strip() or f"Manual recovery confirmed by admin on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     
     # Final confirmation
-    print(f"\n" + "="*80)
+    print("\n" + "="*80)
     print("🚨 FINAL CONFIRMATION")
     print("="*80)
     print(f"Amount: {ltc_amount} {TARGET_CURRENCY}")
@@ -626,13 +624,13 @@ async def interactive_manual_credit():
     print(f"Blockchain TxID: {blockchain_txid or 'Not provided'}")
     print(f"Note: {confirmation_note}")
     
-    final_confirm = input(f"\n⚠️  FINAL CONFIRMATION: Execute credit operation? (YES/no): ").strip()
+    final_confirm = input("\n⚠️  FINAL CONFIRMATION: Execute credit operation? (YES/no): ").strip()
     if final_confirm != "YES":
         print("Operation cancelled. Must enter 'YES' exactly to proceed.")
         return False
     
     # Execute credit
-    print(f"\n🚀 Executing manual credit operation...")
+    print("\n🚀 Executing manual credit operation...")
     operation_result = await recovery.execute_manual_credit(
         ltc_amount=ltc_amount,
         blockchain_txid=blockchain_txid,
@@ -640,29 +638,29 @@ async def interactive_manual_credit():
     )
     
     if operation_result["success"]:
-        print(f"\n✅ MANUAL CREDIT SUCCESSFUL!")
+        print("\n✅ MANUAL CREDIT SUCCESSFUL!")
         print(f"   Transaction ID: {operation_result['unified_transaction_id']}")
         print(f"   Amount Credited: {operation_result['amount_credited']} {TARGET_CURRENCY}")
         print(f"   New Balance: {operation_result['new_balance']} {TARGET_CURRENCY}")
         print(f"   Wallet ID: {operation_result['wallet_id']}")
         
         # Verify success
-        print(f"\n🔍 Verifying operation success...")
+        print("\n🔍 Verifying operation success...")
         verification_result = await recovery.verify_credit_success(operation_result)
         
         if verification_result["verification_errors"]:
-            print(f"\n⚠️  VERIFICATION WARNINGS:")
+            print("\n⚠️  VERIFICATION WARNINGS:")
             for error in verification_result["verification_errors"]:
                 print(f"   • {error}")
         else:
-            print(f"✅ All verifications passed!")
+            print("✅ All verifications passed!")
         
-        print(f"\n🎉 RECOVERY OPERATION COMPLETE")
+        print("\n🎉 RECOVERY OPERATION COMPLETE")
         print(f"User {TARGET_USERNAME} has been credited {ltc_amount} {TARGET_CURRENCY}")
         return True
         
     else:
-        print(f"\n❌ MANUAL CREDIT FAILED:")
+        print("\n❌ MANUAL CREDIT FAILED:")
         print(f"   Error: {operation_result['error']}")
         return False
 

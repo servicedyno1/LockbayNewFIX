@@ -5,19 +5,16 @@ Shows how to migrate existing handlers to use the audit decorators
 
 import logging
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram.ext import ContextTypes
 
 # Import the audit decorators
 from utils.handler_decorators import (
     audit_handler,
     audit_admin_handler,
-    audit_escrow_handler,
-    audit_exchange_handler,
     audit_conversation_handler,
     audit_wallet_handler,
     audit_callback_handler,
     audit_escrow_with_session,
-    audit_exchange_with_session,
     audit_wallet_with_session,
     with_error_recovery,
     with_performance_monitoring,

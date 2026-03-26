@@ -8,8 +8,7 @@ can send SMS invitations.
 import json
 import logging
 from datetime import datetime, timezone, timedelta
-from decimal import Decimal
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 

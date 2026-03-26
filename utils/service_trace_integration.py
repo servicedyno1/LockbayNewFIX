@@ -4,20 +4,19 @@ Provides comprehensive trace correlation for external service integrations
 including email, SMS, webhooks, and other third-party services
 """
 
-import logging
 import asyncio
 import json
 from functools import wraps
-from typing import Dict, Any, Optional, Callable, Union, List
+from typing import Dict, Any, Optional, Callable, List
 from datetime import datetime
 import traceback
 
 from utils.trace_correlation import (
     trace_manager, OperationType, TraceStatus, TraceContext,
-    traced_operation, with_trace_context, correlate_with_external_id
+    correlate_with_external_id
 )
 from utils.trace_logging_integration import (
-    get_trace_logger, MonitoringIntegration, trace_external_api_call
+    get_trace_logger, MonitoringIntegration
 )
 
 logger = get_trace_logger(__name__)

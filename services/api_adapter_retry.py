@@ -5,15 +5,14 @@ Base class for all external API integrations to provide consistent error handlin
 
 import asyncio
 import logging
-import time
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Tuple, Union, TypeVar
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 from datetime import datetime
 import aiohttp
 from functools import wraps
 
 from services.cashout_error_classifier import UnifiedErrorClassifier
-from services.circuit_breaker import with_circuit_breaker, circuit_breakers
+from services.circuit_breaker import circuit_breakers
 from models import OperationFailureType, CashoutErrorCode
 from utils.error_handler import handle_error
 

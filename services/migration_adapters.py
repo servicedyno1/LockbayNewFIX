@@ -12,20 +12,16 @@ This allows for gradual migration without breaking existing functionality.
 import logging
 from typing import Dict, Any, Optional, List, Union
 from decimal import Decimal
-from datetime import datetime
-import asyncio
 
 # Import the new unified architecture
 from services.core.payment_processor import PaymentProcessor
 from services.core.payment_data_structures import (
-    PayoutRequest, PayinRequest, PaymentDestination, PaymentResult,
-    TransactionStatus, PaymentError, PaymentProvider
+    PayoutRequest, PaymentDestination, PaymentResult
 )
 
 # Import existing services for fallback compatibility
 from services.fincra_service import FincraService
 from services.kraken_service import KrakenService
-from services.blockbee_service import BlockBeeService
 
 logger = logging.getLogger(__name__)
 

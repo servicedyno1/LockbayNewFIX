@@ -7,12 +7,10 @@ import logging
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from sqlalchemy import desc, select
-from typing import Optional, Any
+from sqlalchemy import select
 
-from database import async_managed_session
 from models import Rating, User, Escrow
-from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
+from utils.callback_utils import safe_edit_message_text
 from utils.button_handler_async import button_callback_wrapper
 from services.admin_trade_notifications import AdminTradeNotificationService
 
@@ -93,12 +91,11 @@ async def handle_rate_seller(update: Update, context: ContextTypes.DEFAULT_TYPE)
             # Get seller info
             result = await session.execute(select(User).where(User.id == trade.seller_id))
             seller = result.scalar_one_or_none()
-            seller_name = "Seller"
             if seller:
                 if seller.username is not None:
-                    seller_name = f"@{seller.username}"
+                    pass
                 elif seller.first_name is not None:
-                    seller_name = seller.first_name
+                    pass
             
             # Store IDs in context for later use (avoid detached instances)
             context.user_data['rating_escrow_id'] = trade.id
@@ -109,7 +106,7 @@ async def handle_rate_seller(update: Update, context: ContextTypes.DEFAULT_TYPE)
             # Show rating selection interface
             # Extract Python value from SQLAlchemy column for type safety
             amount_value = float(getattr(trade, 'amount', 0) or 0)
-            message = f"⭐ Rate \n\n"
+            message = "⭐ Rate \n\n"
             message += f"Trade #{trade.escrow_id[-6:]} - ${amount_value:.2f}\n\n"
             message += "How was your experience with this seller?"
             
@@ -137,7 +134,7 @@ async def handle_rate_seller(update: Update, context: ContextTypes.DEFAULT_TYPE)
             logger.error(f"Error in handle_rate_seller: {e}")
             try:
                 await query.edit_message_text("❌ Something went wrong. Please try again.")
-            except:
+            except Exception:
                 pass
         return ConversationHandler.END
 
@@ -216,12 +213,12 @@ async def handle_rate_dispute(update: Update, context: ContextTypes.DEFAULT_TYPE
                 result = await session.execute(select(User).where(User.id == counterpart_id))
                 counterpart = result.scalar_one_or_none()
             
-            counterpart_name = category.title()
+            category.title()
             if counterpart:
                 if counterpart.username is not None:
-                    counterpart_name = f"@{counterpart.username}"
+                    pass
                 elif counterpart.first_name is not None:
-                    counterpart_name = counterpart.first_name
+                    pass
             
             # Store IDs and dispute context in context for later use (avoid detached instances)
             context.user_data['rating_escrow_id'] = trade.id
@@ -236,15 +233,15 @@ async def handle_rate_dispute(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Extract Python value from SQLAlchemy column for type safety
             amount_value = float(getattr(trade, 'amount', 0) or 0)
             if dispute_outcome == 'winner':
-                message = f"⭐ Share Your Feedback\n\n"
+                message = "⭐ Share Your Feedback\n\n"
                 message += f"Trade #{trade.escrow_id[-6:]} - ${amount_value:.2f}\n"
-                message += f"Dispute resolved in your favor\n\n"
+                message += "Dispute resolved in your favor\n\n"
                 message += f"How was your experience with this {category}?"
             else:
-                message = f"⭐ Optional Feedback\n\n"
+                message = "⭐ Optional Feedback\n\n"
                 message += f"Trade #{trade.escrow_id[-6:]} - ${amount_value:.2f}\n"
-                message += f"We understand this outcome may be disappointing\n\n"
-                message += f"Your feedback helps us improve (completely optional)"
+                message += "We understand this outcome may be disappointing\n\n"
+                message += "Your feedback helps us improve (completely optional)"
             
             keyboard = [
                 [InlineKeyboardButton("⭐⭐⭐⭐⭐ Excellent (5)", callback_data="rating_5")],
@@ -269,7 +266,7 @@ async def handle_rate_dispute(update: Update, context: ContextTypes.DEFAULT_TYPE
             logger.error(f"Error in handle_rate_dispute: {e}")
             try:
                 await query.edit_message_text("❌ Something went wrong. Please try again.")
-            except:
+            except Exception:
                 pass
         return ConversationHandler.END
 
@@ -345,12 +342,11 @@ async def handle_rate_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             # Get buyer info
             result = await session.execute(select(User).where(User.id == trade.buyer_id))
             buyer = result.scalar_one_or_none()
-            buyer_name = "Buyer"
             if buyer:
                 if buyer.username is not None:
-                    buyer_name = f"@{buyer.username}"
+                    pass
                 elif buyer.first_name is not None:
-                    buyer_name = buyer.first_name
+                    pass
             
             # Store IDs in context for later use (avoid detached instances)
             context.user_data['rating_escrow_id'] = trade.id
@@ -361,7 +357,7 @@ async def handle_rate_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             # Show rating selection interface
             # Extract Python value from SQLAlchemy column for type safety
             amount_value = float(getattr(trade, 'amount', 0) or 0)
-            message = f"⭐ Rate \n\n"
+            message = "⭐ Rate \n\n"
             message += f"Trade #{trade.escrow_id[-6:]} - ${amount_value:.2f}\n\n"
             message += "How was your experience with this buyer?"
             
@@ -389,7 +385,7 @@ async def handle_rate_buyer(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             logger.error(f"Error in handle_rate_buyer: {e}")
             try:
                 await query.edit_message_text("❌ Something went wrong. Please try again.")
-            except:
+            except Exception:
                 pass
         return ConversationHandler.END
 
@@ -403,7 +399,7 @@ async def handle_rating_selection(update: Update, context: ContextTypes.DEFAULT_
         return ConversationHandler.END
     
     try:
-        async with button_callback_wrapper(update, "💬 Adding comment...") as session:
+        async with button_callback_wrapper(update, "💬 Adding comment..."):
             # Extract rating from callback
             if not query.data:
                 await query.edit_message_text("❌ Invalid request")
@@ -428,7 +424,7 @@ async def handle_rating_selection(update: Update, context: ContextTypes.DEFAULT_
             
             # Show comment input interface
             stars = "⭐" * rating
-            message = f"⭐ Rating \n\n"
+            message = "⭐ Rating \n\n"
             message += f"You selected: {stars} ({rating}/5)\n\n"
             message += "💬 Add a comment (optional):\n"
             message += "Type your feedback or click Submit to finish"
@@ -452,7 +448,7 @@ async def handle_rating_selection(update: Update, context: ContextTypes.DEFAULT_
         logger.error(f"Error in handle_rating_selection: {e}")
         try:
             await query.edit_message_text("❌ Something went wrong. Please try again.")
-        except:
+        except Exception:
             pass
         return ConversationHandler.END
 
@@ -469,7 +465,7 @@ async def handle_rating_submit(update: Update, context: ContextTypes.DEFAULT_TYP
         async with button_callback_wrapper(update, "✅ Submitting rating...") as session:
             # Get stored IDs from context
             escrow_id = context.user_data.get('rating_escrow_id') if context.user_data else None
-            escrow_string_id = context.user_data.get('rating_escrow_string_id') if context.user_data else None
+            context.user_data.get('rating_escrow_string_id') if context.user_data else None
             rating_stars = context.user_data.get('rating_stars') if context.user_data else None
             comment = context.user_data.get('rating_comment', '') if context.user_data else ''
             rating_type = context.user_data.get('rating_type', 'seller') if context.user_data else 'seller'
@@ -598,17 +594,16 @@ async def handle_rating_submit(update: Update, context: ContextTypes.DEFAULT_TYP
                 elif db_user.first_name is not None:
                     rater_name = db_user.first_name
                 
-                rated_name = "you"
                 if rated_user and rated_user.username is not None:
-                    rated_name = f"@{rated_user.username}"
+                    pass
                 elif rated_user and rated_user.first_name is not None:
-                    rated_name = rated_user.first_name
+                    pass
                 
                 stars_text = "⭐" * (rating_stars or 0)
                 
                 # Notification to the person who was rated
                 if rated_user and rated_user.telegram_id:
-                    rating_notification = f"🌟 New Rating Received\n\n"
+                    rating_notification = "🌟 New Rating Received\n\n"
                     rating_notification += f"{rater_name} rated you {stars_text} ({rating_stars}/5)\n"
                     if comment:
                         rating_notification += f"💬 \"{comment}\"\n"
@@ -652,7 +647,7 @@ async def handle_rating_submit(update: Update, context: ContextTypes.DEFAULT_TYP
                             logger.info(f"✅ Rating email notification sent to {rated_user.email}")
                         else:
                             logger.error(f"❌ Failed to send rating email to {rated_user.email} - email service returned False")
-                            logger.error(f"   🔧 Check BREVO_API_KEY configuration")
+                            logger.error("   🔧 Check BREVO_API_KEY configuration")
                     except Exception as e:
                         logger.error(f"❌ Failed to send rating email notification: {e}")
                         
@@ -680,11 +675,11 @@ async def handle_rating_submit(update: Update, context: ContextTypes.DEFAULT_TYP
                     user_name = rated_user.first_name
                 
                 stars = "⭐" * (rating_stars or 0)
-                message = f"✅ Rating \n\n"
+                message = "✅ Rating \n\n"
                 message += f"You rated {user_name}: {stars} ({rating_stars}/5)\n"
                 if comment:
                     message += f"Comment: {comment}\n"
-                message += f"\nThank you for your feedback!"
+                message += "\nThank you for your feedback!"
                 
                 keyboard = [
                     [InlineKeyboardButton("📋 My Trades", callback_data="trades_messages_hub")],
@@ -730,7 +725,7 @@ async def handle_rating_submit(update: Update, context: ContextTypes.DEFAULT_TYP
         logger.error(f"Error in handle_rating_submit: {e}")
         try:
             await query.edit_message_text("❌ Failed to submit rating. Please try again.")
-        except:
+        except Exception:
             pass
         return ConversationHandler.END
 
@@ -793,13 +788,13 @@ async def handle_trade_rating_selection(update: Update, context: ContextTypes.DE
             
             # Show completion message
             stars = "⭐" * rating_value
-            message = f"✅ All Ratings Complete!\n\n"
+            message = "✅ All Ratings Complete!\n\n"
             message += f"Trade Experience: {stars} ({rating_value}/5)\n\n"
             if escrow_string_id:
                 message += f"Thank you for rating your trade experience with #{escrow_string_id[:12]}!\n"
             else:
                 message += "Thank you for rating your trade experience!\n"
-            message += f"Your feedback helps improve our platform."
+            message += "Your feedback helps improve our platform."
             
             keyboard = [
                 [InlineKeyboardButton("📋 My Trades", callback_data="trades_messages_hub")],
@@ -819,7 +814,7 @@ async def handle_trade_rating_selection(update: Update, context: ContextTypes.DE
         logger.error(f"Error in handle_trade_rating_selection: {e}")
         try:
             await query.edit_message_text("❌ Failed to submit trade rating. Please try again.")
-        except:
+        except Exception:
             pass
         return ConversationHandler.END
 
@@ -833,7 +828,7 @@ async def handle_skip_trade_rating(update: Update, context: ContextTypes.DEFAULT
         return ConversationHandler.END
     
     try:
-        async with button_callback_wrapper(update, "👌 Skipping...") as session:
+        async with button_callback_wrapper(update, "👌 Skipping..."):
             # Get stored escrow_string_id from context
             escrow_string_id = context.user_data.get('rating_escrow_string_id') if context.user_data else None
             
@@ -881,7 +876,7 @@ async def handle_skip_trade_rating(update: Update, context: ContextTypes.DEFAULT
         logger.error(f"Error in handle_skip_trade_rating: {e}")
         try:
             await query.edit_message_text("❌ Something went wrong. Returning to main menu.")
-        except:
+        except Exception:
             pass
         return ConversationHandler.END
 
@@ -912,7 +907,7 @@ async def handle_rating_comment(update: Update, context: ContextTypes.DEFAULT_TY
         callback_data = f"rate_seller:{escrow_string_id}"
     
     stars = "⭐" * (rating_stars or 0)
-    reply_message = f"⭐ Rating \n\n"
+    reply_message = "⭐ Rating \n\n"
     reply_message += f"Rating: {stars} ({rating_stars}/5)\n"
     reply_message += f"Comment: {message.text[:100]}{'...' if len(message.text) > 100 else ''}\n\n"
     reply_message += "Ready to submit your rating?"

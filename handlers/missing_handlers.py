@@ -6,7 +6,6 @@ This module provides handlers for callback patterns that exist in the UI but lac
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import or_
 from database import SessionLocal
@@ -15,7 +14,9 @@ from config import Config
 
 # Branding imports
 from utils.branding_utils import BrandingUtils, make_header, make_trust_footer
-from utils.callback_utils import safe_answer_callback_query
+from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
+
+import telegram
 
 logger = logging.getLogger(__name__)
 
@@ -747,7 +748,7 @@ async def handle_my_escrows(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 # Add exchange info to message
                 message += f"<b>#{exchange.exchange_id}</b> {status_emoji} {status_text}\n"
                 message += f"🔄 {exchange.source_amount} {exchange.source_currency} → {exchange.target_amount} {exchange.target_currency}\n"
-                message += f"💱 Exchange\n\n"
+                message += "💱 Exchange\n\n"
                 
                 # Add appropriate button based on status AND rate lock validity
                 if (getattr(exchange, 'status', None) in ["created", "awaiting_deposit"] and 
@@ -1871,12 +1872,11 @@ You haven't created any trades yet.
                     # Get counterparty name
                     counterparty_id = trade.seller_id if trade.buyer_id == db_user.id else trade.buyer_id
                     counterparty = session.query(User).filter(User.id == counterparty_id).first()
-                    counterparty_name = "Unknown"
                     if counterparty:
-                        counterparty_name = counterparty.username or counterparty.first_name or f"User{counterparty.id}"
+                        pass
                     elif trade.seller_email and trade.buyer_id == db_user.id:
                         # Seller invited by email
-                        counterparty_name = trade.seller_email.split('@')[0]
+                        trade.seller_email.split('@')[0]
                     
                     # Status formatting
                     status = str(trade.status).title()
@@ -2067,6 +2067,7 @@ async def handle_complete_trading(update: Update, context: ContextTypes.DEFAULT_
 
 async def handle_quick_rating_access(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle quick rating access button - redirect to rating interface"""
+    from telegram import InlineKeyboardMarkup, InlineKeyboardButton
     query = update.callback_query
     if not query:
         return
@@ -2075,7 +2076,6 @@ async def handle_quick_rating_access(update: Update, context: ContextTypes.DEFAU
         await safe_answer_callback_query(query, "⭐ Opening Rating System...")
         
         # Get user's unrated trades and redirect to rating interface
-        from handlers.user_rating_direct import direct_start_rating
         
         # Create mock data for direct rating handler (it expects rate_escrow_<id> pattern)
         # Ensure effective_user exists
@@ -2216,9 +2216,9 @@ async def handle_generic_fallback(update: Update, context: ContextTypes.DEFAULT_
     if not query:
         return
     await query.edit_message_text(
-        f"⚠️ Feature under development\n\n"
-        f"The requested action is not yet available.\n"
-        f"Please try a different option.",
+        "⚠️ Feature under development\n\n"
+        "The requested action is not yet available.\n"
+        "Please try a different option.",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
         ])

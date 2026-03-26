@@ -49,7 +49,7 @@ class DynamicMinimumValidator:
             
         except Exception as e:
             logger.error(f"Error validating {crypto} amount: {e}")
-            return False, f"❌ Validation error. Please try again.", None
+            return False, "❌ Validation error. Please try again.", None
     
     @staticmethod
     async def validate_ngn_amount(

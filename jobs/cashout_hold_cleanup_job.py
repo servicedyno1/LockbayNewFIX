@@ -5,9 +5,6 @@ Ensures no frozen balance issues persist
 
 import logging
 import asyncio
-from datetime import datetime
-from database import SessionLocal
-from models import Cashout, CashoutStatus
 from utils.cashout_completion_handler import cleanup_completed_cashout_holds
 
 logger = logging.getLogger(__name__)

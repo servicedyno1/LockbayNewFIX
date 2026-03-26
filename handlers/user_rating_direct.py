@@ -9,9 +9,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters, ApplicationHandlerStop
 from models import User, Rating, Escrow
 from database import SyncSessionLocal
-from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
+from utils.callback_utils import safe_answer_callback_query
 from utils.conversation_state_helper import set_conversation_state_db_sync
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +82,7 @@ async def direct_start_rating(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
     
     # Get escrow and participants from database
-    from models import Escrow, User
+    from models import User
     from sqlalchemy import select
     from database import async_managed_session
     
@@ -221,7 +220,7 @@ async def direct_handle_rating_selection(update: Update, context: ContextTypes.D
                 await safe_answer_callback_query(query, "💬")
                 
                 stars = "⭐" * rating
-                message = f"⭐ Rating \n\n"
+                message = "⭐ Rating \n\n"
                 message += f"You selected: {stars} ({rating}/5)\n\n"
                 message += "💬 Add a comment (optional):\n"
                 message += "Type your feedback or click Submit to finish"
@@ -267,7 +266,7 @@ async def direct_handle_rating_comment(update: Update, context: ContextTypes.DEF
     
     # Show confirmation with submit button
     stars = "⭐" * (rating_stars if rating_stars else 5)
-    message = f"⭐ Rating \n\n"
+    message = "⭐ Rating \n\n"
     message += f"Rating: {stars} ({rating_stars}/5)\n"
     message += f"Comment: {comment[:100]}{'...' if len(comment) > 100 else ''}\n\n"
     message += "Ready to submit your rating?"
@@ -312,10 +311,9 @@ async def direct_handle_rating_submit(update: Update, context: ContextTypes.DEFA
         return
     
     # Save rating to database
-    from models import Escrow, User, Rating
+    from models import User
     from sqlalchemy import select
     from database import async_managed_session
-    from services.enhanced_reputation_service import EnhancedReputationService
     
     try:
         async with async_managed_session() as session:
@@ -379,7 +377,7 @@ async def direct_handle_rating_submit(update: Update, context: ContextTypes.DEFA
                 # Send Telegram notification to rated user
                 if rated_user.telegram_id:
                     try:
-                        notification = f"🌟 <b>New Rating Received</b>\n\n"
+                        notification = "🌟 <b>New Rating Received</b>\n\n"
                         notification += f"{rater_name} rated you {stars_text} ({rating_stars}/5)\n"
                         if rating_comment:
                             notification += f"💬 \"{rating_comment}\"\n"
@@ -424,7 +422,7 @@ async def direct_handle_rating_submit(update: Update, context: ContextTypes.DEFA
                             logger.info(f"✅ Rating email notification sent to {rated_user.email}")
                         else:
                             logger.error(f"❌ Failed to send rating email to {rated_user.email} - email service returned False")
-                            logger.error(f"   🔧 Check BREVO_API_KEY configuration")
+                            logger.error("   🔧 Check BREVO_API_KEY configuration")
                     except Exception as e:
                         logger.error(f"❌ Failed to send rating email notification to {rated_name}: {e}")
                         
@@ -433,11 +431,11 @@ async def direct_handle_rating_submit(update: Update, context: ContextTypes.DEFA
             
             # Show success message
             stars = "⭐" * (rating_stars if rating_stars else 5)
-            success_message = f"✅ <b>Rating Submitted!</b>\n\n"
+            success_message = "✅ <b>Rating Submitted!</b>\n\n"
             success_message += f"Rating: {stars} ({rating_stars}/5)\n"
             if rating_comment:
                 success_message += f"Comment: {rating_comment[:100]}{'...' if len(rating_comment) > 100 else ''}\n"
-            success_message += f"\nThank you for your feedback!"
+            success_message += "\nThank you for your feedback!"
             
             keyboard = [[InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]]
             

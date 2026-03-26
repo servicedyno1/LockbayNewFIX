@@ -8,17 +8,14 @@ from typing import Dict, Set, Optional, List, Tuple
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from sqlalchemy import or_, and_, desc
+from sqlalchemy import or_, desc
 
 from database import async_managed_session
 from sqlalchemy import select
 from models import (
-    Dispute, DisputeMessage, DisputeStatus, 
-    Escrow, EscrowStatus, User
+    Dispute, DisputeMessage, Escrow, EscrowStatus, User
 )
-from utils.admin_security import is_admin_secure, is_admin_silent
-from utils.helpers import get_user_display_name
-from utils.callback_utils import safe_answer_callback_query
+from utils.admin_security import is_admin_silent
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +223,7 @@ async def handle_dispute_selection(update: Update, context: ContextTypes.DEFAULT
                             # Build enhanced message with better visual hierarchy
                             # Header section with dispute info
                             message_text = f"⚠️ DISPUTE #{dispute_id}\n"
-                            message_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                            message_text += "━━━━━━━━━━━━━━━━━━━━━━\n"
                             message_text += f"📦 Trade: #{escrow.escrow_id}\n"
                             message_text += f"💰 Amount: ${float(escrow.amount):.2f} USD\n"
                             
@@ -238,7 +235,7 @@ async def handle_dispute_selection(update: Update, context: ContextTypes.DEFAULT
                             # Created date
                             created_date = dispute.created_at.strftime("%b %d, %Y") if dispute.created_at else "Unknown"
                             message_text += f"📅 Created: {created_date}\n"
-                            message_text += f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                            message_text += "━━━━━━━━━━━━━━━━━━━━━━\n\n"
                             
                             if recent_messages:
                                 message_text += f"📜 Recent Messages ({len(recent_messages)})\n\n"
@@ -297,7 +294,7 @@ async def handle_dispute_selection(update: Update, context: ContextTypes.DEFAULT
                                             chat_id=user.id,
                                             text=f"⚠️ Error loading dispute chat. Please try clicking the button again.\n\nError: {str(edit_error)[:100]}"
                                         )
-                                    except:
+                                    except Exception:
                                         pass  # Silent fail if we can't even send error message
                         except Exception as msg_error:
                             logger.error(f"❌ OUTER_ERROR: Exception in dispute message handling: {msg_error}")

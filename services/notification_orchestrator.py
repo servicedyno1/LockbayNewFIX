@@ -9,7 +9,7 @@ import asyncio
 from datetime import datetime
 from services.consolidated_notification_service import ConsolidatedNotificationService, NotificationRequest, NotificationCategory, NotificationPriority, NotificationChannel
 from database import managed_session
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from models import NotificationActivity
 import hashlib
@@ -200,8 +200,8 @@ class NotificationOrchestrator:
         escrow_id = escrow_data["escrow_id"]
         buyer_id = escrow_data["buyer_id"]
         seller_id = escrow_data["seller_id"]
-        amount = escrow_data["amount"]
-        currency = escrow_data["currency"]
+        escrow_data["amount"]
+        escrow_data["currency"]
         
         # VALIDATION: Check if user IDs are valid before attempting to claim notification slots
         buyer_claimed = False

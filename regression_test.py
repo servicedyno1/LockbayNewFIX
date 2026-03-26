@@ -5,8 +5,6 @@ Tests all recent implementations to ensure nothing is broken
 """
 import asyncio
 import sys
-import time
-from typing import List, Tuple
 
 sys.path.insert(0, '.')
 
@@ -241,7 +239,7 @@ class RegressionTest:
             
             async with async_session_maker() as session:
                 result = await session.execute(select(User).limit(1))
-                user = result.scalars().first()
+                result.scalars().first()
             
             self.log_test("Database Connectivity", True, "Database accessible")
             

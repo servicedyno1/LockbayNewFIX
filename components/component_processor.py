@@ -6,7 +6,7 @@ Provides consistent validation and error handling across all components.
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from telegram import Update
 from telegram.ext import ContextTypes
 

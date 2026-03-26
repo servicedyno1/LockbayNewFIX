@@ -228,7 +228,7 @@ class FileUploadValidator:
         
         try:
             # Convert to string for pattern matching (handle encoding errors)
-            file_text = file_data.decode('utf-8', errors='ignore').lower()
+            file_data.decode('utf-8', errors='ignore').lower()
             
             # Script patterns to detect
             script_patterns = [

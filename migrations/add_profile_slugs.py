@@ -57,7 +57,7 @@ def migrate_profile_slugs():
                 print(f"❌ Error for user {user.telegram_id}: {e}")
                 session.rollback()
         
-        print(f"\n📊 Migration complete:")
+        print("\n📊 Migration complete:")
         print(f"   ✅ Success: {success_count}")
         print(f"   ❌ Errors: {error_count}")
         

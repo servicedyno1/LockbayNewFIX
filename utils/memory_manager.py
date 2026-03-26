@@ -7,7 +7,6 @@ import gc
 import logging
 import asyncio
 import functools
-from typing import Any, Callable
 import psutil
 
 logger = logging.getLogger(__name__)
@@ -71,7 +70,7 @@ class MemoryManager:
         
         if current_memory > self.memory_threshold_mb:
             logger.warning(f"High memory usage detected: {current_memory:.1f}MB")
-            collected = cleanup_memory()
+            cleanup_memory()
             new_memory = get_memory_usage()
             logger.info(f"Memory cleanup: {current_memory:.1f}MB → {new_memory:.1f}MB (freed {current_memory - new_memory:.1f}MB)")
             return True

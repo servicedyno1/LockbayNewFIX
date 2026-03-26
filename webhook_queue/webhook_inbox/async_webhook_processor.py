@@ -7,7 +7,6 @@ Fixes Issues #4, #5, #6: Configurable workers, no lock contention, memory leak p
 import asyncio
 import logging
 import time
-import json
 import traceback
 import os
 from typing import Dict, Any, Optional, Callable, List

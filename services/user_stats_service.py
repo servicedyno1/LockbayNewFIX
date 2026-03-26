@@ -3,7 +3,6 @@ User Stats Service - Automatically update user reputation and trade statistics
 """
 
 import logging
-from decimal import Decimal
 from typing import Optional, Union
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession

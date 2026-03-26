@@ -5,21 +5,14 @@ Complete admin control panel for all platform settings - Phases 1-3
 """
 
 import logging
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import Dict, Any
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
-    CallbackQueryHandler,
     ConversationHandler,
-    MessageHandler,
-    filters,
 )
 
 from services.comprehensive_config_service import ComprehensiveConfigService
 from utils.admin_security import admin_required
-from utils.error_handler import error_handler
 from utils.callback_utils import safe_answer_callback_query
 
 logger = logging.getLogger(__name__)
@@ -438,7 +431,7 @@ Choose a quick action to perform:
             config = self.config_service.get_current_config()
             new_maintenance_state = not config.get('maintenance_mode', False)
             
-            result = self.config_service.update_config(
+            self.config_service.update_config(
                 admin_user_id=admin_user.id,
                 updates={"maintenance_mode": new_maintenance_state},
                 reason=f"Maintenance mode {'activated' if new_maintenance_state else 'deactivated'} via quick action"
@@ -536,7 +529,6 @@ Choose a quick action to perform:
             
             # Parse input based on editing type with validation
             updates = {}
-            parsing_errors = []
             
             if editing_type == "escrow_limits":
                 values = [float(x.strip()) for x in message_text.split(',')]
@@ -568,7 +560,7 @@ Choose a quick action to perform:
             # Add more parsing logic for other types...
             
             if updates:
-                result = self.config_service.update_config(
+                self.config_service.update_config(
                     admin_user_id=admin_user.id,
                     updates=updates,
                     reason=f"Manual update via admin interface: {editing_type}"

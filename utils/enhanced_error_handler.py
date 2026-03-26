@@ -4,9 +4,7 @@ Provides consistent error handling and logging correlation between user messages
 """
 
 import logging
-import traceback
-from typing import Optional, Dict, Any
-from telegram import Update
+from typing import Optional
 from telegram.ext import ContextTypes
 
 from utils.unified_activity_monitor import track_correlated_error, unified_monitor

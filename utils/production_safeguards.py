@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from database import sync_engine  # type: ignore
-from models import Wallet, WebhookLog, EscrowStatus  # type: ignore
+from models import Wallet, WebhookLog  # type: ignore
 from utils.atomic_transactions import atomic_transaction
 
 logger = logging.getLogger(__name__)
@@ -333,10 +333,7 @@ def generate_idempotency_key(operation_type: str, user_id: int, **params) -> str
 
 
 # Enhanced production safeguards with alerting
-import asyncio
-from typing import List
 from dataclasses import dataclass
-from collections import defaultdict
 
 @dataclass
 class Alert:
@@ -499,7 +496,7 @@ class ProductionAlerting:
             severity_emoji = {"warning": "⚠️", "critical": "🚨"}
             emoji = severity_emoji.get(alert.severity, "⚠️")
             
-            alert_message = f"""
+            f"""
 {emoji} **PRODUCTION ALERT**
 
 **Severity**: {alert.severity.upper()}

@@ -5,7 +5,7 @@ Handles comprehensive notifications when trades are accepted and activated
 
 import logging
 import html
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from datetime import datetime
 from decimal import Decimal
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
@@ -457,7 +457,7 @@ Access your trade: https://t.me/{Config.BOT_USERNAME}
                 
             escrow_id = activation_data.get('escrow_id', 'Unknown')
             amount = activation_data.get('amount', 0)
-            currency = activation_data.get('currency', 'USD')
+            activation_data.get('currency', 'USD')
             buyer_info = activation_data.get('buyer_info', 'Unknown')
             seller_info = activation_data.get('seller_info', 'Unknown')
             activated_at = activation_data.get('activated_at', datetime.utcnow())

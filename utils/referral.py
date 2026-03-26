@@ -2,10 +2,9 @@
 
 import os
 import logging
-from decimal import Decimal
 from typing import Optional, Dict, Any, List
 
-from models import User, Transaction
+from models import User
 from database import SessionLocal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -69,7 +68,6 @@ class ReferralSystem:
     @classmethod
     def get_referral_link(cls, referral_code: str) -> str:
         """Generate a Telegram bot deep link for referral sharing"""
-        from config import Config
         # Use Telegram bot deep link for direct invitation
         return f"https://t.me/{Config.BOT_USERNAME}?start=ref_{referral_code}"
 
@@ -239,7 +237,7 @@ class ReferralSystem:
                 # Record welcome bonus to prevent duplicates
                 cls._record_welcome_bonus(user.id, referral_reference)
                 logger.info(f"✅ Welcome bonus (trading credit) credited to user {user.id}: ${cls.REFEREE_REWARD_USD}")
-                logger.info(f"📧 NOTIFICATION: Trading credit welcome will be sent via consolidated welcome notification in onboarding service")
+                logger.info("📧 NOTIFICATION: Trading credit welcome will be sent via consolidated welcome notification in onboarding service")
                 
                 return True
             else:
@@ -416,7 +414,6 @@ class ReferralSystem:
             close_session = True
 
         try:
-            from sqlalchemy import func, desc
 
             # Find all unique referrer IDs (users who have referred others)
             referrer_ids_query = (
@@ -580,7 +577,7 @@ class ReferralSystem:
                 existing_for_referee = session.query(Transaction).filter(
                     Transaction.user_id == referrer_id,
                     Transaction.transaction_type == "admin_adjustment",
-                    Transaction.description.contains(f"Referral reward:")
+                    Transaction.description.contains("Referral reward:")
                 ).filter(
                     Transaction.description.contains(f"user {referee_id}")
                 ).first()

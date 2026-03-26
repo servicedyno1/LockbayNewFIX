@@ -6,10 +6,6 @@ DEPRECATED: This module now delegates to UniversalIDGenerator for consistency.
 Use UniversalIDGenerator directly for new code.
 """
 
-import secrets
-import string
-import time
-from datetime import datetime
 from typing import Optional
 from utils.universal_id_generator import UniversalIDGenerator
 
@@ -76,7 +72,7 @@ class UTIDGenerator:
             return False
         
         # Extract parts
-        prefix = utid[:2]
+        utid[:2]
         date_part = utid[2:8]
         suffix = utid[8:]
         
@@ -92,7 +88,7 @@ class UTIDGenerator:
         try:
             month = int(date_part[:2])
             day = int(date_part[2:4])
-            year = int(date_part[4:6])
+            int(date_part[4:6])
             
             # Basic date validation
             if month < 1 or month > 12:

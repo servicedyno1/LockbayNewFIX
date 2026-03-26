@@ -248,7 +248,6 @@ class GroupEventService:
         try:
             from models import BotGroup
             from database import SessionLocal
-            from sqlalchemy import update
             with SessionLocal() as session:
                 existing = session.query(BotGroup).filter(BotGroup.chat_id == chat_id).first()
                 if existing:

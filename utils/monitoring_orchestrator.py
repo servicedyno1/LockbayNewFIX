@@ -6,17 +6,16 @@ Coordinates and manages the complete comprehensive monitoring infrastructure
 import logging
 import asyncio
 import time
-from typing import Dict, List, Optional, Any, Set
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 from enum import Enum
-import json
 
 # Import all monitoring components
 from utils.standardized_metrics_framework import standardized_metrics, start_metrics_collection
-from utils.performance_baselines_config import performance_baselines, get_baselines_summary
+from utils.performance_baselines_config import get_baselines_summary
 from utils.central_metrics_aggregator import central_aggregator, start_metrics_aggregation
-from utils.unified_performance_reporting import unified_reporter, start_performance_reporting
+from utils.unified_performance_reporting import start_performance_reporting
 from utils.monitoring_systems_integration import MonitoringSystemsIntegration
 from utils.comprehensive_monitoring_dashboard import (
     comprehensive_dashboard, start_comprehensive_monitoring, get_dashboard_data
@@ -27,7 +26,6 @@ from utils.enhanced_alert_correlation import (
 from utils.performance_regression_detection import (
     regression_detector, start_regression_detection, get_regression_status
 )
-from utils.unified_activity_monitor import unified_monitor
 from utils.system_health import SystemHealthMonitor
 
 logger = logging.getLogger(__name__)
@@ -455,7 +453,7 @@ class MonitoringOrchestrator:
         try:
             # Monitor dashboard response time
             dashboard_start = time.time()
-            dashboard_data = get_dashboard_data()
+            get_dashboard_data()
             dashboard_time = (time.time() - dashboard_start) * 1000
             
             self.performance_metrics['dashboard_response_time_ms'].append(dashboard_time)
@@ -464,7 +462,7 @@ class MonitoringOrchestrator:
             
             # Monitor alert correlation performance
             correlation_start = time.time()
-            correlation_status = get_correlation_status()
+            get_correlation_status()
             correlation_time = (time.time() - correlation_start) * 1000
             
             self.performance_metrics['alert_processing_time_ms'].append(correlation_time)
@@ -473,7 +471,7 @@ class MonitoringOrchestrator:
             
             # Monitor regression detection performance  
             regression_start = time.time()
-            regression_status = get_regression_status()
+            get_regression_status()
             regression_time = (time.time() - regression_start) * 1000
             
             self.performance_metrics['regression_analysis_time_ms'].append(regression_time)
@@ -636,7 +634,7 @@ class MonitoringOrchestrator:
         """Calculate overall health of the monitoring infrastructure"""
         try:
             total_subsystems = len(self.subsystems)
-            active_subsystems = self._get_active_subsystem_count()
+            self._get_active_subsystem_count()
             healthy_subsystems = sum(1 for s in self.subsystems.values() if s.health_status == "healthy")
             
             if total_subsystems == 0:

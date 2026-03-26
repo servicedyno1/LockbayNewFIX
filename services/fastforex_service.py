@@ -13,10 +13,9 @@ import time
 from decimal import Decimal
 from typing import Dict, Optional
 from config import Config
-from utils.data_sanitizer import sanitize_for_log, safe_error_log
+from utils.data_sanitizer import safe_error_log
 from utils.production_cache import get_cached, set_cached, delete_cached
 from services.api_adapter_retry import APIAdapterRetry
-from services.external_api_optimizer import get_api_optimizer, optimized_http_session
 from models import CashoutErrorCode
 
 logger = logging.getLogger(__name__)

@@ -5,14 +5,11 @@ Addresses Issues: #9, #14, #15, #16, #18, #19
 """
 
 import logging
-from datetime import datetime
-from typing import Optional, List, Dict
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
-from sqlalchemy import desc
 
 from database import SessionLocal
-from models import User, Rating, Escrow
+from models import User, Rating
 from services.enhanced_reputation_service import EnhancedReputationService
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 from utils.helpers import escape_markdown
@@ -328,7 +325,7 @@ Build reputation:
                     message += f"\nAvg: {reputation.overall_rating:.1f}/{next_requirements[1]} {'✅' if reputation.overall_rating >= next_requirements[1] else '❌'}"
                     message += f"\nVolume: ${float(reputation.total_volume):,.0f}/${next_requirements[2]:,} {'✅' if float(reputation.total_volume) >= next_requirements[2] else '❌'}"
                 else:
-                    message += f"\n\n🎯 Max level achieved!"
+                    message += "\n\n🎯 Max level achieved!"
                 
                 message += f"\n\n💼 ${float(reputation.total_volume):,.0f} volume"
                 message += f"\n🛡️ {reputation.dispute_rate*100:.0f}% disputes"
@@ -338,7 +335,7 @@ Build reputation:
         
         keyboard = [
             [
-                InlineKeyboardButton("📊 View My Reviews", callback_data=f"my_reviews"),
+                InlineKeyboardButton("📊 View My Reviews", callback_data="my_reviews"),
                 InlineKeyboardButton("🏆 All Achievements", callback_data="all_achievements")
             ],
             [
@@ -561,12 +558,12 @@ Or browse our top-rated sellers instead."""
                 message += f"\n🏆 {', '.join(reputation.badges[:3])}"
             
             if seller_profile.trust_indicators:
-                message += f"\n\n✅ **Trust Indicators:**"
+                message += "\n\n✅ **Trust Indicators:**"
                 for indicator in seller_profile.trust_indicators[:3]:
                     message += f"\n• {escape_markdown(indicator)}"
             
             if seller_profile.warnings:
-                message += f"\n\n⚠️ **Considerations:**"
+                message += "\n\n⚠️ **Considerations:**"
                 for warning in seller_profile.warnings[:2]:
                     message += f"\n• {escape_markdown(warning)}"
             

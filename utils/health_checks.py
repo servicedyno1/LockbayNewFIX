@@ -6,7 +6,7 @@ Provides health check endpoints for all critical services
 import logging
 import asyncio
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)

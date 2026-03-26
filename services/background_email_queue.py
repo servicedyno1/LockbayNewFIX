@@ -12,12 +12,9 @@ RAILWAY COMPATIBILITY: Gracefully degrades to no-op mode when Replit KV unavaila
 The caller should handle fallback to direct email sending (already implemented in email_verification_service.py).
 """
 
-import asyncio
 import logging
-import json
-import time
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, List
+from datetime import datetime
+from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
 try:
@@ -30,7 +27,6 @@ except ImportError:
     QueueConfig = None
 
 from services.email import EmailService
-from services.email_templates import create_unified_email_template
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -197,7 +193,7 @@ class BackgroundEmailQueue:
             return {
                 "success": True,
                 "job_id": job_id,
-                "message": f"Email queued for background processing",
+                "message": "Email queued for background processing",
                 "queued_at": datetime.utcnow().isoformat()
             }
             
@@ -362,7 +358,6 @@ class BackgroundEmailQueue:
     async def _process_email_job(self, email_job_data: Dict[str, Any]) -> Dict[str, Any]:
         """Background job processor for email sending"""
         # Ensure asyncio is available in this context
-        import asyncio
         start_time = datetime.utcnow()
         
         try:
@@ -583,7 +578,7 @@ class BackgroundEmailQueue:
         import html as html_lib
         from config import Config
         from database import SessionLocal
-        from models import Dispute, Escrow, EscrowMessage, User
+        from models import Dispute, EscrowMessage, User
         
         # SECURITY: Escape all user-generated content
         escaped_sender_info = html_lib.escape(sender_info)

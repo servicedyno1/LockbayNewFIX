@@ -7,10 +7,8 @@ Runs once during bot startup to fix the bug where only new users received full c
 """
 
 import logging
-from typing import Optional
 from telegram.ext import Application
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import User
 from database import async_managed_session

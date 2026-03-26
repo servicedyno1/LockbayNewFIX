@@ -4,18 +4,15 @@ Comprehensive notification infrastructure for all refund scenarios with guarante
 """
 
 import logging
-import asyncio
 import json
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List, Union
-from decimal import Decimal
+from typing import Optional, Dict, Any, List
 from enum import Enum
 
 # Database imports
 from database import SessionLocal
 from models import (
-    User, Refund, RefundType, RefundStatus, Escrow, Cashout,
-    CashoutStatus, EscrowStatus
+    User, Refund, RefundType, RefundStatus, Escrow, Cashout
 )
 
 # Service imports
@@ -24,10 +21,7 @@ from services.consolidated_notification_service import consolidated_notification
 from services.refund_email_templates import refund_email_templates
 from services.refund_bot_templates import refund_bot_templates
 from services.notification_delivery_tracker import (
-    notification_delivery_tracker,
     DeliveryChannel,
-    DeliveryStatus,
-    FailureReason,
     track_refund_notification_delivery,
     record_email_delivery_attempt,
     record_telegram_delivery_attempt

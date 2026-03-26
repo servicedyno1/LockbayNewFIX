@@ -6,7 +6,7 @@ from typing import Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from models import Cashout, User
-from services.crypto import CryptoService
+from services.crypto import CryptoServiceAtomic
 
 logger = logging.getLogger(__name__)
 

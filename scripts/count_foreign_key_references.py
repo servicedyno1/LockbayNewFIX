@@ -63,7 +63,7 @@ def count_foreign_key_references():
             "admin_action_token.cashout_id": "SELECT COUNT(*) FROM admin_action_token WHERE cashout_id IS NOT NULL"
         }
         
-        print(f"\n🏷️  Business ID references needing PK relationships:")
+        print("\n🏷️  Business ID references needing PK relationships:")
         business_total = 0
         for ref_name, query in business_id_queries.items():
             try:
@@ -97,7 +97,7 @@ def count_foreign_key_references():
             """
         }
         
-        print(f"\n🔍 Checking for orphaned records:")
+        print("\n🔍 Checking for orphaned records:")
         orphan_total = 0
         for check_name, query in orphan_queries.items():
             try:
@@ -114,13 +114,13 @@ def count_foreign_key_references():
                 counts[check_name] = -1
         
         # Migration impact assessment
-        print(f"\n📋 Migration Impact Assessment:")
+        print("\n📋 Migration Impact Assessment:")
         print(f"  Records affected by BigInteger FK fixes: {user_total:,}")
         print(f"  Records needing new PK relationships: {business_total:,}")
         print(f"  Orphaned records to investigate: {orphan_total:,}")
         
         if orphan_total > 0:
-            print(f"  ⚠️  WARNING: Orphaned records found - investigate before migration")
+            print("  ⚠️  WARNING: Orphaned records found - investigate before migration")
         
         # Estimate migration time
         estimated_minutes = max(1, (user_total + business_total) // 10000)  # Rough estimate
@@ -143,7 +143,7 @@ def validate_data_integrity():
     session = SessionLocal()
     
     try:
-        print(f"\n🛡️  Data Integrity Validation:")
+        print("\n🛡️  Data Integrity Validation:")
         
         # Check for NULL user_ids in critical tables
         null_checks = {
@@ -166,7 +166,7 @@ def validate_data_integrity():
                 print(f"  ❌ {check_name}: Error - {e}")
         
         if null_issues == 0:
-            print(f"  ✅ Data integrity validation passed")
+            print("  ✅ Data integrity validation passed")
         else:
             print(f"  ⚠️  Found {null_issues:,} potential data integrity issues")
         

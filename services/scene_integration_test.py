@@ -8,9 +8,8 @@ Validates that scene flows work end-to-end with existing infrastructure.
 import logging
 import asyncio
 from typing import Dict, Any
-from decimal import Decimal
 
-from services.scene_engine import get_scene_engine, SceneStatus
+from services.scene_engine import get_scene_engine
 from services.scene_ute_integration import get_scene_ute_adapter
 from database import SessionLocal
 from models import User
@@ -240,7 +239,7 @@ async def quick_scene_test() -> bool:
     """Quick test to verify Scene Engine is working"""
     try:
         scene_engine = await get_scene_engine()
-        ute_adapter = await get_scene_ute_adapter()
+        await get_scene_ute_adapter()
         
         # Check basic functionality
         test_user_id = 99999999

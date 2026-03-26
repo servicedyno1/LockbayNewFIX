@@ -6,11 +6,11 @@ Systematic refund mechanism for expired/failed orders and rate locks
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List, Dict, Optional
+from typing import List, Dict
 from database import SessionLocal
 from models import (
-    ExchangeOrder, Escrow, Refund, RefundType, RefundStatus,
-    User, Wallet, Transaction, TransactionType
+    ExchangeOrder, Refund, RefundType, RefundStatus,
+    User, Wallet
 )
 from services.crypto import CryptoServiceAtomic
 from services.consolidated_notification_service import consolidated_notification_service
@@ -401,7 +401,6 @@ class AutomaticRefundService:
         try:
             from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
             from config import Config
-            from decimal import Decimal
             from datetime import datetime
             
             # Generate contextual refund message based on order type
@@ -412,7 +411,7 @@ class AutomaticRefundService:
             )
             
             # Create comprehensive Telegram message
-            message = f"🔄 **Automatic Refund Processed**\n\n"
+            message = "🔄 **Automatic Refund Processed**\n\n"
             message += f"💰 **Amount Refunded:** ${float(refund_amount):,.2f} {currency}\n"
             message += f"📊 **Refund ID:** {refund_id}\n"
             message += f"⏰ **Date:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}\n\n"
@@ -421,10 +420,10 @@ class AutomaticRefundService:
             message += f"📝 **What happened:**\n{refund_context}\n\n"
             
             # Add reassurance and next steps
-            message += f"✅ **Your funds are safe**\n"
+            message += "✅ **Your funds are safe**\n"
             message += f"The ${float(refund_amount):,.2f} has been automatically credited to your USD wallet.\n\n"
-            message += f"🔍 You can check your updated balance anytime.\n"
-            message += f"💬 Questions? Our support team is here to help!"
+            message += "🔍 You can check your updated balance anytime.\n"
+            message += "💬 Questions? Our support team is here to help!"
             
             # Create action buttons for user convenience
             keyboard = [
@@ -486,27 +485,27 @@ class AutomaticRefundService:
                     )
                 elif order_type in ["exchange", "direct_exchange"]:
                     return (
-                        f"Your cryptocurrency exchange order expired before completion. "
-                        f"Since you made payment, we've automatically refunded your funds. "
-                        f"You can create a new exchange order anytime."
+                        "Your cryptocurrency exchange order expired before completion. "
+                        "Since you made payment, we've automatically refunded your funds. "
+                        "You can create a new exchange order anytime."
                     )
                 else:
                     return (
-                        f"Your order expired before completion, so we've automatically "
-                        f"refunded your payment to keep your funds safe."
+                        "Your order expired before completion, so we've automatically "
+                        "refunded your payment to keep your funds safe."
                     )
             
             elif "failed" in refund_reason.lower():
                 return (
-                    f"There was a technical issue processing your order, so we've automatically "
-                    f"refunded your payment. You can try again, and our team is working to prevent "
-                    f"similar issues in the future."
+                    "There was a technical issue processing your order, so we've automatically "
+                    "refunded your payment. You can try again, and our team is working to prevent "
+                    "similar issues in the future."
                 )
             
             elif "cancelled" in refund_reason.lower():
                 return (
-                    f"Your order was cancelled, but we received your payment after the cancellation. "
-                    f"Don't worry - we've automatically credited the funds to your wallet."
+                    "Your order was cancelled, but we received your payment after the cancellation. "
+                    "Don't worry - we've automatically credited the funds to your wallet."
                 )
             
             else:

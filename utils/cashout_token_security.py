@@ -8,12 +8,12 @@ import hmac
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Dict, Any
 from decimal import Decimal
 import logging
 
 from database import SyncSessionLocal
-from models import PendingCashout, User
+from models import PendingCashout
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -267,9 +267,9 @@ class CashoutTokenSecurity:
             is_valid = hmac.compare_digest(received_signature, expected_signature)
             
             if is_valid:
-                logger.debug(f"✅ Token signature validation successful")
+                logger.debug("✅ Token signature validation successful")
             else:
-                logger.warning(f"❌ Token signature validation failed")
+                logger.warning("❌ Token signature validation failed")
                 logger.warning(f"   Expected: {expected_signature}")
                 logger.warning(f"   Received: {received_signature}")
                 logger.warning(f"   Message:  {canonical_message}")

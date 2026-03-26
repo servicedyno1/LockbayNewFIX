@@ -4,18 +4,16 @@ Comprehensive monitoring for Redis sessions, financial locks, and database opera
 """
 
 import logging
-import time
 import asyncio
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from enum import Enum
 
 from utils.session_migration_helper import session_migration_helper
 from utils.financial_operation_locker import financial_locker
 from utils.enhanced_db_session_manager import enhanced_db_session_manager
 from services.state_manager import state_manager
-from config import Config
 
 logger = logging.getLogger(__name__)
 

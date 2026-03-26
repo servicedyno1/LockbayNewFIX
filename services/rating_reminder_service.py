@@ -5,7 +5,7 @@ Sends follow-up reminders to users who haven't rated completed trades
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import TelegramError
 

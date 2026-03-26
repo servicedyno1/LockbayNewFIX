@@ -7,14 +7,11 @@ import logging
 import time
 import hashlib
 import hmac
-from typing import Dict, Any, Optional
 from datetime import datetime
 
 from config import Config
 from services.email import email_service
-from models import User, Cashout, CashoutStatus
 from utils.helpers import format_amount
-from database import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +41,7 @@ class ComprehensiveAdminNotificationService:
             secret_key = getattr(Config, 'ADMIN_EMAIL_SECRET')
             
             if not secret_key:
-                logger.error(f"🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for token generation")
+                logger.error("🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for token generation")
                 return "SECURITY_ERROR"
             
             token_data = f"admin_action:{action}:{transaction_id}:{timestamp}"
@@ -88,7 +85,7 @@ class ComprehensiveAdminNotificationService:
             
             secret_key = getattr(Config, 'ADMIN_EMAIL_SECRET')
             if not secret_key:
-                logger.error(f"🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for token validation")
+                logger.error("🚨 CRITICAL: ADMIN_EMAIL_SECRET not available for token validation")
                 return False
             
             token_data = f"admin_action:{action}:{transaction_id}:{timestamp}"

@@ -189,7 +189,7 @@ class OptimizedQueries:
     @staticmethod
     def get_support_tickets_with_users(session: Session, limit: int = 10):
         """Get support tickets with user data in single query (prevents N+1)"""
-        from models import SupportTicket, User
+        from models import SupportTicket
         from sqlalchemy.orm import joinedload
 
         return (
@@ -203,7 +203,7 @@ class OptimizedQueries:
     @staticmethod
     def get_escrows_with_participants(session: Session, escrow_ids: list):
         """Get escrows with buyer/seller data in single query (prevents N+1)"""
-        from models import Escrow, User
+        from models import Escrow
         from sqlalchemy.orm import joinedload
 
         return (
@@ -219,7 +219,7 @@ class OptimizedQueries:
     @staticmethod
     def get_user_escrows_optimized(session: Session, user_id: int):
         """Get user's escrows with minimal queries"""
-        from models import Escrow, User
+        from models import Escrow
         from sqlalchemy.orm import joinedload
         from sqlalchemy import or_
 

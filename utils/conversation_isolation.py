@@ -2,7 +2,6 @@
 Utility functions for conversation handler state isolation
 """
 import logging
-from telegram.ext import ConversationHandler
 
 logger = logging.getLogger(__name__)
 

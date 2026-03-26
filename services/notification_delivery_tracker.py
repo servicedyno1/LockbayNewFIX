@@ -4,19 +4,14 @@ Comprehensive delivery tracking system with retry logic, exponential backoff, an
 """
 
 import logging
-import asyncio
 import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List, Set
 from enum import Enum
-from decimal import Decimal
 from dataclasses import dataclass, asdict
-import math
 
 # Database imports
-from database import async_managed_session
-from models import User
-from config import Config
+from database import async_managed_session, SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +156,7 @@ class NotificationDeliveryTracker:
         try:
             async with async_managed_session() as session:
                 # Convert delivery record to JSON for storage
-                record_data = {
+                {
                     'notification_id': delivery_record.notification_id,
                     'user_id': delivery_record.user_id,
                     'template_id': delivery_record.template_id,
@@ -454,7 +449,7 @@ class NotificationDeliveryTracker:
             # In a real implementation, this would integrate with a proper job scheduler
             # For now, we'll add to a retry queue and process in background
             
-            retry_item = {
+            {
                 "notification_id": notification_id,
                 "channel": channel.value,
                 "retry_time": retry_time.isoformat(),
@@ -757,7 +752,7 @@ Notification ID: {delivery_record.notification_id}"""
     async def process_retry_queue(self) -> int:
         """Process pending retries in the retry queue"""
         try:
-            current_time = datetime.utcnow()
+            datetime.utcnow()
             processed_count = 0
             
             # Process retries (simplified implementation)

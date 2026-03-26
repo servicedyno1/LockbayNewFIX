@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Optional, Tuple
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
-from database import SessionLocal, managed_session
+from database import managed_session
 from models import Wallet, Transaction, TransactionType
 
 logger = logging.getLogger(__name__)
@@ -252,7 +252,7 @@ def migrate_duplicate_wallets(user_id: int, session=None) -> bool:
         primary_wallet = usd_wallets[0]
         total_balance = Decimal("0.00")
         total_frozen = Decimal("0.00")
-        total_locked = Decimal("0.00")
+        Decimal("0.00")
         
         for wallet in usd_wallets:
             total_balance += Decimal(str(wallet.available_balance))

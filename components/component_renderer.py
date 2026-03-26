@@ -6,7 +6,6 @@ Provides consistent styling and layout across all components.
 """
 
 import logging
-from typing import Dict, Any, Optional
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from services.scene_engine import SceneState, ComponentConfig, SceneStep, ComponentType
@@ -336,7 +335,6 @@ class ComponentRenderer:
         step: SceneStep
     ) -> None:
         """Render standardized status display component"""
-        config = component_config.config
         data = scene_state.data
         
         status = data.get('status', 'processing')
@@ -614,7 +612,7 @@ class ComponentRenderer:
             )
             
             keyboard = []
-            max_per_row = config.get('max_per_row', 1)
+            config.get('max_per_row', 1)
             
             for i, option in enumerate(options):
                 # Show option description if available

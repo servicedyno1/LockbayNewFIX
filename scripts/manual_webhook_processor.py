@@ -10,13 +10,13 @@ import os
 import asyncio
 import argparse
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import async_managed_session
-from models import Escrow, WebhookEventLedger, EscrowStatus, Transaction, TransactionType
-from sqlalchemy import select, func
+from models import Escrow, WebhookEventLedger, Transaction
+from sqlalchemy import select
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -45,7 +45,7 @@ async def process_stuck_webhook_direct(webhook_id: int):
         logger.info(f"  TxID: {webhook_event.txid}")
         
         if webhook_event.status == 'completed':
-            logger.warning(f"Webhook already completed successfully")
+            logger.warning("Webhook already completed successfully")
             return {'success': False, 'error': 'Webhook already completed'}
         
         # Parse the payload
@@ -103,7 +103,7 @@ async def process_stuck_webhook_direct(webhook_id: int):
         # Now use unified payment processor
         from services.unified_payment_processor import unified_processor
         
-        logger.info(f"🔄 Processing payment via unified processor...")
+        logger.info("🔄 Processing payment via unified processor...")
         
         processing_result = await unified_processor.process_escrow_payment(
             escrow=escrow,
@@ -117,7 +117,7 @@ async def process_stuck_webhook_direct(webhook_id: int):
         
         # ProcessingResult is a dataclass with .success attribute
         if processing_result.success:
-            logger.info(f"✅ Payment processed successfully")
+            logger.info("✅ Payment processed successfully")
             
             # Update webhook status
             webhook_event.status = 'completed'
@@ -210,7 +210,7 @@ async def main():
             print(f"Found webhook ID {webhook_event.id} for reference {args.process_reference}")
             result = await process_stuck_webhook_direct(webhook_event.id)
             if result['success']:
-                print(f"\n✅ Successfully processed webhook")
+                print("\n✅ Successfully processed webhook")
                 print(f"  Result: {result.get('result')}")
             else:
                 print(f"\n❌ Processing failed: {result.get('error')}")

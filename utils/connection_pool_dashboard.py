@@ -5,19 +5,14 @@ Real-time web dashboard for monitoring database connection pool performance
 
 import logging
 import asyncio
-import json
-import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
-from collections import defaultdict, deque
+from typing import Dict, List, Any
+from dataclasses import dataclass
+from collections import deque
 import threading
-from pathlib import Path
 import uuid
-import statistics
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 import uvicorn
 
 logger = logging.getLogger(__name__)

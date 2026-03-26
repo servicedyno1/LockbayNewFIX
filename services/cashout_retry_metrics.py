@@ -5,12 +5,11 @@ Comprehensive analytics and monitoring for the retry system
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
-from sqlalchemy import func, and_, or_, case
-from sqlalchemy.orm import Session
+from typing import Dict, Any, List
+from sqlalchemy import func, or_, case
 
 from database import managed_session
-from models import Cashout, CashoutStatus, CashoutFailureType, CashoutErrorCode, Refund, RefundType
+from models import Cashout, CashoutStatus, CashoutFailureType
 
 logger = logging.getLogger(__name__)
 

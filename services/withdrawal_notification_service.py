@@ -124,10 +124,9 @@ class WithdrawalNotificationService:
                 amount_str = f"{amount:.4f}"
             
             # Format USD amount
-            usd_display = f"(${usd_amount:.2f})" if usd_amount else ""
             
             # Truncate hash for professional display
-            hash_display = f"{blockchain_hash[:8]}...{blockchain_hash[-4:]}" if len(blockchain_hash) > 12 else blockchain_hash
+            f"{blockchain_hash[:8]}...{blockchain_hash[-4:]}" if len(blockchain_hash) > 12 else blockchain_hash
             
             # Truncate destination address for security
             if destination_address:
@@ -181,7 +180,7 @@ class WithdrawalNotificationService:
                 message += f"\n\n🔍 <a href='{explorer_url}{blockchain_hash}'>View on Blockchain</a>"
             elif not pending_funding and not is_real_blockchain_hash:
                 # Show processing message when we only have Kraken refid
-                message += f"\n\n⏳ <i>Blockchain hash available soon</i>"
+                message += "\n\n⏳ <i>Blockchain hash available soon</i>"
             
             # Send message with professional formatting
             await self.bot.send_message(

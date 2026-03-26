@@ -8,9 +8,7 @@ import json
 import time
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Set, Union
-from datetime import datetime, timedelta
-from collections import defaultdict
+from typing import Any, Dict, Optional, Set
 
 # Import Replit Key-Value Store
 try:
@@ -497,7 +495,7 @@ class ReplitKVRedisCompat:
             return 0
         
         else:
-            logger.warning(f"⚠️ Unsupported Lua script in Key-Value Store mode")
+            logger.warning("⚠️ Unsupported Lua script in Key-Value Store mode")
             return None
     
     async def close(self):

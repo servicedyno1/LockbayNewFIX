@@ -58,10 +58,10 @@ class EmailService:
         """Send an email using Brevo"""
 
         if not self.enabled:
-            logger.error(f"❌ Email sending FAILED - BREVO_API_KEY not configured")
+            logger.error("❌ Email sending FAILED - BREVO_API_KEY not configured")
             logger.error(f"   Recipient: {to_email}")
             logger.error(f"   Subject: {subject}")
-            logger.error(f"   🔧 FIX: Set BREVO_API_KEY in production secrets and redeploy")
+            logger.error("   🔧 FIX: Set BREVO_API_KEY in production secrets and redeploy")
             return False
 
         try:
@@ -116,11 +116,11 @@ class EmailService:
         """Send an email with Reply-To header for webhook routing"""
 
         if not self.enabled:
-            logger.error(f"❌ Email sending FAILED - BREVO_API_KEY not configured")
+            logger.error("❌ Email sending FAILED - BREVO_API_KEY not configured")
             logger.error(f"   Recipient: {to_email}")
             logger.error(f"   Subject: {subject}")
             logger.error(f"   Reply-To: {reply_to}")
-            logger.error(f"   🔧 FIX: Set BREVO_API_KEY in production secrets and redeploy")
+            logger.error("   🔧 FIX: Set BREVO_API_KEY in production secrets and redeploy")
             return False
 
         try:
@@ -1442,7 +1442,6 @@ Best regards,
             
             if email_sent:
                 # Store OTP in database with expiration
-                from models import OTPVerification
                 from database import SessionLocal
                 
                 session = SessionLocal()
@@ -1513,7 +1512,6 @@ Best regards,
     async def verify_otp(self, email: str, otp: str, user_id: int, verification_type: str) -> tuple[bool, str, dict]:
         """Verify OTP code and return context data for cashout lookup"""
         from models import OTPVerification
-        from database import SessionLocal
         from datetime import datetime
         from sqlalchemy import select, text
         import json

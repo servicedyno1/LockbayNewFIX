@@ -649,7 +649,7 @@ class FincraService(APIAdapterRetry):
                         # Enhanced error categorization
                         elif response.status == 401:
                             logger.error(f"Fincra authentication failed: {response_data}")
-                            logger.error(f"Check FINCRA_API_KEY and ensure it matches the environment (LIVE/TEST)")
+                            logger.error("Check FINCRA_API_KEY and ensure it matches the environment (LIVE/TEST)")
                             # Track auth failures for circuit breaker
                             _fincra_auth_failure_count += 1
                             if _fincra_auth_failure_count >= _FINCRA_AUTH_FAILURE_THRESHOLD:
@@ -712,9 +712,9 @@ class FincraService(APIAdapterRetry):
                 elif "connection" in error_detail.lower():
                     error_context = f"Connection failed to Fincra API ({self.base_url})"
                 elif "ssl" in error_detail.lower():
-                    error_context = f"SSL/TLS error connecting to Fincra API"
+                    error_context = "SSL/TLS error connecting to Fincra API"
                 else:
-                    error_context = f"Network error accessing Fincra API"
+                    error_context = "Network error accessing Fincra API"
                 
                 if attempt < max_retries - 1:
                     delay = 0.5 + random.uniform(0, 0.3)  # Much faster: 0.5-0.8s

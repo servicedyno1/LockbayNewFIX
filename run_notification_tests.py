@@ -24,9 +24,9 @@ from services.consolidated_notification_service import (
     NotificationCategory,
     DeliveryStatus
 )
-from models import User, Escrow, EscrowStatus, Wallet, UserStatus
+from models import User, Escrow, EscrowStatus, Wallet
 from config import Config
-from sqlalchemy import select, delete
+from sqlalchemy import delete
 
 # Configure logging
 logging.basicConfig(

@@ -12,7 +12,7 @@ class FeePolicyMessages:
     @staticmethod
     def get_fee_policy_short():
         """Short fee policy for inline display"""
-        return f"5% platform fee • Refundable on early cancellation"
+        return "5% platform fee • Refundable on early cancellation"
     
     @staticmethod
     def get_fee_policy_tooltip():

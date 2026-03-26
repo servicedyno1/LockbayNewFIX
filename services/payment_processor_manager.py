@@ -1,7 +1,7 @@
 """Payment Processor Manager - Single provider configuration (no failover)"""
 
 import logging
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Tuple
 from enum import Enum
 from config import Config
 from services.blockbee_service import blockbee_service, BlockBeeAPIError

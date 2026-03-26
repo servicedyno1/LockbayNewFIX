@@ -4,9 +4,7 @@ Comprehensive HTML email templates for all refund notification scenarios
 """
 
 import logging
-from typing import Dict, Any, Optional
-from datetime import datetime
-from config import Config
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -1580,7 +1578,7 @@ class RefundEmailTemplates:
         """Generate error fallback template when template generation fails"""
         user = context.get("user", {})
         platform = context.get("platform", {"name": "Trading Platform"})
-        refund = context.get("refund", {})
+        context.get("refund", {})
         
         subject = f"⚠️ Important Account Update - {platform['name']}"
         

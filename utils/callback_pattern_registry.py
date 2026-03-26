@@ -5,7 +5,6 @@ Implements namespaced callback patterns to prevent conflicts
 
 import logging
 from typing import Dict, Set, List, Tuple, Optional
-import re
 
 logger = logging.getLogger(__name__)
 

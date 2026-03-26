@@ -4,15 +4,13 @@ Prevents cascading failures and protects system stability
 """
 
 import asyncio
-import time
 import logging
 from typing import Any, Callable, Optional, Dict
 from enum import Enum
 from functools import wraps
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from services.state_manager import state_manager
-from services.atomic_lock_manager import atomic_lock_manager, LockOperationType
 
 logger = logging.getLogger(__name__)
 

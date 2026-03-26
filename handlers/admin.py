@@ -13,10 +13,8 @@ from utils.admin_security import is_admin_secure
 from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
 from utils.admin_prefetch import (
     prefetch_admin_dashboard,
-    prefetch_admin_user_list,
     get_cached_admin_dashboard,
-    cache_admin_dashboard,
-    invalidate_admin_cache
+    cache_admin_dashboard
 )
 from config import Config
 
@@ -471,21 +469,21 @@ async def handle_admin_analytics(update: Update, context: ContextTypes.DEFAULT_T
 
     try:
         from database import SessionLocal
-        from models import User, Escrow, Transaction, Cashout, ExchangeOrder, DirectExchange
+        from models import User, Escrow, Cashout, ExchangeOrder
         from datetime import datetime, timedelta
-        from sqlalchemy import func, desc
+        from sqlalchemy import func
         
         session = SessionLocal()
         try:
             # === COMPREHENSIVE BUSINESS INTELLIGENCE ===
             now = datetime.utcnow()
             today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-            week_start = now - timedelta(days=7)
-            month_start = now - timedelta(days=30)
+            now - timedelta(days=7)
+            now - timedelta(days=30)
             
             # === USER METRICS ===
             total_users = session.query(User).count()
-            active_users_today = session.query(User).filter(User.last_activity >= today_start).count()
+            session.query(User).filter(User.last_activity >= today_start).count()
             new_users_today = session.query(User).filter(User.created_at >= today_start).count()
             verified_users = session.query(User).filter(User.email_verified == True).count()
             
@@ -500,21 +498,21 @@ async def handle_admin_analytics(update: Update, context: ContextTypes.DEFAULT_T
             # === EXCHANGE BUSINESS ===
             total_exchanges = session.query(ExchangeOrder).count()
             completed_exchanges = session.query(ExchangeOrder).filter(ExchangeOrder.status == "completed").count()
-            exchange_volume_usd = session.query(func.coalesce(func.sum(ExchangeOrder.final_amount), 0)).filter(
+            session.query(func.coalesce(func.sum(ExchangeOrder.final_amount), 0)).filter(
                 ExchangeOrder.status == "completed"
             ).scalar() or 0
-            pending_exchanges = session.query(ExchangeOrder).filter(
+            session.query(ExchangeOrder).filter(
                 ExchangeOrder.status.in_([ExchangeStatus.CREATED.value, ExchangeStatus.PROCESSING.value])
             ).count()
             
             # === CASHOUT ANALYTICS ===
             total_cashouts = session.query(Cashout).count()
-            completed_cashouts = session.query(Cashout).filter(Cashout.status == "completed").count()
+            session.query(Cashout).filter(Cashout.status == "completed").count()
             pending_cashouts = session.query(Cashout).filter(
                 Cashout.status.in_(["pending", "otp_pending", "admin_pending", "approved", "executing"])
             ).count()
             
-            cashout_volume = session.query(func.coalesce(func.sum(Cashout.amount), 0)).filter(
+            session.query(func.coalesce(func.sum(Cashout.amount), 0)).filter(
                 Cashout.status == "completed"
             ).scalar() or 0
             
@@ -524,7 +522,7 @@ async def handle_admin_analytics(update: Update, context: ContextTypes.DEFAULT_T
             exchange_markup_revenue = session.query(func.coalesce(func.sum(ExchangeOrder.fee_amount), 0)).filter(
                 ExchangeOrder.status == "completed"
             ).scalar() or 0
-            legacy_total_revenue = float(platform_fees) + float(exchange_markup_revenue)
+            float(platform_fees) + float(exchange_markup_revenue)
             
             # NEW: Unified revenue tracking from platform_revenue table
             from services.unified_revenue_service import unified_revenue_service
@@ -533,7 +531,7 @@ async def handle_admin_analytics(update: Update, context: ContextTypes.DEFAULT_T
             total_unified_revenue = revenue_analytics.get('total_revenue', 0.0)
             today_revenue = revenue_analytics.get('today_revenue', 0.0)
             month_revenue = revenue_analytics.get('month_revenue', 0.0)
-            revenue_sources = revenue_analytics.get('revenue_sources_30d', {})
+            revenue_analytics.get('revenue_sources_30d', {})
             
             # === RECENT ACTIVITY ===
             recent_exchanges_today = session.query(ExchangeOrder).filter(
@@ -694,9 +692,9 @@ async def handle_crypto_balance_command(update: Update, context: ContextTypes.DE
                 
                 # Add account status info
                 account_type = balance_data.get('account_type', 'Pro')
-                message += f"\n\n📊 **Account Status**"
-                message += f"\n🦑 Provider: Kraken"
-                message += f"\n💸 Withdrawals: ✅"
+                message += "\n\n📊 **Account Status**"
+                message += "\n🦑 Provider: Kraken"
+                message += "\n💸 Withdrawals: ✅"
                 message += f"\n📋 Type: {account_type}"
             else:
                 message += "No significant balances found"
@@ -989,7 +987,6 @@ async def handle_performance_command(update: Update, context: ContextTypes.DEFAU
     try:
         # COLLISION FIX: Use shared CPU monitor to prevent resource contention
         from utils.shared_cpu_monitor import get_cpu_usage, get_memory_usage
-        import psutil
         
         # Get performance metrics using shared service
         cpu_reading = await get_cpu_usage()
@@ -1054,8 +1051,8 @@ async def handle_admin_disputes(update: Update, context: ContextTypes.DEFAULT_TY
     try:
         from database import SessionLocal
         from models import Dispute, Escrow, User
-        from datetime import datetime, timedelta
-        from sqlalchemy import func, desc
+        from datetime import datetime
+        from sqlalchemy import desc
         
         session = SessionLocal()
         try:
@@ -1098,12 +1095,12 @@ async def handle_admin_disputes(update: Update, context: ContextTypes.DEFAULT_TY
                 })
             
             # Build message with safe text formatting
-            message = f"⚖️ Dispute Management Dashboard\n\n"
-            message += f"📊 Overview\n"
+            message = "⚖️ Dispute Management Dashboard\n\n"
+            message += "📊 Overview\n"
             message += f"• Total Disputes: {total_disputes:,} • Resolution Rate: {resolution_rate:.1f}%\n"
             message += f"• Open: {open_disputes} • Under Review: {under_review}\n"
             message += f"• Resolved: {resolved_disputes:,} • New Today: {disputes_today}\n\n"
-            message += f"🔥 Active Disputes\n"
+            message += "🔥 Active Disputes\n"
             
             if recent_disputes:
                 for dispute in recent_disputes[:3]:  # Show top 3
@@ -1183,16 +1180,15 @@ async def handle_admin_reports(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         from database import SessionLocal
-        from models import User, Escrow, EscrowStatus, Transaction
-        from sqlalchemy import func, and_
-        from datetime import datetime, timedelta
+        from models import User, Escrow
+        from datetime import datetime
         from decimal import Decimal
         
         session = SessionLocal()
         try:
             # Get current time and month start
             now = datetime.utcnow()
-            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             
             # Get system metrics
             total_users = session.query(User).count()
@@ -1207,10 +1203,7 @@ async def handle_admin_reports(update: Update, context: ContextTypes.DEFAULT_TYP
             ).count()
             
             # Get revenue this month from completed transactions (use instance attributes, not class columns)
-            from sqlalchemy import and_
             monthly_revenue = Decimal('0')  # Default value if no revenue
-            
-            monthly_revenue = monthly_revenue_query or Decimal('0')
             
             # Format revenue
             if monthly_revenue >= 1000:
@@ -1307,7 +1300,6 @@ async def handle_admin_manual_ops(update: Update, context: ContextTypes.DEFAULT_
         try:
             from models import Cashout, CashoutStatus, ExchangeOrder
             from datetime import timedelta
-            from sqlalchemy import desc, or_
             
             now = datetime.utcnow()
             today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1518,7 +1510,7 @@ All cashouts are processed.
    Age: {int(age_minutes)}m
    ID: {cashout.cashout_id}"""
                 
-                message += f"""
+                message += """
 
 📋 **Approve Individual Cashouts:**"""
                 
@@ -1540,7 +1532,7 @@ All cashouts are processed.
                     keyboard.append([InlineKeyboardButton(button_text, callback_data=callback_data)])
                 
                 # Add bulk options
-                message += f"""
+                message += """
 
 🔧 **Bulk Operations:**
 • Process multiple cashouts at once
@@ -1596,7 +1588,7 @@ async def handle_admin_manual_hash(update: Update, context: ContextTypes.DEFAULT
                 )
             ).order_by(desc(Cashout.created_at)).limit(5).all()
             
-            message = f"""🔍 **Manual Hash Verification**
+            message = """🔍 **Manual Hash Verification**
 
 🔐 **Pending Hash Verifications**"""
             
@@ -1627,7 +1619,7 @@ async def handle_admin_manual_hash(update: Update, context: ContextTypes.DEFAULT
             else:
                 message += "\n✅ No pending hash verifications"
             
-            message += f"""
+            message += """
 
 🔧 **Hash Verification Process**
 1. Verify blockchain transaction manually
@@ -1699,7 +1691,7 @@ async def handle_admin_manual_payment(update: Update, context: ContextTypes.DEFA
                 Cashout.created_at >= datetime.utcnow() - timedelta(days=7)
             ).order_by(desc(Cashout.created_at)).limit(5).all()
             
-            message = f"""💰 **Manual Payment Override**
+            message = """💰 **Manual Payment Override**
 
 ⚠️ **Stuck/Failed Payments**"""
             
@@ -1721,7 +1713,7 @@ async def handle_admin_manual_payment(update: Update, context: ContextTypes.DEFA
             else:
                 message += "\n✅ No stuck payments found"
             
-            message += f"""
+            message += """
 
 🔧 **Override Options**
 • Force completion with manual confirmation
@@ -1778,7 +1770,7 @@ async def handle_admin_manual_emergency(update: Update, context: ContextTypes.DE
     if query:
         await safe_answer_callback_query(query, "⚡")
 
-    message = f"""⚡ **Emergency Processing Center**
+    message = """⚡ **Emergency Processing Center**
 
 🚨 **EMERGENCY OPERATIONS ONLY**
 
@@ -2556,7 +2548,7 @@ async def complete_cashout_approval(cashout_id: str, admin_id: int, transaction_
             try:
                 from utils.cashout_completion_handler import auto_release_completed_cashout_hold
                 import asyncio
-                release_result = asyncio.create_task(auto_release_completed_cashout_hold(
+                asyncio.create_task(auto_release_completed_cashout_hold(
                     cashout_id=cashout_id,
                     user_id=cashout.user_id,
                     session=session
@@ -2589,7 +2581,7 @@ async def complete_cashout_approval(cashout_id: str, admin_id: int, transaction_
             else:
                 # Insufficient funds - should not happen in normal flow
                 logger.error(f"Insufficient funds for cashout {cashout_id}: available={wallet.available_balance if wallet else 'N/A'}, frozen={wallet.frozen_balance if wallet else 'N/A'}, required={cashout.amount}")
-                raise Exception(f"Insufficient wallet funds for cashout completion")
+                raise Exception("Insufficient wallet funds for cashout completion")
             
             session.commit()
             
@@ -2621,10 +2613,6 @@ async def complete_cashout_approval(cashout_id: str, admin_id: int, transaction_
                 
                 # Store achievement and receipt data for notification enhancement
                 if user_achievements or cashout_receipt:
-                    context_data = {
-                        'user_achievements': user_achievements,
-                        'cashout_receipt': cashout_receipt
-                    }
                     logger.info(f"✅ Phase 3B integration complete for cashout {cashout_id}")
                 
             except Exception as e:
@@ -2891,7 +2879,6 @@ async def handle_admin_email_verification(update: Update, context: ContextTypes.
         try:
             from models import EmailVerification, OTPVerification
             from datetime import timedelta
-            from sqlalchemy import desc, func, and_
             
             now = datetime.utcnow()
             today = now.replace(hour=0, minute=0, second=0, microsecond=0)

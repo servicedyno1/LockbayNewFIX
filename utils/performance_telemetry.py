@@ -3,9 +3,8 @@ Lightweight Performance Telemetry Module
 Tracks cache hit rates and webhook latency for performance monitoring
 """
 
-import time
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
 from collections import deque

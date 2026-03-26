@@ -11,7 +11,7 @@ from utils.conversation_protection import ConversationTimeout
 logger = logging.getLogger(__name__)
 
 
-def require_user_data(*required_fields):
+def _require_user_data_v1(*required_fields):
     """
     Decorator to validate user_data before executing handler
 
@@ -54,7 +54,7 @@ def require_user_data(*required_fields):
     return decorator
 
 
-async def validate_and_recover_context(
+async def _validate_and_recover_context_v1(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     required_data: Dict[str, List[str]] = None,

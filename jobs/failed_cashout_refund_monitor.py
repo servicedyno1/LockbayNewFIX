@@ -6,17 +6,14 @@ technical failures (retry) from user errors (refund)
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any
 from decimal import Decimal
 from database import async_managed_session
 from sqlalchemy import select
 from models import (
-    Cashout, CashoutStatus, Transaction, TransactionType, User,
-    Refund, RefundType, RefundStatus, CashoutFailureType, CashoutType
+    Cashout, CashoutStatus, Transaction, TransactionType, Refund, RefundType, RefundStatus, CashoutFailureType, CashoutType
 )
-from services.crypto import CryptoServiceAtomic
 from services.consolidated_notification_service import consolidated_notification_service
-from services.cashout_retry_service import cashout_retry_service
 from utils.universal_id_generator import UniversalIDGenerator
 
 logger = logging.getLogger(__name__)
@@ -536,7 +533,7 @@ class FailedCashoutRefundMonitor:
                     return best_match
                 
                 # No exact amount matches - use time proximity fallback
-                logger.warning(f"⚠️ NO_AMOUNT_MATCH: Using time proximity fallback for USD cashout")
+                logger.warning("⚠️ NO_AMOUNT_MATCH: Using time proximity fallback for USD cashout")
                 closest_debit = min(potential_debits, key=lambda d: abs((d.created_at - cashout.created_at).total_seconds()))
                 time_diff = abs((closest_debit.created_at - cashout.created_at).total_seconds() / 60)
                 logger.info(f"✅ USD_TIME_FALLBACK: {closest_debit.transaction_id} ({time_diff:.1f}min diff)")

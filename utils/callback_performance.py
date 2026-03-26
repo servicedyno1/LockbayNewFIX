@@ -5,8 +5,7 @@ Reduces duplicate processing and improves response times
 
 import logging
 import asyncio
-from typing import Dict, Set, Optional
-from datetime import datetime, timedelta
+from typing import Dict, Set
 from telegram import Update
 from telegram.ext import ContextTypes
 

@@ -6,15 +6,14 @@ Dynamic security thresholds based on user behavior patterns and real-time analys
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 import statistics
-import asyncio
 
-from sqlalchemy import func, and_
+from sqlalchemy import and_
 from database import SessionLocal
-from models import User, Transaction, Cashout, Escrow
+from models import Transaction, Cashout
 from utils.dynamic_minimum_validator import DynamicMinimumValidator
 from services.blockbee_service import BlockBeeService
 

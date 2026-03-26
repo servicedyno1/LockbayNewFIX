@@ -14,13 +14,12 @@ Features:
 
 import logging
 import hashlib
-import json
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 
 from services.email_verification_service import EmailVerificationService
 from models import User, EmailVerification
-from database import async_managed_session, managed_session
+from database import managed_session
 from sqlalchemy import select, and_
 
 logger = logging.getLogger(__name__)
@@ -156,7 +155,7 @@ class CashoutOTPFlow:
                     cashout_context[field] = context_with_channel[field]
             
             # Send OTP using EmailVerificationService with proper session
-            from database import async_managed_session, managed_session
+            from database import async_managed_session
             async with async_managed_session() as session:
                 result = await EmailVerificationService.send_otp_async(
                     session=session,

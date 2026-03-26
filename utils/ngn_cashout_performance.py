@@ -21,7 +21,6 @@ from decimal import Decimal
 from database import SessionLocal
 from models import User, SavedBankAccount
 from utils.production_cache import get_cached, set_cached, delete_cached
-from utils.decimal_precision import MonetaryDecimal
 
 logger = logging.getLogger(__name__)
 

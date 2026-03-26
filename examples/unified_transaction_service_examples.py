@@ -7,18 +7,13 @@ according to the document specification.
 
 import asyncio
 from decimal import Decimal
-from datetime import datetime
-from typing import Dict, Any
 
 from services.unified_transaction_service import (
-    UnifiedTransactionService, 
     TransactionRequest, 
-    TransactionResult,
     create_unified_transaction_service
 )
 from services.dual_write_adapter import DualWriteMode
 from models import UnifiedTransactionType, UnifiedTransactionStatus, UnifiedTransactionPriority
-from database import managed_session
 
 
 async def example_wallet_cashout_flow():
@@ -59,7 +54,7 @@ async def example_wallet_cashout_flow():
     
     # Step 2: Handle OTP flow (if required)
     if result.requires_otp:
-        print(f"\n2. OTP Verification Required")
+        print("\n2. OTP Verification Required")
         
         # Simulate OTP verification success
         otp_result = await service.transition_status(
@@ -72,7 +67,7 @@ async def example_wallet_cashout_flow():
         print(f"   Status: {otp_result.old_status} → {otp_result.new_status}")
     
     # Step 3: Process external payout
-    print(f"\n3. Processing External Payout")
+    print("\n3. Processing External Payout")
     payout_result = await service.process_external_payout(transaction_id)
     print(f"   Payout Result: {payout_result.get('success')}")
     
@@ -130,7 +125,7 @@ async def example_exchange_sell_crypto_flow():
     transaction_id = result.transaction_id
     
     # Step 2: Simulate payment confirmation
-    print(f"\n2. Payment Confirmation")
+    print("\n2. Payment Confirmation")
     payment_result = await service.transition_status(
         transaction_id=transaction_id,
         new_status=UnifiedTransactionStatus.PAYMENT_CONFIRMED,
@@ -145,7 +140,7 @@ async def example_exchange_sell_crypto_flow():
     print(f"   Status: {payment_result.old_status} → {payment_result.new_status}")
     
     # Step 3: Process internal transfer (exchange completion)
-    print(f"\n3. Processing Exchange Completion")
+    print("\n3. Processing Exchange Completion")
     
     # First transition to processing
     await service.transition_status(
@@ -214,7 +209,7 @@ async def example_escrow_flow():
     transaction_id = result.transaction_id
     
     # Step 2: Payment confirmation
-    print(f"\n2. Payment Confirmation")
+    print("\n2. Payment Confirmation")
     payment_result = await service.transition_status(
         transaction_id=transaction_id,
         new_status=UnifiedTransactionStatus.PAYMENT_CONFIRMED,
@@ -224,7 +219,7 @@ async def example_escrow_flow():
     print(f"   Payment Transition: {payment_result.success}")
     
     # Step 3: Seller acceptance
-    print(f"\n3. Seller Acceptance")
+    print("\n3. Seller Acceptance")
     acceptance_result = await service.transition_status(
         transaction_id=transaction_id,
         new_status=UnifiedTransactionStatus.AWAITING_APPROVAL,
@@ -242,7 +237,7 @@ async def example_escrow_flow():
     print(f"   Funds Held: {funds_held_result.success}")
     
     # Step 4: Work completion and release
-    print(f"\n4. Escrow Release Process")
+    print("\n4. Escrow Release Process")
     release_pending_result = await service.transition_status(
         transaction_id=transaction_id,
         new_status=UnifiedTransactionStatus.RELEASE_PENDING,
@@ -252,7 +247,7 @@ async def example_escrow_flow():
     print(f"   Release Pending: {release_pending_result.success}")
     
     # Step 5: Execute release (internal transfer to seller)
-    print(f"\n5. Executing Release Transfer")
+    print("\n5. Executing Release Transfer")
     release_result = await service.process_internal_transfer(transaction_id)
     print(f"   Release Result: {release_result.get('success')}")
     
@@ -331,7 +326,7 @@ async def example_retry_handling():
     transaction_id = result.transaction_id
     
     # Simulate failure and retry
-    print(f"1. Simulating External API Failure")
+    print("1. Simulating External API Failure")
     
     # Transition to failed status
     await service.transition_status(
@@ -341,7 +336,7 @@ async def example_retry_handling():
     )
     
     # Attempt retry
-    print(f"\n2. Attempting Retry")
+    print("\n2. Attempting Retry")
     retry_result = await service.handle_failure_retry(transaction_id)
     print(f"   Retry Executed: {retry_result.get('success')}")
     

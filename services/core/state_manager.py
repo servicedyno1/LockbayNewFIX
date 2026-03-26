@@ -13,27 +13,19 @@ Key Features:
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Union, Tuple
-from datetime import datetime, timedelta
-from contextlib import asynccontextmanager
+from typing import Dict, Any, Optional, List, Tuple
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import and_, or_, func
 
-from database import managed_session, get_db_session, async_managed_session
+from database import async_managed_session
 from models import (
-    UnifiedTransaction, UnifiedTransactionStatus, 
-    UnifiedTransactionStatusHistory, Cashout, CashoutStatus,
-    Escrow, EscrowStatus, ExchangeOrder, ExchangeStatus,
-    WalletHolds, WalletHoldStatus
+    UnifiedTransaction, UnifiedTransactionStatusHistory, Cashout, Escrow, ExchangeOrder, WalletHolds
 )
 
 from .payment_data_structures import (
-    TransactionStatus, PaymentProvider, PaymentError,
-    map_legacy_status, is_valid_transition, validate_state_transition,
-    get_status_category, StateTransitionError, get_valid_transitions,
-    is_terminal_state, is_error_state, is_waiting_state,
-    map_provider_status_to_unified
+    TransactionStatus, PaymentProvider, map_legacy_status, validate_state_transition,
+    StateTransitionError
 )
 
 logger = logging.getLogger(__name__)

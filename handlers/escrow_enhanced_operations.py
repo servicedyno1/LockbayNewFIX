@@ -4,23 +4,19 @@ Demonstrates proper escrow state transitions with SELECT FOR UPDATE and optimist
 """
 
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from decimal import Decimal
-from datetime import datetime, timedelta
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from datetime import datetime
+from telegram import Update
 from telegram.ext import ContextTypes
 
 # Core imports
-from database import SessionLocal
-from models import User, Wallet, Escrow, EscrowStatus, TransactionType
-from config import Config
+from models import User, Escrow, EscrowStatus
 
 # Enhanced state management imports
 from utils.session_migration_helper import session_migration_helper
 from utils.financial_operation_locker import financial_locker, FinancialLockType
 from utils.enhanced_db_session_manager import enhanced_db_session_manager
-from utils.callback_utils import safe_edit_message_text
-from utils.branding_utils import make_header, format_branded_amount
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +64,7 @@ async def create_escrow_with_enhanced_locking(
         async with enhanced_db_session_manager.managed_session(
             operation_name=f"escrow_create_{operation_id}",
             timeout_seconds=45
-        ) as db_session:
+        ):
             
             # Use financial operation locker for escrow creation
             async with financial_locker.atomic_financial_operation(
@@ -203,7 +199,7 @@ async def transition_escrow_status_enhanced(
         async with enhanced_db_session_manager.managed_session(
             operation_name=f"escrow_transition_{operation_id}",
             timeout_seconds=30
-        ) as db_session:
+        ):
             
             async with financial_locker.atomic_financial_operation(
                 operation_id=operation_id,

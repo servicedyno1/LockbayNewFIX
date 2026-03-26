@@ -15,7 +15,6 @@ Key Features:
 import logging
 from typing import Dict, List, Optional, Any
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import async_managed_session
 from models import User, SavedBankAccount, SavedAddress

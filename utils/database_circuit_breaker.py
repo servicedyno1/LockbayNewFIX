@@ -6,7 +6,7 @@ Implements circuit breaker pattern to prevent cascade failures during database o
 import time
 import logging
 import threading
-from typing import Optional, Callable, Any, Dict, List
+from typing import Callable, Any, Dict
 from enum import Enum
 from dataclasses import dataclass
 from contextlib import contextmanager

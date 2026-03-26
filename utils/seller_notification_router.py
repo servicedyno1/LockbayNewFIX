@@ -11,7 +11,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 from database import SessionLocal
-from models import User, SellerContactType
+from models import SellerContactType
 from services.unified_notification_service import UnifiedNotificationService, NotificationType
 from services.seller_invitation import SellerInvitationService
 from services.email import EmailService

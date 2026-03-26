@@ -5,15 +5,13 @@ Consolidates all user activities, errors, and system events into a single dashbo
 
 import logging
 import asyncio
-import time
 import json
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from collections import deque, defaultdict
 from enum import Enum
 import uuid
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +173,7 @@ class UnifiedActivityMonitor:
                     username=username_val,
                     is_admin=False,
                     title="Recent User Activity",
-                    description=f"User was active recently (loaded from DB)",
+                    description="User was active recently (loaded from DB)",
                     details={
                         "loaded_from_db": True,
                         "last_activity": last_activity.isoformat(),
@@ -564,7 +562,7 @@ class UnifiedActivityMonitor:
     def _determine_error_severity(self, user_message: str, backend_error: str) -> ErrorSeverity:
         """Determine error severity based on error content"""
         user_lower = user_message.lower()
-        backend_lower = backend_error.lower()
+        backend_error.lower()
         
         # Critical errors
         if any(keyword in user_lower for keyword in ['database', 'payment', 'funds', 'money']):

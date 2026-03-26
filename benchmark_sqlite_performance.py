@@ -85,7 +85,7 @@ async def benchmark_fast_sqlite():
         print("=" * 80)
         print("🎯 PERFORMANCE ANALYSIS")
         print("=" * 80)
-        print(f"   Baseline (old SQLite): 35-40ms")
+        print("   Baseline (old SQLite): 35-40ms")
         print(f"   Optimized (new SQLite): {avg_time:.2f}ms")
         
         if avg_time < 20:

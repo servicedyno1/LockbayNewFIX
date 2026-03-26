@@ -11,11 +11,10 @@ Features:
 
 import logging
 import asyncio
-import os
 import glob
 import tempfile
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from pathlib import Path
 from database import async_managed_session
 from models import Escrow, EscrowStatus, EscrowRefundOperation

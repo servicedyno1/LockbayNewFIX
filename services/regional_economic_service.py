@@ -5,15 +5,13 @@ Purchasing power parity and regional economic adjustments for global fairness
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from datetime import datetime
+from typing import Dict
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
-import asyncio
 
-from database import SessionLocal, async_managed_session
+from database import async_managed_session
 from models import User
-from config import Config
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)

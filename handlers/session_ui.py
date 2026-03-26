@@ -4,13 +4,11 @@ Provides interface for switching between multiple concurrent operations
 """
 
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler
 
-from database import SessionLocal
-from models import User, Escrow, ExchangeOrder, Cashout
 from utils.universal_session_manager import (
     universal_session_manager, SessionType, OperationStatus
 )
@@ -56,7 +54,7 @@ async def show_active_sessions(update: Update, context: ContextTypes.DEFAULT_TYP
     message = f"📋 Your Active Sessions ({len(sessions)} total)\n\n"
     
     # Display statistics
-    stats = universal_session_manager.get_statistics()
+    universal_session_manager.get_statistics()
     if user.id in [s.user_id for s in sessions]:
         sessions_per_type = {}
         for session in sessions:
@@ -145,7 +143,7 @@ async def view_session_details(update: Update, context: ContextTypes.DEFAULT_TYP
         return ConversationHandler.END
     
     # Build detailed view
-    message = f"📄 Session Details\n\n"
+    message = "📄 Session Details\n\n"
     message += f"Type: {session.session_type.value.replace('_', ' ').title()}\n"
     message += f"Status: {get_status_emoji(session.status)} {session.status.value}\n"
     message += f"Created: {session.created_at.strftime('%Y-%m-%d %H:%M')}\n"
@@ -157,7 +155,7 @@ async def view_session_details(update: Update, context: ContextTypes.DEFAULT_TYP
             minutes = int(remaining / 60)
             message += f"Expires in: {minutes} minutes\n"
         else:
-            message += f"Status: ⏰ Expired\n"
+            message += "Status: ⏰ Expired\n"
     
     # Add metadata if available
     if session.metadata:

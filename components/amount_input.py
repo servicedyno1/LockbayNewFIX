@@ -131,7 +131,7 @@ class AmountInputComponent:
             logger.error(f"Invalid amount format: {e}")
             return {
                 'success': False,
-                'error': f"Invalid amount format. Please enter a number (e.g., 100 or 100.50)"
+                'error': "Invalid amount format. Please enter a number (e.g., 100 or 100.50)"
             }
     
     def _clean_amount_string(self, text: str) -> Optional[str]:

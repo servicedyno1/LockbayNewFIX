@@ -243,9 +243,7 @@ LEGACY_STATUS_MAPPING = {
     "partial_payment": TransactionStatus.AWAITING,
     
     # === CashoutStatus mappings (15 states → 5) ===
-    "otp_pending": TransactionStatus.AWAITING,
     "user_confirm_pending": TransactionStatus.AWAITING,
-    "admin_pending": TransactionStatus.AWAITING,
     "pending_config": TransactionStatus.AWAITING,
     "pending_address_config": TransactionStatus.AWAITING,
     "pending_funding": TransactionStatus.AWAITING,

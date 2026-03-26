@@ -8,9 +8,9 @@ import asyncio
 import sys
 from decimal import Decimal
 from datetime import datetime, timedelta
-from sqlalchemy import select, func, text
+from sqlalchemy import select, text
 from database import async_managed_session
-from models import Transaction, User, Escrow, Wallet
+from models import User, Wallet
 
 async def audit_duplicate_overpayments(days_back=None):
     """Audit all duplicate overpayment transactions and generate report
@@ -104,7 +104,7 @@ async def audit_duplicate_overpayments(days_back=None):
             print(f"    Duplicate Count: {duplicate_count}")
             print(f"    Excess Credited: ${excess_credited}")
             print(f"    Transaction IDs: {transaction_ids}")
-            print(f"    Timestamps:")
+            print("    Timestamps:")
             for i, ts in enumerate(timestamps):
                 marker = "✅ ORIGINAL" if i == 0 else f"❌ DUPLICATE {i}"
                 print(f"        {marker}: {ts}")
@@ -150,7 +150,7 @@ async def audit_duplicate_overpayments(days_back=None):
         print("3. Add idempotency protection to prevent future duplicates")
         print("4. Monitor for any new duplicate overpayments")
         print()
-        print(f"Script: python scripts/rollback_duplicate_overpayments.py")
+        print("Script: python scripts/rollback_duplicate_overpayments.py")
         print("=" * 80)
 
 if __name__ == "__main__":

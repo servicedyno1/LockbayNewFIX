@@ -12,12 +12,8 @@ Replaces multiple specialized workflow jobs with a single optimized runner.
 """
 
 import logging
-import asyncio
 from datetime import datetime
-from typing import Dict, Any, List, Optional
-from database import managed_session, get_db_session
-from services.unified_transaction_engine import unified_transaction_engine
-from utils.performance_monitor import performance_monitor
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

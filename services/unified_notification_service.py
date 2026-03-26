@@ -8,7 +8,7 @@ Replaces multiple scattered notification services with one unified interface.
 import logging
 import requests
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 
 # Database and models

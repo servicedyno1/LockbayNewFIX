@@ -5,11 +5,10 @@ Enhanced notifications for cashout processing with urgency indicators
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from datetime import datetime
+from typing import Optional, Dict
 from telegram import Bot
 from config import Config
-from utils.admin_security import AdminSecurity
 from models import Cashout, User, Escrow, CashoutType
 
 logger = logging.getLogger(__name__)
@@ -168,7 +167,6 @@ async def notify_admin_cashout_confirmation(session, cashout_request: Cashout, u
             destination = "Bank Account"
         else:
             address = cashout_request.address or "TBA"
-            network = cashout_request.network or "TRC20"
             destination = f"{address[:12]}...{address[-8:]}" if len(address) > 20 else address
             
         # Format created time
@@ -274,7 +272,6 @@ async def notify_admin_cashout_ready_for_processing(cashout_request: Cashout):
                 destination = "Bank Account"
             else:
                 address = cashout_request.address or "TBA"
-                network = cashout_request.network or "TRC20"
                 destination = f"{address[:12]}...{address[-8:]}" if len(address) > 20 else address
                 
             # Format created time

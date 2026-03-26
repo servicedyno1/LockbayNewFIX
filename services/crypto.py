@@ -4,25 +4,17 @@ This replaces the broken crypto.py file with race condition fixes.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional, Dict, Any, List, Union
 from sqlalchemy.sql import func
 from sqlalchemy import select
 
-from models import Wallet, Transaction, TransactionType, EscrowStatus, User
+from models import Wallet, Transaction, TransactionType
 from database import get_session  # SYNC FIX: Use get_session for consistent session management
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from utils.universal_id_generator import UniversalIDGenerator
-from utils.atomic_transactions import (
-    atomic_transaction,
-    async_atomic_transaction,
-    locked_wallet_operation,
-    locked_wallet_operation_async,
-    locked_escrow_operation,
-)
-from services.blockbee_service import blockbee_service, BlockBeeAPIError
 from services.fastforex_service import fastforex_service, FastForexAPIError
 from services.payment_processor_manager import payment_manager, PaymentProvider
 from config import Config
@@ -244,7 +236,7 @@ class CryptoServiceAtomic:
         cls, usd_amount: float, currency: str
     ) -> Dict[str, Any]:
         """Calculate 2% markup for crypto wallet deposits (except USDT which is already USD)"""
-        from decimal import Decimal, ROUND_HALF_UP
+        from decimal import Decimal
         
         usd_decimal = Decimal(str(usd_amount))
         
@@ -575,7 +567,7 @@ class CryptoServiceAtomic:
         try:
             from database import get_session
             from models import Wallet, Transaction
-            from decimal import Decimal, ROUND_HALF_UP
+            from decimal import Decimal
             from datetime import datetime
             import uuid
             
@@ -647,7 +639,7 @@ class CryptoServiceAtomic:
             import uuid
             from decimal import Decimal, ROUND_HALF_UP
             from datetime import datetime, timezone
-            from sqlalchemy import select, update
+            from sqlalchemy import select
             
             # Ensure amount is positive and properly formatted
             amount_decimal = Decimal(str(abs(amount)))
@@ -788,10 +780,9 @@ class CryptoServiceAtomic:
             raise ValueError("async session is required for debit_user_wallet_atomic - no sync fallback allowed")
         
         try:
-            import uuid
             from decimal import Decimal, ROUND_HALF_UP
             from datetime import datetime, timezone
-            from sqlalchemy import select, update
+            from sqlalchemy import select
             
             # CRITICAL FIX: Ensure amount is always positive for debit operations
             # The caller should pass positive amounts, and we'll handle the debit logic
@@ -945,8 +936,6 @@ class CryptoServiceAtomic:
                     logger.error(f"FRAUD ALERT: User {user_id} attempting rapid cashouts (count: {recent_cashouts})")
                     # Send alert to admin
                     try:
-                        from services.admin_email_alerts import admin_email_alerts
-                        import asyncio
                         # Send admin notification - simplified approach
                         logger.critical(f"🚨 FRAUD_ALERT: User {user_id} attempted {recent_cashouts + 1} rapid cashouts")
                     except Exception as alert_error:
@@ -1174,7 +1163,6 @@ class CryptoService:
         logger.info(
             f"Legacy credit_user_wallet for user {user_id} safely redirected to atomic version"
         )
-        import asyncio
         return await CryptoServiceAtomic.credit_user_wallet_atomic(
             user_id, amount, currency, **kwargs
         )
@@ -1232,7 +1220,7 @@ class CashoutHoldService:
         }
         """
         try:
-            from models import Transaction, TransactionType, Wallet
+            from models import Transaction, TransactionType
             from utils.atomic_transactions import locked_wallet_operation
             from decimal import Decimal, ROUND_HALF_UP
             from utils.universal_id_generator import UniversalIDGenerator
@@ -1545,7 +1533,7 @@ class CashoutHoldService:
         )
         
         try:
-            from models import Transaction, TransactionType, Wallet
+            from models import Transaction, TransactionType
             from utils.atomic_transactions import locked_wallet_operation
             from decimal import Decimal, ROUND_HALF_UP
             from utils.universal_id_generator import UniversalIDGenerator
@@ -1695,7 +1683,7 @@ class CashoutHoldService:
                         # Use asyncio.create_task to schedule the async audit logging
                         asyncio.create_task(audit_logger.log_admin_action(
                             admin_id=admin_id,
-                            action=f"release_cashout_hold",
+                            action="release_cashout_hold",
                             target_type="cashout_hold",
                             target_id=f"user_{user_id}_cashout_{cashout_id}",
                             details={
@@ -1798,8 +1786,8 @@ class CashoutHoldService:
         """
         if not system_context:
             logger.critical(
-                f"🚨 SECURITY VIOLATION: _release_cashout_hold_internal_system_only called "
-                f"without system_context. This function is only for verified system processes."
+                "🚨 SECURITY VIOLATION: _release_cashout_hold_internal_system_only called "
+                "without system_context. This function is only for verified system processes."
             )
             return {
                 "success": False,
@@ -1815,7 +1803,7 @@ class CashoutHoldService:
         )
         
         try:
-            from models import Transaction, TransactionType, Wallet
+            from models import Transaction, TransactionType
             from utils.atomic_transactions import locked_wallet_operation
             from decimal import Decimal, ROUND_HALF_UP
             from utils.universal_id_generator import UniversalIDGenerator
@@ -1999,7 +1987,7 @@ class CashoutHoldService:
         }
         """
         try:
-            from models import Transaction, TransactionType, Wallet
+            from models import Transaction, TransactionType
             from utils.atomic_transactions import locked_wallet_operation
             from decimal import Decimal, ROUND_HALF_UP
             from utils.universal_id_generator import UniversalIDGenerator
@@ -2047,7 +2035,7 @@ class CashoutHoldService:
                 # CRITICAL FIX: Check if this is a legacy hold (balance not debited at placement)
                 hold_debited = True  # Default for new holds
                 if hold_transaction_id:
-                    original_hold = tx_session.query(Transaction).filter(
+                    tx_session.query(Transaction).filter(
                         Transaction.transaction_id == hold_transaction_id,
                         Transaction.user_id == user_id,
                         Transaction.transaction_type == TransactionType.CASHOUT_HOLD.value
@@ -2190,7 +2178,7 @@ class CashoutHoldService:
         }
         """
         try:
-            from models import Transaction, TransactionType, Wallet
+            from models import Transaction, TransactionType
             from utils.atomic_transactions import locked_wallet_operation
             from decimal import Decimal, ROUND_HALF_UP
             from utils.universal_id_generator import UniversalIDGenerator
@@ -2591,7 +2579,7 @@ class CashoutHoldService:
         )
         
         try:
-            from models import Transaction, TransactionType, Wallet, WalletHolds, WalletHoldStatus
+            from models import Transaction, TransactionType, WalletHolds, WalletHoldStatus
             from utils.atomic_transactions import locked_wallet_operation
             from decimal import Decimal, ROUND_HALF_UP
             from utils.universal_id_generator import UniversalIDGenerator
@@ -2609,7 +2597,7 @@ class CashoutHoldService:
                 existing_refund = tx_session.query(Transaction).filter(
                     Transaction.user_id == user_id,
                     Transaction.transaction_type == TransactionType.REFUND.value,
-                    Transaction.description.contains(f"Admin approved refund"),
+                    Transaction.description.contains("Admin approved refund"),
                     Transaction.amount == refund_amount,
                     Transaction.status == "completed"
                 ).first()
@@ -2829,7 +2817,7 @@ class CashoutHoldService:
         )
         
         try:
-            from models import WalletHolds, WalletHoldStatus, CashoutStatus
+            from models import WalletHolds, WalletHoldStatus
             
             audit_logged = False
             use_provided_session = session is not None
@@ -2876,7 +2864,6 @@ class CashoutHoldService:
                 
                 # Update cashout status if exists - DISABLED (model not available)
                 # Define cashout as None since it's disabled
-                cashout = None
                 # cashout = tx_session.query(CashoutRequests).filter(
                 #     CashoutRequests.cashout_id == cashout_id,
                 #     CashoutRequests.user_id == user_id
@@ -3027,7 +3014,7 @@ class CashoutHoldService:
         )
         
         try:
-            from models import Transaction, TransactionType, Wallet
+            from models import Transaction, TransactionType
             from utils.atomic_transactions import locked_wallet_operation
             from decimal import Decimal, ROUND_HALF_UP
             from utils.universal_id_generator import UniversalIDGenerator
@@ -3045,7 +3032,7 @@ class CashoutHoldService:
                 existing_credit = tx_session.query(Transaction).filter(
                     Transaction.user_id == user_id,
                     Transaction.transaction_type == TransactionType.REFUND.value,
-                    Transaction.description.contains(f"Manual admin credit"),
+                    Transaction.description.contains("Manual admin credit"),
                     Transaction.description.contains(f"admin:{admin_id}"),
                     Transaction.amount == credit_amount,
                     Transaction.status == "completed"

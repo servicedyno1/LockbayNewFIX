@@ -5,7 +5,7 @@ Includes conversation flows, payment processing, and automatic settlement
 
 import logging
 from utils.universal_session_manager import (
-    universal_session_manager, SessionType, OperationStatus
+    universal_session_manager, SessionType
 )
 import json
 import decimal
@@ -16,13 +16,10 @@ from typing import Optional, Dict, Any
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
-    MessageHandler,
     CallbackQueryHandler,
-    filters,
-    CommandHandler,
 )
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
-from database import SessionLocal, async_managed_session
+from database import async_managed_session
 from models import (
     User,
     ExchangeOrder,
@@ -35,17 +32,13 @@ from services.financial_gateway import financial_gateway
 from services.fincra_service import fincra_service
 from services.payment_processor_manager import payment_manager, PaymentProvider
 from services.saved_destination_cache import SavedDestinationCache
-from utils.user_cache import UserCache
 
 # PRECISION MONEY UTILITIES - for accurate monetary formatting
 from utils.precision_money import (
     format_money,
     decimal_to_string,
-    safe_multiply,
-    safe_divide,
-    safe_add
+    safe_multiply
 )
-from utils.decimal_precision import MonetaryDecimal
 
 # UNIFIED TRANSACTION SYSTEM INTEGRATION
 from services.unified_transaction_service import (
@@ -66,7 +59,6 @@ logger = logging.getLogger(__name__)
 from utils.user_cache import user_cache
 
 # PERFORMANCE OPTIMIZATION: Exchange context prefetch (reduces 57 queries to 2)
-import utils.exchange_prefetch as exchange_prefetch
 from utils.exchange_prefetch import (
     prefetch_exchange_context,
     get_cached_exchange_data,
@@ -613,7 +605,7 @@ Choose type:"""
             cached_usd_ngn = context.user_data.get('cached_exchange_usd_ngn_rate')
             if cached_usd_ngn and (time.time() - cached_usd_ngn.get('fetched_at', 0)) < 300:  # 5 min cache
                 clean_usd_ngn_rate = cached_usd_ngn['rate']
-                logger.info(f"🚀 Using cached USD-NGN rate to prevent duplicate API call")
+                logger.info("🚀 Using cached USD-NGN rate to prevent duplicate API call")
             else:
                 # Fresh rate fetch
                 clean_usd_ngn_rate = await financial_gateway.get_usd_to_ngn_rate_clean()
@@ -622,7 +614,7 @@ Choose type:"""
                         'rate': clean_usd_ngn_rate,
                         'fetched_at': time.time()
                     }
-                    logger.info(f"🔄 Cached fresh USD-NGN rate for exchange operation")
+                    logger.info("🔄 Cached fresh USD-NGN rate for exchange operation")
                     
             if exchange_type == "crypto_to_ngn":
                 # RESILIENT: Use enhanced rate fetching with retry logic
@@ -678,7 +670,7 @@ Choose type:"""
                 cached_usd_ngn = context.user_data.get('cached_exchange_usd_ngn_rate')
                 if cached_usd_ngn:
                     emergency_rate = cached_usd_ngn['rate']
-                    logger.info(f"🚀 Using cached USD-NGN rate for emergency fallback")
+                    logger.info("🚀 Using cached USD-NGN rate for emergency fallback")
                 else:
                     # Last resort: make fresh API call if no cache available
                     emergency_rate = await financial_gateway.get_usd_to_ngn_rate_clean()
@@ -751,7 +743,7 @@ Choose type:"""
 {rate_display} per {crypto} • Ex: {example}→{example_display}
 
 Enter {crypto} amount:"""
-                except Exception as e:
+                except Exception:
                     text = f"""💱 Sell {crypto} → NGN
 {rate_info}
 
@@ -837,7 +829,7 @@ Enter NGN amount:"""
                             # Delete processing message and show error
                             try:
                                 await processing_msg.delete()
-                            except Exception as e:
+                            except Exception:
                                 pass
                             # Format crypto amounts to avoid scientific notation
                             from utils.decimal_precision import MonetaryDecimal
@@ -857,7 +849,7 @@ Enter NGN amount:"""
                     if amount_decimal < Decimal("0.01"):
                         try:
                             await processing_msg.delete()
-                        except Exception as e:
+                        except Exception:
                             pass
                         await message.reply_text(
                             "❌ Amount too small. Minimum amount is 0.01"
@@ -869,7 +861,7 @@ Enter NGN amount:"""
                     # Delete processing message and show error
                     try:
                         await processing_msg.delete()
-                    except Exception as e:
+                    except Exception:
                         pass
                     await message.reply_text(
                         "❌ Amount too large. Maximum amount is 1,000,000"
@@ -880,7 +872,7 @@ Enter NGN amount:"""
                 # Delete processing message and show error
                 try:
                     await processing_msg.delete()
-                except Exception as e:
+                except Exception:
                     pass
                 await message.reply_text(
                     "❌ Invalid amount. Please enter a valid number.\n\n"
@@ -1178,7 +1170,7 @@ Next: {crypto} wallet address"""
         update: Update, context: ContextTypes.DEFAULT_TYPE, quote_text: str, user
     ) -> int:
         """Show saved bank accounts with selection options - Consistent with wallet cashout UX"""
-        async with async_managed_session() as session:
+        async with async_managed_session():
             # Get saved bank accounts using cached method - ordered by last used
             saved_banks = await SavedDestinationCache.load_bank_accounts_optimized(int(user.telegram_id))
 
@@ -2179,7 +2171,7 @@ Example: 0123456789"""
         """Handle single bank verification match with NEW concurrent system format"""
         try:
             await loading_msg.delete()
-        except Exception as e:
+        except Exception:
             pass
 
         # Store bank details in exchange context
@@ -2215,7 +2207,7 @@ Example: 0123456789"""
         """Handle multiple bank matches with NEW concurrent system format and TEXT INPUT support"""
         try:
             await loading_msg.delete()
-        except Exception as e:
+        except Exception:
             pass
 
         if not matches:
@@ -2352,7 +2344,7 @@ Example: 0123456789"""
             has_different_names = len(unique_names) > 1
             
             if has_different_names:
-                text = f"🏦 Multiple Account Names Found\n\n⚠️ The same account number returned different names. Please select the correct one:\n\n"
+                text = "🏦 Multiple Account Names Found\n\n⚠️ The same account number returned different names. Please select the correct one:\n\n"
             else:
                 text = f"🏦 Select Bank for {account_name}\n\n"
                 
@@ -2446,7 +2438,7 @@ Example: 0123456789"""
                     await query.edit_message_text("❌ Invalid bank selection. Please try again.")
                     return
                     
-            except (ValueError, IndexError) as e:
+            except (ValueError, IndexError):
                 await query.edit_message_text("❌ Error processing bank selection. Please try again.")
                 return
         
@@ -2982,11 +2974,9 @@ This will make your next exchanges faster and easier."""
         
         # Check if user has multiple bank accounts for smart button display
         user_has_multiple_banks = False
-        current_bank_id = None
         user = None
         
         try:
-            from sqlalchemy.orm import sessionmaker
             from models import User, SavedBankAccount
             
             async with async_managed_session() as session:
@@ -3004,7 +2994,7 @@ This will make your next exchanges faster and easier."""
                     # Extract current bank ID from exchange data if available
                     bank_details = exchange_data.get("bank_details", {})
                     if isinstance(bank_details, dict) and "bank_account_id" in bank_details:
-                        current_bank_id = bank_details["bank_account_id"]
+                        bank_details["bank_account_id"]
                     
         except Exception as e:
             logger.error(f"Error checking user banks: {e}")
@@ -3196,7 +3186,7 @@ This will make your next exchanges faster and easier."""
                         cached_usd_ngn = context.user_data.get('cached_exchange_usd_ngn_rate')
                         if cached_usd_ngn and (time.time() - cached_usd_ngn.get('fetched_at', 0)) < 300:  # 5 min cache
                             clean_usd_ngn_rate = cached_usd_ngn['rate']
-                            logger.info(f"🚀 Crypto switch: Using cached USD-NGN rate to prevent duplicate API call")
+                            logger.info("🚀 Crypto switch: Using cached USD-NGN rate to prevent duplicate API call")
                         else:
                             clean_usd_ngn_rate = await financial_gateway.get_usd_to_ngn_rate_clean()
                             if clean_usd_ngn_rate:
@@ -3204,7 +3194,7 @@ This will make your next exchanges faster and easier."""
                                     'rate': clean_usd_ngn_rate,
                                     'fetched_at': time.time()
                                 }
-                                logger.info(f"🔄 Crypto switch: Cached fresh USD-NGN rate")
+                                logger.info("🔄 Crypto switch: Cached fresh USD-NGN rate")
                         
                         if new_crypto_usd_rate and clean_usd_ngn_rate:
                             # Step 4: Calculate equivalent crypto amount that maintains USD value
@@ -3355,12 +3345,12 @@ This will make your next exchanges faster and easier."""
             from telegram import InlineKeyboardMarkup, InlineKeyboardButton
             
             processing_message = (
-                f"⏳ **Creating Your Exchange...**\n\n"
-                f"Please wait while we:\n"
-                f"• Verify your account\n"
-                f"• Create transaction records\n"
-                f"• Set up exchange order\n\n"
-                f"This may take a few seconds..."
+                "⏳ **Creating Your Exchange...**\n\n"
+                "Please wait while we:\n"
+                "• Verify your account\n"
+                "• Create transaction records\n"
+                "• Set up exchange order\n\n"
+                "This may take a few seconds..."
             )
             
             await safe_edit_message_text(
@@ -3370,7 +3360,7 @@ This will make your next exchanges faster and easier."""
                 reply_markup=InlineKeyboardMarkup([])  # Remove buttons during processing
             )
             
-            logger.info(f"✅ Exchange UI immediately updated with processing message")
+            logger.info("✅ Exchange UI immediately updated with processing message")
 
         try:
             async with async_managed_session() as session:
@@ -3612,7 +3602,6 @@ This will make your next exchanges faster and easier."""
                         
                         if db_order:
                             # FIX: Use proper status mapping and validation through StatusUpdateFacade
-                            from utils.status_flows import UnifiedTransitionValidator, UnifiedTransactionType
                             from services.legacy_status_mapper import LegacyStatusMapper, LegacySystemType
                             from utils.status_update_facade import StatusUpdateFacade
                             
@@ -4257,6 +4246,8 @@ Choose new bank account:"""
     @staticmethod
     async def handle_crypto_switch_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Handle new crypto selection for switching"""
+        from models import User
+        from datetime import datetime
         query = update.callback_query
         if not query or not query.data:
             return
@@ -5501,7 +5492,7 @@ Choose new wallet address:"""
             # Default to ngn_to_crypto for NGN crypto switching context
             if not exchange_type:
                 exchange_type = "ngn_to_crypto"
-                logger.warning(f"Exchange type not found in context, defaulting to ngn_to_crypto for NGN switching")
+                logger.warning("Exchange type not found in context, defaulting to ngn_to_crypto for NGN switching")
             
             logger.info(f"🔍 SWITCH DEBUG: exchange_type = '{exchange_type}' (validated)")
             logger.info(f"🔍 SWITCH DEBUG: ngn_amount = {ngn_amount}, new_crypto = {new_crypto}")
@@ -5597,7 +5588,7 @@ New amount: {decimal_to_string(final_crypto_amount, precision=8)} {new_crypto}
 📥 Receive: {format_money(ngn_amount, 'NGN')}
 
 Now select a {new_crypto} wallet address to send your crypto from."""
-                    logger.info(f"✅ SELLING PATH: Displaying Send crypto, Receive NGN")
+                    logger.info("✅ SELLING PATH: Displaying Send crypto, Receive NGN")
                 else:
                     # User is BUYING crypto with NGN - use "Pay" as they're purchasing  
                     success_text = f"""✅ Crypto Switched to {new_crypto}!
@@ -5606,7 +5597,7 @@ Now select a {new_crypto} wallet address to send your crypto from."""
 📥 Receive: {decimal_to_string(final_crypto_amount, precision=8)} {new_crypto}
 
 Now select a {new_crypto} wallet address to receive your crypto."""
-                    logger.info(f"✅ BUYING PATH: Displaying Pay NGN, Receive crypto")
+                    logger.info("✅ BUYING PATH: Displaying Pay NGN, Receive crypto")
 
                 keyboard = [
                     [InlineKeyboardButton("📍 Select Wallet Address", callback_data="exchange_back_to_addresses")],
@@ -5708,7 +5699,7 @@ Now select a {new_crypto} wallet address to receive your crypto."""
 
                 # Show success message
                 ngn_amount = switch_context["ngn_amount"]
-                masked_addr = f"{selected_address['address'][:10]}...{selected_address['address'][-10:]}"
+                f"{selected_address['address'][:10]}...{selected_address['address'][-10:]}"
                 label = selected_address.get('label') or "Unnamed Address"
                 
                 success_text = f"""✅ Wallet Address Switched!

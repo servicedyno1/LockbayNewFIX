@@ -212,8 +212,6 @@ class InputValidator:
     @classmethod
     def validate_phone(cls, phone: str) -> str:
         """Validate phone number format with country code requirement"""
-        import phonenumbers
-        from phonenumbers import NumberParseException, PhoneNumberFormat
         
         if not phone:
             raise ValidationError("Phone number cannot be empty")
@@ -245,10 +243,10 @@ class InputValidator:
             # Return normalized E.164 format
             return phonenumbers.format_number(parsed_number, PhoneNumberFormat.E164)
             
-        except NumberParseException as e:
+        except NumberParseException:
             raise ValidationError(
                 "Invalid phone number format. Use + followed by country code and number\n"
-                f"Examples: +12025551234, +447700900123"
+                "Examples: +12025551234, +447700900123"
             )
 
     @classmethod

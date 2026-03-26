@@ -4,7 +4,6 @@ FIXES ISSUE #7: Scheduled cleanup of old webhook events
 """
 
 import logging
-import asyncio
 from webhook_queue.webhook_inbox.postgres_async_queue import postgres_async_webhook_queue
 
 logger = logging.getLogger(__name__)

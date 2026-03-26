@@ -5,7 +5,7 @@ Centralized markup calculation eliminating code duplication
 
 import logging
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Union, Dict, Optional
+from typing import Union, Dict
 from config import Config
 from utils.config_validator import ProfitProtector
 

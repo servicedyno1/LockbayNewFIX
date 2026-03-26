@@ -6,7 +6,6 @@ Mirrors successful post-escrow engagement patterns
 
 import logging
 from datetime import datetime, timedelta
-from decimal import Decimal
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes
 from models import ExchangeOrder, User
@@ -51,10 +50,9 @@ class PostExchangeEngagementService:
 
                 # Format currency display
                 if exchange_type == "crypto_to_ngn":
-                    from_currency = getattr(exchange, "from_currency", "CRYPTO")
+                    getattr(exchange, "from_currency", "CRYPTO")
                     amount_display = f"₦{target_amount:,.0f}"
                 else:
-                    from_currency = "NGN"
                     to_currency = getattr(exchange, "to_currency", "CRYPTO")
                     amount_display = f"{target_amount:.6f} {to_currency}"
 

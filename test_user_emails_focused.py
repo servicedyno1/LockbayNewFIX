@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 
 from services.user_cancellation_notifications import UserCancellationNotificationService
 from services.notification_service import NotificationService
-from services.rating_reminder_service import RatingReminderService
 
 # Get admin email from environment
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'test@example.com')

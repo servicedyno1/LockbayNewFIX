@@ -10,14 +10,30 @@ from database import async_managed_session  # async session manager
 from models import ExchangeOrder, ExchangeTransaction
 from sqlalchemy import select
 # MIGRATION: Use unified payment architecture instead of direct service imports
-from services.migration_adapters import payment_adapter, check_unified_balance
-from services.core.payment_processor import PaymentProcessor
 
 # Keep existing services for backward compatibility and specialized operations
-from services.blockbee_service import blockbee_service
-from services.notification_service import notification_service as notification_hub
-from services.financial_gateway import financial_gateway
-from services.notification_service import notification_service
+
+# Lazy-loaded services with safe fallbacks
+def _get_fincra_service():
+    try:
+        from services.fincra_service import fincra_service
+        return fincra_service
+    except ImportError:
+        return None
+
+def _get_unified_revenue_service():
+    try:
+        from services.unified_revenue_service import unified_revenue_service
+        return unified_revenue_service
+    except ImportError:
+        return None
+
+def _get_unified_status_notification_service():
+    try:
+        from services.unified_status_notification_service import unified_status_notification_service
+        return unified_status_notification_service
+    except ImportError:
+        return None
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +156,7 @@ async def record_exchange_completion_revenue(session, order):
         exchange_rate = getattr(order, 'exchange_rate', Decimal('1.0'))
         
         # Record revenue using unified service
-        success = unified_revenue_service.record_exchange_revenue(
+        success = _get_unified_revenue_service().record_exchange_revenue(
             exchange_id=order_id,
             exchange_utid=utid,
             user_id=user_id,
@@ -222,11 +238,13 @@ async def _check_exchange_confirmations_impl(session):
                 
                 # NOTIFICATION: Notify user about status change
                 try:
-                    await unified_status_notification_service.notify_exchange_status_change(
-                        exchange_utid=getattr(order, "utid", ""),
-                        old_status=old_status,
-                        new_status="processing"
-                    )
+                    svc = _get_unified_status_notification_service()
+                    if svc:
+                        await svc.notify_exchange_status_change(
+                            exchange_utid=getattr(order, "utid", ""),
+                            old_status=old_status,
+                            new_status="processing"
+                        )
                 except Exception as notification_error:
                     logger.error(f"Failed to send processing notification: {notification_error}")
                 
@@ -332,11 +350,13 @@ async def check_crypto_deposit(session, order):
 
                 # NOTIFICATION: Notify user about payment confirmation
                 try:
-                    await unified_status_notification_service.notify_exchange_status_change(
-                        exchange_utid=getattr(order, "utid", ""),
-                        old_status=old_status,
-                        new_status="payment_received"
-                    )
+                    svc = _get_unified_status_notification_service()
+                    if svc:
+                        await svc.notify_exchange_status_change(
+                            exchange_utid=getattr(order, "utid", ""),
+                            old_status=old_status,
+                            new_status="payment_received"
+                        )
                 except Exception as notification_error:
                     logger.error(f"Failed to send payment confirmation notification: {notification_error}")
 
@@ -411,7 +431,7 @@ async def send_crypto_purchase_completion_notification(session, order, tx_hash):
             logger.warning(f"User {order.user_id} not found for order {order.id}")
             return
 
-        source_amount = getattr(order, 'source_amount', 0)
+        getattr(order, 'source_amount', 0)
         target_currency = getattr(order, 'target_currency', 'CRYPTO')
         final_amount = getattr(order, 'final_amount', 0)
         wallet_address = getattr(order, 'wallet_address', 'N/A')
@@ -451,6 +471,7 @@ async def send_crypto_purchase_completion_notification(session, order, tx_hash):
 
 async def process_crypto_payout_with_notifications(session, order):
     """Process cryptocurrency payout for ngn_to_crypto orders with completion notification"""
+    from datetime import datetime
     try:
         # CRITICAL: Double-check status to prevent duplicate payouts
         await session.refresh(order)  # Refresh to get latest status
@@ -565,14 +586,17 @@ async def process_ngn_payout_with_notifications(session, order):
         reference = f"EX{order.id}_{int(datetime.utcnow().timestamp())}"
 
         # Initiate bank transfer via Fincra with enhanced error handling
-        transfer_result = await fincra_service.initiate_payout(
-            amount_ngn=Decimal(str(getattr(order, "final_amount", 0))),
-            bank_code=bank_info.get("bank_code"),
-            account_number=bank_info.get("account_number"), 
-            account_name=bank_info.get("account_name"),
-            reference=reference,
-            user_id=getattr(order, "user_id", 0),
-        )
+        fincra_svc_enhanced = _get_fincra_service()
+        transfer_result = None
+        if fincra_svc_enhanced:
+            transfer_result = await fincra_svc_enhanced.initiate_payout(
+                amount_ngn=Decimal(str(getattr(order, "final_amount", 0))),
+                bank_code=bank_info.get("bank_code"),
+                account_number=bank_info.get("account_number"), 
+                account_name=bank_info.get("account_name"),
+                reference=reference,
+                user_id=getattr(order, "user_id", 0),
+            )
 
         # Extract bank reference from Fincra response
         bank_reference = None
@@ -624,7 +648,9 @@ async def process_ngn_payout_with_notifications(session, order):
     finally:
         # ASYNC FIX: Ensure HTTP sessions are properly closed
         try:
-            await fincra_service.close_session()
+            fincra_svc_cleanup = _get_fincra_service()
+            if fincra_svc_cleanup:
+                await fincra_svc_cleanup.close_session()
         except Exception as session_error:
             logger.debug(f"Session cleanup warning (non-critical): {session_error}")
 
@@ -647,14 +673,17 @@ async def process_ngn_payout(session, order):
         bank_info = json.loads(bank_details)
 
         # Initiate bank transfer via Fincra
-        transfer_result = await fincra_service.initiate_payout(
-            amount_ngn=Decimal(str(getattr(order, "final_amount", 0))),
-            bank_code=bank_info.get("bank_code"),
-            account_number=bank_info.get("account_number"),
-            account_name=bank_info.get("account_name"),
-            reference=f"EX{order.id}_{int(datetime.utcnow().timestamp())}",
-            user_id=getattr(order, "user_id", 0),
-        )
+        fincra_svc_payout = _get_fincra_service()
+        transfer_result = None
+        if fincra_svc_payout:
+            transfer_result = await fincra_svc_payout.initiate_payout(
+                amount_ngn=Decimal(str(getattr(order, "final_amount", 0))),
+                bank_code=bank_info.get("bank_code"),
+                account_number=bank_info.get("account_number"),
+                account_name=bank_info.get("account_name"),
+                reference=f"EX{order.id}_{int(datetime.utcnow().timestamp())}",
+                user_id=getattr(order, "user_id", 0),
+            )
 
         if transfer_result and transfer_result.get("success"):
             # CRITICAL: Verify this is a REAL success, not fake test mode success
@@ -690,11 +719,13 @@ async def process_ngn_payout(session, order):
             
             # NOTIFICATION: Notify user about successful completion
             try:
-                await unified_status_notification_service.notify_exchange_status_change(
-                    exchange_utid=getattr(order, "utid", ""),
-                    old_status="processing",
-                    new_status="completed"
-                )
+                notification_svc = _get_unified_status_notification_service()
+                if notification_svc:
+                    await notification_svc.notify_exchange_status_change(
+                        exchange_utid=getattr(order, "utid", ""),
+                        old_status="processing",
+                        new_status="completed"
+                    )
             except Exception as notification_error:
                 logger.error(f"Failed to send completion notification: {notification_error}")
 
@@ -714,11 +745,13 @@ async def process_ngn_payout(session, order):
             
             # NOTIFICATION: Notify user about failure
             try:
-                await unified_status_notification_service.notify_exchange_status_change(
-                    exchange_utid=getattr(order, "utid", ""),
-                    old_status="processing",
-                    new_status="failed"
-                )
+                failure_svc = _get_unified_status_notification_service()
+                if failure_svc:
+                    await failure_svc.notify_exchange_status_change(
+                        exchange_utid=getattr(order, "utid", ""),
+                        old_status="processing",
+                        new_status="failed"
+                    )
             except Exception as notification_error:
                 logger.error(f"Failed to send failure notification: {notification_error}")
             
@@ -730,7 +763,9 @@ async def process_ngn_payout(session, order):
     finally:
         # ASYNC FIX: Ensure HTTP sessions are properly closed to prevent unclosed session warnings
         try:
-            await fincra_service.close_session()
+            fincra_svc_final = _get_fincra_service()
+            if fincra_svc_final:
+                await fincra_svc_final.close_session()
         except Exception as session_error:
             logger.debug(f"Session cleanup warning (non-critical): {session_error}")
 
@@ -739,9 +774,12 @@ async def check_ngn_payment(session, order):
     """Check if NGN payment has been received"""
     try:
         # Check payment status via Fincra
-        payment_status = await fincra_service.verify_payment(
-            f"EX{order.id}", str(getattr(order, "source_amount", 0))
-        )
+        fincra_svc_check = _get_fincra_service()
+        payment_status = None
+        if fincra_svc_check:
+            payment_status = await fincra_svc_check.verify_payment(
+                f"EX{order.id}", str(getattr(order, "source_amount", 0))
+            )
 
         if payment_status and payment_status.get("status") == "confirmed":
             logger.info(f"NGN payment confirmed for order {order.id}")
@@ -770,17 +808,19 @@ async def check_ngn_payment(session, order):
         logger.error(f"Error checking NGN payment for order {order.id}: {e}")
 
 
-async def process_crypto_payout(session, order):
-    """Process cryptocurrency payout"""
+async def process_crypto_payout_binance(session, order):
+    """Process cryptocurrency payout via Binance (NOT YET IMPLEMENTED)"""
     try:
-        # Initiate crypto cashout via Binance
-        cashout_result = await binance_service.initiate_cashout(
-            currency=getattr(order, "target_currency", "USD"),
-            amount=Decimal(str(getattr(order, "final_amount", 0))),
-            address=getattr(order, "wallet_address", ""),
-            user_id=getattr(order, "user_id", 0),
-            reference=f"EX{order.id}",
-        )
+        # Initiate crypto cashout (binance_service not yet implemented)
+        # When implemented, this would call:
+        # cashout_result = await binance_service.initiate_cashout(
+        #     currency=getattr(order, "target_currency", "USD"),
+        #     amount=Decimal(str(getattr(order, "final_amount", 0))),
+        #     address=getattr(order, "wallet_address", ""),
+        #     user_id=getattr(order, "user_id", 0),
+        #     reference=f"EX{order.id}",
+        # )
+        cashout_result = None
 
         if cashout_result and cashout_result.get("success"):
             logger.info(f"Crypto payout initiated for order {order.id}")
@@ -1241,15 +1281,12 @@ async def notify_admin_manual_crypto_needed(session, order):
         
         # Urgency indicators (same as cashout notifications)
         if order_age_minutes <= 15:
-            urgency = "⚡ NEW"
-            priority_text = f"{int(order_age_minutes)} minutes old"
+            f"{int(order_age_minutes)} minutes old"
         elif order_age_minutes <= 30:
-            urgency = "🔥 PRIORITY" 
-            priority_text = f"{int(order_age_minutes)} minutes old"
+            f"{int(order_age_minutes)} minutes old"
         else:
             hours = int(order_age_minutes / 60)
-            urgency = "🚨 URGENT HIGH PRIORITY"
-            priority_text = f"{hours} hours old" if hours > 0 else f"{int(order_age_minutes)} minutes old"
+            f"{hours} hours old" if hours > 0 else f"{int(order_age_minutes)} minutes old"
         
         # Format wallet address display
         wallet_addr = getattr(order, 'wallet_address', 'N/A')

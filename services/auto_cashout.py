@@ -5,10 +5,10 @@ from typing import Dict, Any, Optional
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, or_
 from database import SyncSessionLocal, AsyncSessionLocal  # FIXED: Move to top-level import to prevent local import errors
 from models import (
-    User, Escrow, Cashout, Transaction, TransactionType, SavedAddress, SavedBankAccount, 
+    User, Escrow, Cashout, Transaction, TransactionType, SavedBankAccount, 
     CashoutStatus, WalletHolds, WalletHoldStatus, Wallet, UnifiedTransaction, 
     UnifiedTransactionStatus, UnifiedTransactionType, UnifiedTransactionPriority,
     UnifiedTransactionRetryLog, CashoutErrorCode, CashoutType
@@ -23,7 +23,7 @@ from utils.cashout_state_validator import CashoutStateValidator
 from datetime import datetime, timedelta
 import asyncio
 # Import ORM typing helpers for Column[Type] vs Type compatibility
-from utils.orm_typing_helpers import as_int, as_str, as_decimal, as_bool, as_datetime
+from utils.orm_typing_helpers import as_int, as_str, as_decimal, as_bool
 
 logger = logging.getLogger(__name__)
 
@@ -381,7 +381,7 @@ class AutoCashoutService:
         
         try:
             # 1. Mark cashout as SUCCESS for user experience using proper ORM updates
-            cashout_id_str = as_str(cashout.cashout_id)
+            as_str(cashout.cashout_id)
             rows_updated = session.query(Cashout).filter(Cashout.id == cashout.id).update({
                 Cashout.status: CashoutStatus.SUCCESS.value,
                 Cashout.completed_at: datetime.utcnow(),
@@ -1423,10 +1423,7 @@ class AutoCashoutService:
         from services.kraken_withdrawal_service import get_kraken_withdrawal_service
         from services.kraken_address_verification_service import KrakenAddressVerificationService
         from services.fastforex_service import FastForexService
-        from decimal import Decimal
         from models import CashoutStatus
-        from services.crypto import CryptoServiceAtomic
-        from models import TransactionType
         
         # Create UnifiedTransaction for retry tracking (if not already exists)
         unified_tx_id = None
@@ -1639,7 +1636,7 @@ class AutoCashoutService:
                 # Consume holds
                 try:
                     from utils.cashout_completion_handler import auto_release_completed_cashout_hold
-                    hold_result = await auto_release_completed_cashout_hold(
+                    await auto_release_completed_cashout_hold(
                         cashout_id=cashout_id,
                         user_id=user_id,
                         session=session
@@ -1907,7 +1904,7 @@ class AutoCashoutService:
                 # Consume holds
                 try:
                     from utils.cashout_completion_handler import auto_release_completed_cashout_hold
-                    hold_result = await auto_release_completed_cashout_hold(
+                    await auto_release_completed_cashout_hold(
                         cashout_id=cashout_id,
                         user_id=user_id,
                         session=session
@@ -2020,8 +2017,6 @@ class AutoCashoutService:
         """
         from decimal import Decimal
         from datetime import datetime
-        import uuid
-        from sqlalchemy import text
         
         # Session management
         session_provided = session is not None
@@ -2233,7 +2228,7 @@ class AutoCashoutService:
             
             return {
                 "success": True,
-                "message": f"Cashout confirmed and funds placed on hold",
+                "message": "Cashout confirmed and funds placed on hold",
                 "cashout_id": cashout_id,
                 "hold_id": wallet_hold.id,
                 "amount": str(amount_decimal),
@@ -2490,7 +2485,7 @@ async def process_crypto_cashout_wrapper(user_id: int, cashout_id: str) -> Dict[
                 cashout.completed_at = datetime.utcnow()
                 cashout.processed_at = datetime.utcnow()  # type: ignore[attr-defined]
                 cashout.external_tx_id = withdraw_result.get("txid")
-                cashout.admin_notes = (cashout.admin_notes or "") + f"\nProcessing method: automatic_kraken"
+                cashout.admin_notes = (cashout.admin_notes or "") + "\nProcessing method: automatic_kraken"
                 
                 # Update wallet balances (release locked funds)
                 # NOTE: available_balance was already reduced when the hold was placed
@@ -2802,7 +2797,7 @@ async def process_pending_cashouts(session: Optional[AsyncSession] = None) -> Di
             failure_rate = (stats['failed'] / stats['processed']) * 100
             if failure_rate > 50:  # Alert if more than 50% failures
                 try:
-                    from services.consolidated_notification_service import ConsolidatedNotificationService, NotificationCategory, NotificationPriority, NotificationChannel
+                    from services.consolidated_notification_service import ConsolidatedNotificationService, NotificationPriority
                     
                     notification_service = ConsolidatedNotificationService()
                     await notification_service.send_admin_alert(

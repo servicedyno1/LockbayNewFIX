@@ -8,7 +8,6 @@ Validates all status changes to prevent invalid transitions like COMPLETED -> CR
 
 import logging
 from typing import Dict, Set, Optional, Tuple
-from enum import Enum
 from models import ExchangeStatus
 
 logger = logging.getLogger(__name__)

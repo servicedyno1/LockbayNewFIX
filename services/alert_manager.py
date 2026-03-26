@@ -154,7 +154,7 @@ class AlertManager:
 
     def _format_system_alert(self, alert_data: Dict[str, Any]) -> str:
         """Format system monitoring alert message"""
-        check_type = alert_data.get("check_type", "System")
+        alert_data.get("check_type", "System")
         status = alert_data.get("status", "unknown")
         issues = alert_data.get("issues", [])
 

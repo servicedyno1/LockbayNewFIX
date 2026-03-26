@@ -4,11 +4,11 @@ Handles partner program applications and admin notifications
 """
 import logging
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from models import PartnerApplication, PartnerApplicationStatus, CommunityType, CommissionTier, User
+from models import PartnerApplication, PartnerApplicationStatus, User
 from config import Config
 from services.async_email_service import AsyncEmailService
 

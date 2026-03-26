@@ -6,8 +6,7 @@ Reduces startup time by loading handlers only when needed
 import logging
 import asyncio
 import importlib
-from typing import Dict, List, Callable, Any, Optional
-from functools import wraps
+from typing import Dict, List, Callable, Any
 import time
 
 logger = logging.getLogger(__name__)

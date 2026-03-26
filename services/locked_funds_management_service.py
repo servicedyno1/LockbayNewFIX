@@ -5,15 +5,13 @@ Provides comprehensive locked funds detection, cleanup, and monitoring with prop
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from decimal import Decimal
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import SessionLocal
-from models import Transaction, Cashout, Wallet, User, CashoutStatus
-from services.idempotency import IdempotencyService, FinancialIdempotency
+from models import Transaction, Cashout, Wallet, CashoutStatus
+from services.idempotency import IdempotencyService
 from services.crypto import CryptoServiceAtomic
 from utils.universal_id_generator import UniversalIDGenerator
 from utils.atomic_transactions import async_atomic_transaction
@@ -44,7 +42,7 @@ class LockedFundsManagementService:
             Dict with detection results and recommendations
         """
         try:
-            logger.info(f"🔍 LOCKED_FUNDS_DETECTION: Starting comprehensive scan" + 
+            logger.info("🔍 LOCKED_FUNDS_DETECTION: Starting comprehensive scan" + 
                        (f" for user {user_id}" if user_id else " (all users)"))
             
             async with async_atomic_transaction() as session:
@@ -343,6 +341,7 @@ class LockedFundsManagementService:
     @classmethod
     async def _cleanup_stale_cashout(cls, cashout_id: str, session: AsyncSession, dry_run: bool = True) -> Dict[str, Any]:
         """Clean up a stale cashout with proper idempotency"""
+        from models import Transaction
         try:
             cashout = session.query(Cashout).filter(Cashout.cashout_id == cashout_id).first()
             if not cashout:

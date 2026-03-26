@@ -7,13 +7,12 @@ Prevents split-brain scenarios in multi-instance deployments
 import logging
 import hashlib
 import time
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import OperationalError, IntegrityError
+from sqlalchemy.exc import OperationalError
 from database import engine
-import asyncio
 
 logger = logging.getLogger(__name__)
 

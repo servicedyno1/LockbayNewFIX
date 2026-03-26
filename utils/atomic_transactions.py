@@ -3,15 +3,14 @@
 import asyncio
 import logging
 import time
-import uuid
 from contextlib import asynccontextmanager, contextmanager
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar, Generator, Dict, Union, AsyncGenerator
+from typing import Any, Callable, Optional, TypeVar, Generator, Dict, AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, OperationalError, IntegrityError
 from sqlalchemy import text
-from database import managed_session, SessionLocal, handle_database_error
+from database import SessionLocal, handle_database_error
 
 
 # DEPRECATED: AsyncSessionAdapter removed due to thread safety issues
@@ -99,7 +98,7 @@ def atomic_transaction(session: Optional[Session] = None) -> Generator[Session, 
                     session.commit()
                     logger.debug("Sync atomic transaction committed successfully")
                     return  # Success
-                except OperationalError as e:
+                except OperationalError:
                     if session:
                         try:
                             session.rollback()
@@ -195,7 +194,6 @@ def locked_wallet_operation(
     """
     from models import Wallet
     from sqlalchemy import text
-    from sqlalchemy.exc import IntegrityError
 
     try:
         # RACE CONDITION FIX: First try to create wallet atomically if it doesn't exist
@@ -285,7 +283,7 @@ async def locked_wallet_operation_async(
             raise ValueError(f"CRITICAL: Atomic upsert failed to return wallet row for user {user_id}, currency {currency}")
         
         # Map the returned row to ORM entity for proper typing and relationships
-        wallet = Wallet(
+        Wallet(
             id=wallet_row.id,
             user_id=wallet_row.user_id,
             currency=wallet_row.currency,
@@ -399,7 +397,6 @@ async def locked_escrow_operation_async(
     """
     from models import Escrow
     from sqlalchemy import select
-    import asyncio
 
     start_time = time.time()
     max_retries = 3

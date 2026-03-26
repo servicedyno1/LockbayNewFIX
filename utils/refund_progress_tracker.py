@@ -6,19 +6,14 @@ Enhanced tracking system for comprehensive refund status management
 import logging
 import asyncio
 import json
-import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Callable
 from enum import Enum
-from decimal import Decimal
 from dataclasses import dataclass, asdict
-import threading
-from collections import defaultdict, deque
+from collections import defaultdict
 
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
 
-from models import Refund, RefundStatus, RefundType, User
+from models import Refund
 from database import SessionLocal
 from utils.refund_status_tracking import RefundStatusTracker, RefundProgressStatus
 from services.unified_refund_notification_service import UnifiedRefundNotificationService
@@ -130,7 +125,7 @@ class RealTimeRefundProgressTracker:
             self.metrics["active_sessions_count"] = len(self.active_sessions)
             
             # Record initial progress update
-            await_result = asyncio.create_task(self.update_progress(
+            asyncio.create_task(self.update_progress(
                 refund_id=refund_id,
                 stage=initial_stage,
                 details="Refund tracking session started",
@@ -222,7 +217,7 @@ class RealTimeRefundProgressTracker:
                 self.active_sessions[refund_id].websocket_clients.append(websocket_client)
                 
                 # Send current progress state to new client
-                session = self.active_sessions[refund_id]
+                self.active_sessions[refund_id]
                 current_progress = self.get_detailed_progress(refund_id)
                 
                 if current_progress:

@@ -13,20 +13,16 @@ Key Features:
 """
 
 import logging
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List
 from decimal import Decimal
-from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import Enum
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError, OperationalError
-from sqlalchemy import text, func, and_, or_
+from sqlalchemy import text
 
-from database import managed_session
 from models import (
-    User, Wallet, InternalWallet, BalanceAuditLog, WalletBalanceSnapshot,
-    DistributedLock, Transaction
+    Wallet, InternalWallet
 )
 
 logger = logging.getLogger(__name__)
@@ -108,7 +104,7 @@ class DatabaseSafetyService:
         checked_items = 0
         
         try:
-            logger.info(f"🔒 Starting wallet constraint validation")
+            logger.info("🔒 Starting wallet constraint validation")
             
             # Get wallets to check
             query = session.query(Wallet)
@@ -275,7 +271,7 @@ class DatabaseSafetyService:
         checked_items = 0
         
         try:
-            logger.info(f"🔒 Starting internal wallet constraint validation")
+            logger.info("🔒 Starting internal wallet constraint validation")
             
             # Get internal wallets to check
             query = session.query(InternalWallet)

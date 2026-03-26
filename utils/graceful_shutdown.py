@@ -7,7 +7,7 @@ import logging
 import asyncio
 import signal
 import sys
-from typing import Set, Any
+from typing import Set
 from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)

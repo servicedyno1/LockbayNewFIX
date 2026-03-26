@@ -6,21 +6,18 @@ Integrates performance baselines, health scoring, trend analysis, and real-time 
 import logging
 import asyncio
 import time
-import json
 from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict, field
+from datetime import datetime
+from dataclasses import dataclass, asdict
 from enum import Enum
-from collections import defaultdict, deque
+from collections import deque
 import statistics
 
-from utils.standardized_metrics_framework import standardized_metrics, StandardMetric
+from utils.standardized_metrics_framework import standardized_metrics
 from utils.performance_baselines_config import (
-    performance_baselines, PerformanceLevel, evaluate_metric_performance, 
-    create_performance_report, get_baselines_summary
+    performance_baselines, PerformanceLevel, create_performance_report, get_baselines_summary
 )
-from utils.central_metrics_aggregator import central_aggregator, get_aggregation_summary
-from utils.unified_performance_reporting import unified_reporter
+from utils.central_metrics_aggregator import get_aggregation_summary
 from utils.unified_activity_monitor import unified_monitor
 from utils.system_health import SystemHealthMonitor
 
@@ -385,7 +382,7 @@ class ComprehensiveMonitoringDashboard:
     async def _process_alerts_and_health(self):
         """Process current alerts and calculate overall health score"""
         try:
-            current_time = datetime.utcnow()
+            datetime.utcnow()
             
             # Count alerts by severity
             warning_count = sum(1 for alert in self.active_alerts.values() 

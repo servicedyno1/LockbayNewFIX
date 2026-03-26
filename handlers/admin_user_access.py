@@ -81,7 +81,7 @@ This will show:
             if permissions.get('restricted_features'):
                 text += f"\n\n**Restricted Features:** {', '.join(permissions['restricted_features'])}"
             
-            text += f"\n\n**Special Status:**"
+            text += "\n\n**Special Status:**"
             text += f"\n{'✅' if permissions['is_admin'] else '❌'} Admin"
             text += f"\n{'✅' if permissions['is_unrestricted'] else '❌'} Unrestricted User"
             text += f"\n{'✅' if permissions['can_access_all'] else '❌'} Full Access"

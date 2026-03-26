@@ -5,7 +5,6 @@ Verifies that the scheduler configuration is correct and no duplicates exist
 """
 import asyncio
 import sys
-from datetime import datetime
 
 sys.path.insert(0, '.')
 
@@ -159,7 +158,7 @@ class DuplicateEmailRegressionTest:
                     if trigger.interval.total_seconds() == 3600:  # 1 hour
                         jobs_at_8am.append(f"{job.name} (hourly)")
             
-            print(f"\n   Jobs that run at 8:00 AM:")
+            print("\n   Jobs that run at 8:00 AM:")
             for job_name in jobs_at_8am:
                 print(f"   • {job_name}")
             
@@ -174,7 +173,7 @@ class DuplicateEmailRegressionTest:
                 )
             
             if has_daily_financial:
-                print(f"   ✅ Daily financial report job runs at 8 AM (expected)")
+                print("   ✅ Daily financial report job runs at 8 AM (expected)")
             
             # Count total jobs at 8 AM
             self.test(
@@ -301,7 +300,7 @@ class DuplicateEmailRegressionTest:
                 
                 # Count errors
                 errors = [l for l in recent_lines if 'ERROR' in l and 'DUPLICATE_EMAIL_FIX' not in l]
-                critical = [l for l in recent_lines if 'CRITICAL' in l and 'ConsolidatedScheduler' not in l]
+                [l for l in recent_lines if 'CRITICAL' in l and 'ConsolidatedScheduler' not in l]
                 
                 self.test(
                     "No recent errors",
@@ -310,7 +309,7 @@ class DuplicateEmailRegressionTest:
                 )
                 
                 if errors:
-                    print(f"\n   Recent errors found:")
+                    print("\n   Recent errors found:")
                     for err in errors[:3]:
                         print(f"   {err.strip()[:80]}")
                 

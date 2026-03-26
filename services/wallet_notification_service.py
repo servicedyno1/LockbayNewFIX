@@ -4,11 +4,12 @@ Handles confirmation messages for wallet deposits separate from exchange/escrow 
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional
 from decimal import Decimal
 from config import Config
 from models import User
 from utils.atomic_transactions import atomic_transaction
+from services.email import EmailService
 
 # UNIFIED NOTIFICATION SYSTEM INTEGRATION
 from services.consolidated_notification_service import (

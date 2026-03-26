@@ -4,21 +4,17 @@ Detailed transaction oversight, monitoring, and control interface
 """
 
 import logging
-from typing import Optional, Dict, List
-from datetime import datetime, timedelta
-from decimal import Decimal
+from datetime import datetime, timedelta, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import desc, func, or_, and_
 
 from database import SessionLocal
 from models import (
     User, Escrow, EscrowStatus, ExchangeOrder, ExchangeStatus,
-    Cashout, CashoutStatus, Transaction, TransactionType, Rating
+    Cashout, CashoutStatus, Transaction, Rating
 )
 from utils.admin_security import is_admin_secure
-from utils.financial import FinancialCalculator
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 from utils.cashout_state_validator import CashoutStateValidator
 
@@ -99,7 +95,7 @@ async def handle_admin_transactions(update: Update, context: ContextTypes.DEFAUL
             ).scalar() or 0
             
             # CashOut transactions
-            total_cashouts = session.query(Cashout).count()
+            session.query(Cashout).count()
             pending_cashouts_query = session.query(Cashout).filter(
                 or_(
                     Cashout.status == CashoutStatus.PENDING.value,
@@ -1782,7 +1778,7 @@ async def handle_admin_trans_actions(update: Update, context: ContextTypes.DEFAU
     if query:
         await safe_answer_callback_query(query, "⚡")
 
-    message = f"""⚡ Quick Actions
+    message = """⚡ Quick Actions
 
 🔧 Transaction Operations
 • Bulk transaction management

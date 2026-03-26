@@ -4,20 +4,12 @@ Ensures 100% audit coverage by enforcing decorators on all handlers and providin
 """
 
 import logging
-import inspect
 import ast
-import os
-import sys
 from pathlib import Path
-from typing import Dict, List, Set, Optional, Any, Callable
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 
-from utils.comprehensive_audit_logger import AuditEventType, audit_user_interaction, ComprehensiveAuditLogger
-from utils.handler_decorators import (
-    handler_lifecycle, admin_action, conversation_handler, 
-    communication_handler, transaction_handler, system_handler
-)
 
 logger = logging.getLogger(__name__)
 
@@ -350,7 +342,6 @@ class HandlerDecoratorEnforcer:
             lines = f.readlines()
         
         # Add imports if needed
-        import_lines = []
         needed_imports = set()
         for handler in handlers:
             needed_imports.update(handler.required_decorators)

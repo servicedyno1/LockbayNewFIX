@@ -6,16 +6,11 @@ with automatic repair, detailed logging, and admin alerting
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List
 from decimal import Decimal
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, text
+from sqlalchemy import text
 
-from database import SessionLocal
-from models import (
-    Escrow, EscrowStatus, EscrowHolding, Transaction, TransactionType, 
-    User, PlatformRevenue
-)
 from services.escrow_holding_verifier import EscrowHoldingVerifier
 from services.admin_email_alerts import AdminEmailAlertService
 from utils.atomic_transactions import atomic_transaction
@@ -25,7 +20,6 @@ from utils.financial_audit_logger import (
     FinancialContext,
     EntityType
 )
-from services.consolidated_notification_service import consolidated_notification_service
 
 logger = logging.getLogger(__name__)
 

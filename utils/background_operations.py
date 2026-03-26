@@ -5,7 +5,6 @@ Moves heavy startup operations to background tasks for faster bot startup
 
 import asyncio
 import logging
-from typing import Any, Optional
 from utils.parallel_startup import deferred_operation
 
 logger = logging.getLogger(__name__)

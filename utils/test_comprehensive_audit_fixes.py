@@ -8,9 +8,7 @@ import os
 import json
 import asyncio
 import logging
-from typing import Dict, Any, Optional
 from datetime import datetime
-from unittest.mock import Mock, AsyncMock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -133,7 +131,7 @@ def test_audit_logger_metadata_handling():
                 print(f"  🔧 Testing payload {i+1}: {payload['type']}")
                 
                 # Test direct audit logging
-                result = logger_instance.audit(
+                logger_instance.audit(
                     event_type=AuditEventType.SYSTEM,
                     action=f"test_metadata_type_{payload['type']}",
                     result="success",
@@ -261,7 +259,7 @@ async def test_webhook_simulation():
                     related_ids=related_ids
                 )
                 
-                print(f"    ✅ Webhook end logged successfully")
+                print("    ✅ Webhook end logged successfully")
                 
                 # Test error case with float processing time
                 await webhook_logger.log_webhook_end(
@@ -274,7 +272,7 @@ async def test_webhook_simulation():
                     related_ids=related_ids
                 )
                 
-                print(f"    ✅ Error case logged successfully")
+                print("    ✅ Error case logged successfully")
                 
             except Exception as e:
                 print(f"    ❌ Failed for {mock_data['name']}: {e}")
@@ -334,7 +332,7 @@ def test_json_serialization_edge_cases():
         print("    ✅ AuditRecord JSON conversion succeeded")
         
         # Verify it's valid JSON
-        parsed = json.loads(json_str)
+        json.loads(json_str)
         print("    ✅ Generated JSON is valid and parseable")
         
         # Test with edge case metadata types
@@ -351,7 +349,7 @@ def test_json_serialization_edge_cases():
         
         test_record.payload_metadata = edge_case_metadata
         json_str = test_record.to_json()
-        parsed = json.loads(json_str)
+        json.loads(json_str)
         print("    ✅ Edge case metadata serialization succeeded")
         
         print("✅ JSON serialization edge cases test PASSED")

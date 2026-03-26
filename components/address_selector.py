@@ -229,7 +229,7 @@ class AddressSelectorComponent:
         
         return {
             'valid': False,
-            'error': f"Invalid Bitcoin address format. Expected format starts with 1, 3, or bc1"
+            'error': "Invalid Bitcoin address format. Expected format starts with 1, 3, or bc1"
         }
     
     async def _validate_ethereum_address(self, address: str) -> Dict[str, Any]:

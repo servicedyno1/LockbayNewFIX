@@ -8,13 +8,12 @@ import logging
 import asyncio
 import time
 import os
-from decimal import Decimal
 from telegram import Update
-from telegram.ext import Application, ContextTypes
+from telegram.ext import Application
 
 # Import critical infrastructure only
 from config import Config
-from database import SessionLocal, create_tables
+from database import SessionLocal
 
 # Import basic monitoring only
 from utils.performance_monitor import PerformanceMonitor
@@ -22,7 +21,6 @@ from utils.performance_monitor import PerformanceMonitor
 logger = logging.getLogger(__name__)
 
 # Clean startup manager - replaces global variables
-from main_clean_startup import startup_manager
 
 # Import background and deferred managers for email queue initialization
 from utils.lazy_loader import background_manager
@@ -175,7 +173,6 @@ def main_new_debug():
     """Optimized bot startup with sub-5-second target"""
     
     # Initialize performance monitoring
-    from utils.performance_monitor import PerformanceMonitor
     monitor = PerformanceMonitor()
     monitor.start_startup_monitoring()
     
@@ -202,7 +199,7 @@ def main_new_debug():
 def register_emergency_handlers(application):
     """Register emergency callback handlers for critical functionality"""
     from telegram.ext import CallbackQueryHandler
-    from handlers.messages_hub import show_trades_messages_hub, show_active_trades, open_trade_chat, handle_dispute_trade, handle_dispute_reason
+    from handlers.messages_hub import show_trades_messages_hub, show_active_trades, open_trade_chat, handle_dispute_reason
     from handlers.escrow import handle_view_trade, handle_buyer_cancel_trade, handle_seller_accept_trade, handle_seller_decline_trade, handle_confirm_seller_decline_trade, handle_cancel_escrow, handle_buyer_cancel_confirmed, handle_keep_trade
     from handlers.missing_handlers import handle_main_menu_callback, handle_trade_history, handle_menu_support, handle_view_disputes  
     from handlers.ux_improvements import handle_contact_support
@@ -215,8 +212,6 @@ def register_emergency_handlers(application):
     async def handle_escrow_history_wrapper(update, context):
         """Wrapper for escrow history that fetches user internally"""
         from handlers.menu import show_escrow_history
-        from models import User
-        from database import SessionLocal
         
         if not update.effective_user:
             return
@@ -423,7 +418,6 @@ async def run_webhook_optimized(monitor):
     logger.info("✅ UNIFIED_CALLBACKS: Consolidated callback dispatcher registered (replaces scattered handlers)")
     
     # CRITICAL FIX: Register missing handlers directly here
-    from handlers.messages_hub import show_active_trades
     # Dead imports removed: handle_start_email_input, handle_invitation_decide_later, onboarding_conversation
     # Email onboarding flow is no longer active
     from handlers.support_chat import create_support_conversation_handler, view_support_tickets
@@ -561,7 +555,6 @@ async def run_webhook_optimized(monitor):
     logger.info("✅ EMERGENCY: /cancel command registered with blocking check")
     
     # Register /start command handler with blocking check
-    from handlers.start import start_handler
     blocked_start = create_blocking_aware_command_handler(start_handler)
     application.add_handler(CommandHandler("start", blocked_start), group=0)
     logger.info("✅ STARTUP: /start command registered with blocking check")
@@ -603,7 +596,7 @@ async def run_webhook_optimized(monitor):
     # Register ALL other critical handlers (condensed from polling mode)
     from handlers.wallet_direct import (
         show_crypto_funding_options, start_add_funds, handle_bank_selection, handle_deposit_currency_selection,
-        show_deposit_qr, handle_save_bank_account, handle_cancel_bank_save, handle_add_new_bank,
+        show_deposit_qr, handle_save_bank_account, handle_add_new_bank,
         show_saved_bank_accounts_management, show_saved_crypto_addresses_management,
         show_comprehensive_transaction_history, handle_back_to_main, handle_ngn_bank_account_input,
         handle_wallet_menu, handle_wallet_cashout, handle_auto_cashout_bank_selection,
@@ -612,21 +605,19 @@ async def run_webhook_optimized(monitor):
         handle_confirm_unverified_cashout
     )
     from handlers.fincra_payment import FincraPaymentHandler
-    from handlers.commands import profile_command, show_account_settings, show_cashout_settings, show_notification_settings
+    from handlers.commands import profile_command, show_account_settings, show_cashout_settings
     from handlers.start import show_help_from_onboarding_callback, handle_demo_exchange, handle_demo_escrow
     from handlers.missing_handlers import (
         handle_main_menu_callback, handle_my_escrows, handle_menu_escrows, 
         handle_wal_history, handle_withdrawal_history, handle_exchange_crypto, handle_complete_trading,
         handle_quick_rating_access, handle_settings_verify_email, handle_start_email_verification
     )
-    from handlers.ux_improvements import handle_contact_support
     from handlers.messages_hub import show_trades_messages_hub, handle_start_dispute, handle_dispute_trade
     from handlers.escrow import (
-        start_secure_trade, handle_escrow_crypto_selection, handle_payment_method_selection,
+        start_secure_trade, handle_payment_method_selection,
         handle_release_funds, handle_cancel_release_funds, handle_confirm_release_funds, handle_mark_delivered
     )
     from handlers.referral import handle_invite_friends, handle_referral_stats, handle_referral_leaderboard
-    from services.fee_transparency import FeeTransparencyService
     from handlers.contact_management import ContactManagementHandler
     from handlers.admin import (
         admin_command, handle_broadcast_command,
@@ -1192,11 +1183,10 @@ async def run_webhook_optimized(monitor):
     
     # CRITICAL: Start uvicorn server immediately
     logger.info(f"🚀 FAST_STARTUP: Starting uvicorn server on {Config.WEBHOOK_HOST}:{Config.WEBHOOK_PORT}")
-    logger.info(f"⚡ FAST_STARTUP: Starting with minimal config for immediate binding")
+    logger.info("⚡ FAST_STARTUP: Starting with minimal config for immediate binding")
     
     try:
         # Try to bind and start uvicorn with timeout handling
-        import signal
         import asyncio
         
         # RESILIENCE FIX: Remove artificial timeout and implement proper binding with retries

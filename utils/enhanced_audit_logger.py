@@ -24,18 +24,9 @@ class EnhancedAuditLogger:
     ) -> bool:
         """Log security events with enhanced details"""
         try:
-            timestamp = datetime.utcnow().isoformat()
+            datetime.utcnow().isoformat()
             
             # Create comprehensive log entry
-            log_entry = {
-                'timestamp': timestamp,
-                'event_type': event_type,
-                'severity': severity,
-                'details': details or {},
-                'user_id': user_id,
-                'metadata': metadata or {},
-                'description': description
-            }
             
             # Log to standard logger with appropriate level
             log_msg = description or str(details)

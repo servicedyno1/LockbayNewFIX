@@ -1,6 +1,5 @@
 """Background job scheduler for the Telegram Escrow Bot with atomic transaction support"""
 
-import asyncio
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -19,7 +18,6 @@ from jobs.financial_audit_relay import (
     financial_audit_cleanup_handler,
     financial_audit_stats_handler
 )
-from jobs.unified_retry_processor import process_unified_retries_sync
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -31,8 +29,6 @@ class EscrowScheduler:
     def __init__(self, application):
         self.application = application
         # Optimized scheduler configuration for performance
-        from apscheduler.executors.asyncio import AsyncIOExecutor
-        from apscheduler.jobstores.memory import MemoryJobStore
         
         jobstores = {
             'default': MemoryJobStore()
@@ -222,7 +218,7 @@ class EscrowScheduler:
             logger.error(f"❌ Failed to schedule unified financial scanner: {e}")
         
         # LOCKED FUNDS MONITORING: Comprehensive detection and alerting
-        from jobs.locked_funds_monitor import monitor_locked_funds, cleanup_stale_locked_funds
+        from jobs.locked_funds_monitor import monitor_locked_funds
         
         self.scheduler.add_job(
             monitor_locked_funds,
@@ -1105,7 +1101,7 @@ class EscrowScheduler:
                                         'currency': 'USD',
                                         'buyer_info': buyer_info,
                                         'seller_info': seller_info,
-                                        'cancellation_reason': f'Payment timeout after {minutes_overdue} minutes',
+                                        'cancellation_reason': f'Payment timeout after {int(time_since_creation.total_seconds() / 60)} minutes',
                                         'cancelled_at': datetime.utcnow()
                                     }
                                     
@@ -1861,7 +1857,6 @@ class EscrowScheduler:
         try:
             import psutil
             import gc
-            from datetime import datetime, timedelta
             
             # Get current system metrics
             memory_mb = psutil.Process().memory_info().rss / 1024 / 1024

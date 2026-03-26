@@ -4,23 +4,18 @@ Comprehensive metrics collection, analysis, and reporting system for database co
 """
 
 import logging
-import time
 import asyncio
 import threading
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Any, Tuple, Union
-from collections import deque, defaultdict, Counter
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Union
+from collections import deque, defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 import statistics
 import json
 import psutil
-import gc
-from contextlib import contextmanager
-import weakref
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

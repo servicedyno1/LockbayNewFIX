@@ -4,14 +4,10 @@ Handles wallet lock failures, emergency refunds, and crisis recovery
 """
 
 import logging
-import asyncio
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional, Tuple
+from datetime import datetime
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
-from decimal import Decimal
-import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -158,9 +154,8 @@ class EmergencyResponseSystem:
         try:
             logger.critical(f"🔧 EMERGENCY PROCEDURE: Wallet lock failure for user {emergency.user_id}")
             
-            from database import SessionLocal
             from utils.atomic_transactions import async_atomic_transaction
-            from models import Wallet, Cashout, Transaction
+            from models import Wallet
             from sqlalchemy import select, update, and_
             
             async with async_atomic_transaction() as session:
@@ -226,7 +221,6 @@ class EmergencyResponseSystem:
         try:
             logger.critical(f"🔧 EMERGENCY PROCEDURE: Refund failure for user {emergency.user_id}")
             
-            from database import SessionLocal
             from utils.atomic_transactions import async_atomic_transaction
             from models import Wallet, Cashout, CashoutStatus
             from sqlalchemy import select, update, and_
@@ -311,7 +305,7 @@ class EmergencyResponseSystem:
             # This would involve complex balance reconciliation
             # For now, log the issue and flag for manual review
             
-            logger.critical(f"BALANCE CORRUPTION DETECTED:")
+            logger.critical("BALANCE CORRUPTION DETECTED:")
             logger.critical(f"User: {emergency.user_id}")
             logger.critical(f"Currency: {emergency.currency}")
             logger.critical(f"Context: {emergency.context}")
@@ -353,7 +347,7 @@ class EmergencyResponseSystem:
     async def _handle_binance_failure_with_locked_funds(self, emergency: EmergencyEvent, emergency_id: str) -> Dict[str, Any]:
         """Handle Binance failures where funds are locked but transfer failed"""
         try:
-            logger.critical(f"🔧 EMERGENCY PROCEDURE: Binance failure with locked funds")
+            logger.critical("🔧 EMERGENCY PROCEDURE: Binance failure with locked funds")
             
             # This is a critical scenario - funds are locked but Binance transfer failed
             # Need to verify if crypto was actually sent or not
@@ -378,9 +372,8 @@ class EmergencyResponseSystem:
     async def _handle_orphaned_locked_balance(self, emergency: EmergencyEvent, emergency_id: str) -> Dict[str, Any]:
         """Handle orphaned locked balances"""
         try:
-            logger.critical(f"🔧 EMERGENCY PROCEDURE: Orphaned locked balance cleanup")
+            logger.critical("🔧 EMERGENCY PROCEDURE: Orphaned locked balance cleanup")
             
-            from database import SessionLocal
             from utils.atomic_transactions import async_atomic_transaction
             from models import Wallet
             from sqlalchemy import select, update, and_
@@ -427,12 +420,12 @@ class EmergencyResponseSystem:
     async def _handle_usd_crypto_conversion_error(self, emergency: EmergencyEvent, emergency_id: str) -> Dict[str, Any]:
         """Handle USD-to-crypto conversion errors"""
         try:
-            logger.critical(f"🔧 EMERGENCY PROCEDURE: USD-crypto conversion error")
+            logger.critical("🔧 EMERGENCY PROCEDURE: USD-crypto conversion error")
             
             # This is the critical bug where USD amounts were sent as crypto amounts
             # Block all similar operations and flag for review
             
-            logger.critical(f"CRITICAL USD-CRYPTO CONVERSION ERROR:")
+            logger.critical("CRITICAL USD-CRYPTO CONVERSION ERROR:")
             logger.critical(f"Amount: ${emergency.amount}")
             logger.critical(f"Currency: {emergency.currency}")
             logger.critical(f"Context: {emergency.context}")
@@ -456,10 +449,10 @@ class EmergencyResponseSystem:
     async def _handle_address_parsing_catastrophe(self, emergency: EmergencyEvent, emergency_id: str) -> Dict[str, Any]:
         """Handle address parsing catastrophes"""
         try:
-            logger.critical(f"🔧 EMERGENCY PROCEDURE: Address parsing catastrophe")
+            logger.critical("🔧 EMERGENCY PROCEDURE: Address parsing catastrophe")
             
             # Address was sent in wrong format to Binance
-            logger.critical(f"ADDRESS PARSING CATASTROPHE:")
+            logger.critical("ADDRESS PARSING CATASTROPHE:")
             logger.critical(f"Malformed address: {emergency.context.get('malformed_address', 'Unknown')}")
             logger.critical(f"Expected format: {emergency.context.get('expected_format', 'Unknown')}")
             

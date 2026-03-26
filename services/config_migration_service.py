@@ -5,7 +5,7 @@ Migrates hardcoded values to database-driven configuration system
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any
 from decimal import Decimal
 
 from database import SessionLocal
@@ -250,8 +250,8 @@ class ConfigMigrationService:
     def create_migration_report(self) -> str:
         """Create detailed migration report"""
         try:
-            mapping = self.get_migration_mapping()
-            validation = self.validate_migration()
+            self.get_migration_mapping()
+            self.validate_migration()
             
             report = """
 📊 **Configuration Migration Report**

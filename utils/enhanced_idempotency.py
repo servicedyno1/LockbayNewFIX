@@ -5,11 +5,10 @@ Prevents duplicate escrow creation and ensures consistent operations
 
 import logging
 import hashlib
-from typing import Dict, Optional
+from typing import Dict
 from datetime import datetime, timedelta
 from contextlib import contextmanager
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
 

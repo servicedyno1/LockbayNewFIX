@@ -6,10 +6,9 @@ Captures all Telegram updates before other handlers process them
 import logging
 import time
 import uuid
-from typing import Optional, Dict, Any, List, cast
+from typing import Optional, Dict, Any, cast
 from telegram import Update
-from telegram.ext import ContextTypes, MessageHandler, CallbackQueryHandler, CommandHandler, InlineQueryHandler, ApplicationHandlerStop
-from telegram.ext.filters import ALL
+from telegram.ext import ContextTypes, ApplicationHandlerStop
 
 from utils.comprehensive_audit_logger import (
     audit_user_interaction, 
@@ -53,7 +52,7 @@ class UpdateInterceptor:
         try:
             # Generate trace ID for this interaction
             trace_id = str(uuid.uuid4())
-            request_id = f"req_{int(time.time())}_{self.interaction_counter}"
+            f"req_{int(time.time())}_{self.interaction_counter}"
             self.interaction_counter += 1
             
             # Set trace context

@@ -7,7 +7,6 @@ Supports various transaction types and provides appropriate user actions for eac
 
 import logging
 from typing import Dict, Any, Optional
-from datetime import datetime, timedelta
 
 from telegram import Update
 from telegram.ext import ContextTypes

@@ -7,21 +7,19 @@ import logging
 import time
 import asyncio
 import threading
-import weakref
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List, Tuple
+from datetime import datetime
+from typing import Optional, Dict, Any, List
 from contextlib import contextmanager
 from collections import deque, defaultdict
 from dataclasses import dataclass
 import statistics
-import math
 from enum import Enum
-from sqlalchemy import create_engine, pool, event, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import QueuePool
 from config import Config
 from utils.ssl_connection_monitor import record_ssl_error, record_ssl_recovery, record_ssl_retry
-from utils.enhanced_database_pool_analytics import record_pool_event, pool_analytics
+from utils.enhanced_database_pool_analytics import record_pool_event
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +234,7 @@ class DynamicConnectionPool:
                             logger.debug(f"Using pre-warmed session {connection_id} for {context_id}")
                         except Exception as validation_error:
                             if "SSL" in str(validation_error):
-                                logger.debug(f"🔌 Stale SSL session detected, creating new one")
+                                logger.debug("🔌 Stale SSL session detected, creating new one")
                                 record_ssl_error(f"dynamic_pool_validation_{context_id}", str(validation_error))
                             session.close()
                             session = None
@@ -332,7 +330,7 @@ class DynamicConnectionPool:
         try:
             connection = session.connection()
             return str(id(connection))
-        except Exception as e:
+        except Exception:
             return None
     
     def _update_utilization_sample(self):
@@ -411,7 +409,7 @@ class DynamicConnectionPool:
         
         utilizations = [s['utilization'] for s in samples]
         max_util = max(utilizations)
-        min_util = min(utilizations)
+        min(utilizations)
         variance = statistics.variance(utilizations) if len(utilizations) > 1 else 0
         
         # Detect burst pattern (high variance and recent spike)
@@ -570,7 +568,7 @@ class DynamicConnectionPool:
                     for session in self._warmed_sessions:
                         try:
                             session.close()
-                        except Exception as e:
+                        except Exception:
                             pass
                     self._warmed_sessions.clear()
                 
@@ -613,7 +611,7 @@ class DynamicConnectionPool:
         try:
             stats = self.get_pool_statistics()
             return (stats['pool_checked_out'] / max(stats['pool_size'], 1)) * 100
-        except Exception as e:
+        except Exception:
             return 0.0
     
     def _warm_connections_async(self):
@@ -784,7 +782,7 @@ class DynamicConnectionPool:
                 'pool_overflow': self.engine.pool.overflow(),
                 'pool_invalid': getattr(self.engine.pool, 'invalidated', 0),  # Use invalidated count instead
             }
-        except Exception as e:
+        except Exception:
             base_stats = {
                 'pool_size': self.current_pool_size,
                 'pool_checked_out': 0,

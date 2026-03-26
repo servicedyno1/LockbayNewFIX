@@ -7,7 +7,7 @@ Ensures optimal performance and prevents memory leaks in distributed state manag
 import asyncio
 import logging
 import time
-from typing import Dict, List, Optional, Set, Tuple, Any, Pattern
+from typing import Dict, List, Optional, Set, Any
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 from enum import Enum
@@ -390,7 +390,7 @@ class TTLCleanupService:
         start_time = time.time()
         total_stats = CleanupStats()
         
-        logger.info(f"🔥 Force cleanup triggered" + (f" for pattern: {pattern}" if pattern else ""))
+        logger.info("🔥 Force cleanup triggered" + (f" for pattern: {pattern}" if pattern else ""))
         
         try:
             rules_to_process = self.cleanup_rules
@@ -443,7 +443,7 @@ class TTLCleanupService:
     async def cleanup_completed_sagas(self, max_age_hours: int = 24) -> int:
         """Clean up old completed saga transactions"""
         try:
-            cutoff_time = datetime.utcnow() - timedelta(hours=max_age_hours)
+            datetime.utcnow() - timedelta(hours=max_age_hours)
             cleaned_count = 0
             
             # This would scan for old saga keys in a real implementation

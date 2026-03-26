@@ -6,13 +6,11 @@ Integrates regional economic adjustments with referral system configuration
 
 import logging
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, Optional
+from typing import Dict
 from datetime import datetime
 
-from database import SessionLocal
 from services.referral_admin_service import ReferralAdminService
 from services.regional_economic_service import RegionalEconomicService
-from models import User
 
 logger = logging.getLogger(__name__)
 

@@ -299,7 +299,7 @@ async def test_all_user_notifications():
         print(f"   Details: {result}")
     except Exception as e:
         results.append(("Rating Reminders", False))
-        print(f"   Result: ❌ FAILED")
+        print("   Result: ❌ FAILED")
         print(f"   Error: {e}")
     
     # ========================================================================

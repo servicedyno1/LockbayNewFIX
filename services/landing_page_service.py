@@ -8,7 +8,6 @@ import os
 from typing import Dict, Optional, Any
 from decimal import Decimal
 from sqlalchemy import func
-from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import User

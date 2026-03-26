@@ -5,16 +5,13 @@ Uses GitHub REST API directly to push changes without Git commands
 """
 
 import os
-import sys
 import time
-import json
 import requests
 import threading
 import hashlib
 import base64
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Optional, Set
+from datetime import datetime
+from typing import Dict, Optional
 
 class GitHubAPIPushMonitor:
     def __init__(self, 

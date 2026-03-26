@@ -1,7 +1,7 @@
 """Enhanced Crypto Service with DynoPay Failover Support"""
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from services.crypto import CryptoServiceAtomic
 from services.payment_processor_manager import payment_manager, PaymentProvider
 from config import Config

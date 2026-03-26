@@ -4,7 +4,6 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.crypto_enhanced import CryptoServiceEnhanced
-from services.payment_processor_manager import payment_manager
 from utils.callback_utils import safe_answer_callback_query
 
 logger = logging.getLogger(__name__)

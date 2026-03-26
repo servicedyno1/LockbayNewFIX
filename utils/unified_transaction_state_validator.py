@@ -8,7 +8,6 @@ Validates all status changes across the 16-status unified transaction model.
 
 import logging
 from typing import Dict, Set, Optional, Tuple
-from enum import Enum
 from models import UnifiedTransactionStatus
 
 logger = logging.getLogger(__name__)

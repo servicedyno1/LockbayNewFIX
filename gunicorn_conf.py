@@ -2,7 +2,6 @@
 Gunicorn Configuration for LockBay Telegram Bot
 Production-grade worker management with uvicorn workers
 """
-import multiprocessing
 import os
 
 # Server socket

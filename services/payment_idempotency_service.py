@@ -4,8 +4,7 @@ Provides standardized duplicate prevention for all payment webhook handlers
 """
 
 import logging
-from typing import Dict, Any, Optional, Tuple
-from decimal import Decimal
+from typing import Dict, Any, Tuple
 from sqlalchemy.orm import Session
 from models import Transaction, TransactionType
 from utils.distributed_lock import distributed_lock_service

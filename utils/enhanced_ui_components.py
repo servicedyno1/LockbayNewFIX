@@ -1,6 +1,6 @@
 """Enhanced UI Components - Standardized button placement and UX improvements"""
 
-from typing import List, Dict, Any, Optional
+from typing import List
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from services.enhanced_cancellation_service import EnhancedCancellationService, CancellationStage
 

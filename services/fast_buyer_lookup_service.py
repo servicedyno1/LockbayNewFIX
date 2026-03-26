@@ -24,18 +24,16 @@ Target: <150ms vs ~800ms sequential queries
 
 import logging
 import time
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple, Any
-from decimal import Decimal
+from datetime import datetime, timedelta
+from typing import List, Optional
 from dataclasses import dataclass
-from sqlalchemy.orm import Session, sessionmaker, joinedload
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import desc, func, and_, or_, text, select
+from sqlalchemy import func, select
 import asyncio
 
 from database import SessionLocal
-from models import Rating, User, Escrow, Transaction, Dispute, EscrowStatus
-from utils.constants import PLATFORM_NAME
+from models import Rating, User
 
 logger = logging.getLogger(__name__)
 
@@ -387,7 +385,7 @@ class FastBuyerLookupService:
             stars = "⭐" * int(profile.basic_rating)
             lines.append(f"{stars} {profile.basic_rating}/5.0 ({profile.total_ratings} ratings)")
         else:
-            lines.append(f"⭐ No ratings yet")
+            lines.append("⭐ No ratings yet")
         
         # Trust level
         trust_emoji = {

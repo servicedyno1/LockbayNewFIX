@@ -13,26 +13,22 @@ Features:
 """
 
 import logging
-import asyncio
-import random
 import time
 import hashlib
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, Tuple, List, Callable, Union
+from typing import Dict, Any, Optional
 from decimal import Decimal
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from enum import Enum
-import json
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy import and_, or_, func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import and_, select
 
 from database import sync_managed_session
 from models import (
     UnifiedTransaction, UnifiedTransactionStatus, UnifiedTransactionType,
-    UnifiedTransactionRetryLog, CashoutErrorCode, OperationFailureType,
-    Cashout, CashoutStatus
+    UnifiedTransactionRetryLog
 )
 from config import Config
 from utils.financial_audit_logger import (

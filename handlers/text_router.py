@@ -7,7 +7,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler, filters
 
-from utils.route_guard import RouteGuard, OnboardingProtection
+from utils.route_guard import RouteGuard
 from utils.handler_decorators import audit_handler
 from utils.comprehensive_audit_logger import AuditEventType
 
@@ -47,7 +47,7 @@ class UnifiedTextRouter:
                     logger.critical(f"🚫🚫🚫 BLOCKLIST_VIOLATION: User {user_id} on PERMANENT BLOCKLIST attempted message: '{text[:30]}...'")
                     try:
                         await message.reply_text("❌ Your account has been permanently suspended.")
-                    except:
+                    except Exception:
                         pass
                     return
                 
@@ -58,7 +58,7 @@ class UnifiedTextRouter:
                     logger.warning(f"🚫 BLOCKED_MESSAGE: User {user_id} attempted to send message: '{text[:30]}...'")
                     try:
                         await message.reply_text("❌ Your account has been suspended and you cannot access this service.")
-                    except:
+                    except Exception:
                         pass
                     return
         except Exception as e:

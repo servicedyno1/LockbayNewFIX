@@ -5,10 +5,9 @@ Creates 28 completed trades with 28 five-star ratings totaling $4,873
 
 import asyncio
 import random
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import AsyncSessionLocal
 from models import User, Escrow, Rating, EscrowStatus
@@ -64,7 +63,7 @@ async def setup_onarrival1_ratings():
     async with AsyncSessionLocal() as session:
         try:
             print("🚀 Starting @onarrival1 trading history setup...")
-            print(f"📊 Target: 28 trades, 28 ratings, $4,873 volume\n")
+            print("📊 Target: 28 trades, 28 ratings, $4,873 volume\n")
             
             # Get @onarrival1 user
             result = await session.execute(
@@ -183,17 +182,17 @@ async def setup_onarrival1_ratings():
             await session.commit()
             
             print(f"\n{'='*60}")
-            print(f"✅ SUCCESS! Trading history created for @onarrival1")
+            print("✅ SUCCESS! Trading history created for @onarrival1")
             print(f"{'='*60}")
             print(f"📊 Trades Created: {created_trades}")
             print(f"⭐ Ratings Created: {created_ratings}")
             print(f"💰 Total Volume: ${total_volume}")
             print(f"📈 Average Trade: ${total_volume / 28:.2f}")
-            print(f"🏆 Expected Trust Level: GOLD 🥇")
-            print(f"⭐ Overall Rating: 5.0/5.0")
-            print(f"✅ Completion Rate: 100%")
-            print(f"🚫 Dispute Rate: 0%")
-            print(f"\n🎉 @onarrival1 is now a Gold-level trusted trader!")
+            print("🏆 Expected Trust Level: GOLD 🥇")
+            print("⭐ Overall Rating: 5.0/5.0")
+            print("✅ Completion Rate: 100%")
+            print("🚫 Dispute Rate: 0%")
+            print("\n🎉 @onarrival1 is now a Gold-level trusted trader!")
             
         except Exception as e:
             print(f"\n❌ Error: {e}")

@@ -4,7 +4,7 @@ Monitors unauthorized access attempts and security events
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 import asyncio
@@ -191,7 +191,6 @@ class AdminAlertSystem:
         """Send notification to administrators"""
         try:
             # Import here to avoid circular imports
-            from config import Config
             
             # You could implement various notification methods:
             

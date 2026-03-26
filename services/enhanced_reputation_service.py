@@ -5,17 +5,14 @@ Comprehensive rating and reputation management system addressing all rating syst
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Any
 from decimal import Decimal
 from dataclasses import dataclass
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy import desc, func, and_, or_, text
-from collections import defaultdict
+from sqlalchemy import desc, func, and_, or_
 
 from database import SessionLocal
-from models import Rating, User, Escrow, Transaction, Dispute, EscrowStatus
-from services.user_stats_service import UserStatsService
-from utils.constants import PLATFORM_NAME
+from models import Rating, User, Escrow, Dispute, EscrowStatus
 
 logger = logging.getLogger(__name__)
 

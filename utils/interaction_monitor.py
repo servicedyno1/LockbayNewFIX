@@ -3,10 +3,9 @@ Advanced interaction monitoring to prevent callback timeouts and system overload
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 from datetime import datetime, timedelta
 from dataclasses import dataclass
-import asyncio
 
 logger = logging.getLogger(__name__)
 

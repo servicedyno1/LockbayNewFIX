@@ -6,7 +6,7 @@ Ensures resilient external API calls
 import asyncio
 import logging
 import random
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, TypeVar
 from functools import wraps
 
 logger = logging.getLogger(__name__)

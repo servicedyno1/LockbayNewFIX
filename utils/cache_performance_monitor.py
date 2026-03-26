@@ -6,7 +6,7 @@ Monitors and optimizes cache performance, provides cache warming and statistics
 import asyncio
 import logging
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,6 @@ class CachePerformanceMonitor:
     async def _warm_user_data(self):
         """Warm user data cache with recent users"""
         try:
-            from utils.production_cache import set_cached
             from database import SessionLocal
             from models import User
             

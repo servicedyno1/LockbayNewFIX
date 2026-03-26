@@ -4,12 +4,11 @@ Single unified path for all user and admin notifications across all channels
 """
 
 import logging
-import asyncio
 import time
 import json
 import html
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List, Union, Literal, TYPE_CHECKING, cast
+from typing import Optional, Dict, Any, List, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,9 +19,8 @@ from collections import defaultdict
 import uuid
 
 # Database and models
-from database import SessionLocal, managed_session, AsyncSessionLocal
-from models import User, NotificationPreference, UserStatus, NotificationQueue, NotificationActivity
-from utils.atomic_transactions import atomic_transaction
+from database import AsyncSessionLocal
+from models import User, UserStatus, NotificationQueue, NotificationActivity
 from utils.preferences import get_user_preferences, is_enabled
 from utils.markdown_escaping import format_username_html
 from sqlalchemy import select, update, and_, or_
@@ -681,7 +679,7 @@ class ConsolidatedNotificationService:
                 async with session.begin():
                     if successful_deliveries:
                         # Mark as sent with delivery details
-                        external_message_ids = [
+                        [
                             result.message_id for result in successful_deliveries 
                             if result.message_id
                         ]
@@ -853,7 +851,7 @@ class ConsolidatedNotificationService:
                 self.notification_preferences = context.get("notification_preferences", {})
         
         temp_user = TempUser(user_context)
-        user_prefs = get_user_preferences(temp_user)
+        get_user_preferences(temp_user)
         
         effective_channels = []
         
@@ -1930,7 +1928,6 @@ class ConsolidatedNotificationService:
                 from database import async_managed_session
                 from models import Escrow, User
                 from sqlalchemy import select
-                from utils.referral import ReferralSystem
                 from config import Config
                 
                 async with async_managed_session() as session:
@@ -1951,7 +1948,7 @@ class ConsolidatedNotificationService:
                             share_text = quote("Hey! Join me on Lockbay for secure trades 🛡️")
                             
                             # Don't include raw URL in message to avoid parse errors - button is enough
-                            referral_section = f"""
+                            referral_section = """
 ━━━━━━━━━━━━━━━━━━
 
 ⚠️ Seller not on Lockbay

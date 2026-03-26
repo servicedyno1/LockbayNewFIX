@@ -6,7 +6,7 @@ Monitors for schema-related issues and provides early warnings
 import logging
 import asyncio
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List
 from dataclasses import dataclass
 from utils.schema_validator import schema_validator, SchemaValidationResult
 from utils.enhanced_audit_logger import enhanced_audit_logger

@@ -4,20 +4,18 @@ Provides comprehensive trace correlation for all background jobs and scheduled t
 with operation context maintenance across async workflows
 """
 
-import logging
 import asyncio
 import json
 from functools import wraps
-from typing import Dict, Any, Optional, Callable, Union, List
-from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, Callable, List
+from datetime import datetime
 import traceback
 
 from utils.trace_correlation import (
-    trace_manager, OperationType, TraceStatus, TraceContext,
-    traced_operation, with_trace_context, start_background_job_trace
+    trace_manager, OperationType, TraceStatus, TraceContext
 )
 from utils.trace_logging_integration import (
-    get_trace_logger, MonitoringIntegration, correlate_background_job
+    get_trace_logger, MonitoringIntegration
 )
 
 logger = get_trace_logger(__name__)
@@ -418,7 +416,7 @@ class BatchJobTraceManager:
             # Log progress at intervals
             if processed > 0 and processed % 100 == 0:  # Every 100 items
                 logger.info(
-                    f"📊 Batch Progress Update",
+                    "📊 Batch Progress Update",
                     batch_metrics={
                         'processed': processed,
                         'successful': successful,

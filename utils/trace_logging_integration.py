@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from utils.trace_correlation import trace_manager, TraceContext, OperationType
+from utils.trace_correlation import trace_manager, OperationType
 
 class TraceEnhancedFormatter(logging.Formatter):
     """Enhanced formatter that includes trace information in log records"""

@@ -8,12 +8,11 @@ import uuid
 import hashlib
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional
 from enum import Enum
 from dataclasses import dataclass
-from contextlib import contextmanager
 
-from models import AuditEvent, Base
+from models import AuditEvent
 from utils.comprehensive_audit_logger import (
     ComprehensiveAuditLogger, 
     AuditEventType, 
@@ -21,8 +20,7 @@ from utils.comprehensive_audit_logger import (
     RelatedIDs,
     TraceContext
 )
-from utils.atomic_transactions import atomic_transaction
-from database import SessionLocal, AsyncSessionLocal
+from database import SessionLocal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session as SyncSession
 
@@ -434,8 +432,8 @@ class FinancialAuditLogger:
                 # Continue with audit logging using resolved_user_id=None
             
             # Get trace context
-            trace_id = TraceContext.get_trace_id()
-            session_id = TraceContext.get_session_id()
+            TraceContext.get_trace_id()
+            TraceContext.get_session_id()
             
             # Prepare event data (PII-safe)
             event_data = {}
@@ -607,8 +605,8 @@ class FinancialAuditLogger:
                 return event_id
             
             # Get trace context
-            trace_id = TraceContext.get_trace_id()
-            session_id = TraceContext.get_session_id()
+            TraceContext.get_trace_id()
+            TraceContext.get_session_id()
             
             # Prepare event data (PII-safe) - same logic as sync version
             event_data = {}
@@ -939,7 +937,7 @@ class FinancialAuditRelay:
                         # Mark as processed since we can't track retry count with current schema
                         logger.error(f"Audit event {event.event_id} marked as processed due to processing failure")
                         # Use proper SQL UPDATE statement instead of direct assignment
-                        update_stmt = (
+                        (
                             session.query(AuditEvent)
                             .filter(AuditEvent.id == event.id)
                             .update({'processed': True, 'processed_at': datetime.now(timezone.utc)})

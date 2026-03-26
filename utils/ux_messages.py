@@ -35,7 +35,6 @@ class UXMessages:
         "expired": "⏰ This link has expired. Need a new one?",
         "invalid_input": "❌ That doesn't look right. Want to try again?",
         "contact_load_error": "🔄 Couldn't load contacts. Tap /start to refresh.",
-        "invalid_email": "📧 That email format looks off. Try again?",
     }
 
     # Success messages - celebratory and encouraging

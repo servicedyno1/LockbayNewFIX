@@ -4,17 +4,14 @@ Admin controls for notification preferences, delivery monitoring, and communicat
 """
 
 import logging
-from typing import Optional, Dict, List
-from datetime import datetime, timedelta
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import desc, func, and_, or_
+from sqlalchemy import desc, and_
 
 from database import SessionLocal
-from models import User, NotificationPreference, NotificationQueue, NotificationActivity
+from models import User, NotificationPreference, NotificationActivity
 from utils.admin_security import is_admin_secure
-from services.notification_service import notification_service
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 
 
@@ -214,7 +211,7 @@ async def handle_admin_notif_preferences(update: Update, context: ContextTypes.D
                 message += "\n📝 No recent preference changes"
             
             # Notification type preferences
-            message += f"\n\n📋 **Notification Types**"
+            message += "\n\n📋 **Notification Types**"
             escrow_notifs = session.query(NotificationPreference).filter(
                 NotificationPreference.escrow_updates == True
             ).count()
@@ -273,7 +270,7 @@ async def handle_admin_notif_test(update: Update, context: ContextTypes.DEFAULT_
         await safe_answer_callback_query(query, "🧪")
 
     try:
-        message = f"""🧪 **Notification System Testing**
+        message = """🧪 **Notification System Testing**
 
 🎯 **Available Tests**
 • Test email delivery to admin

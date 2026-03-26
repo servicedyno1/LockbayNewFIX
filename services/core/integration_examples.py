@@ -7,12 +7,11 @@ to the new unified PaymentProcessor system.
 
 import asyncio
 from decimal import Decimal
-from typing import Optional
 
 from .payment_processor import payment_processor
 from .payment_data_structures import (
     PayinRequest, PayoutRequest, PaymentDestination,
-    PaymentProvider, TransactionStatus
+    PaymentProvider
 )
 
 

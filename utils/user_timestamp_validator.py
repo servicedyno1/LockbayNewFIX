@@ -11,7 +11,6 @@ to naive UTC datetimes before they reach the database, preventing errors like:
 """
 
 from sqlalchemy import event
-from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 import logging
 

@@ -24,7 +24,7 @@ MIGRATION PATH:
 """
 
 import warnings
-from typing import Dict, List, Set, Optional, Union
+from typing import Dict, List
 import logging
 
 # Import authoritative status enums from utils.status_flows (which re-exports from models.py)
@@ -32,19 +32,7 @@ from utils.status_flows import (
     # Authoritative enum imports (re-exported from models.py)
     EscrowStatus as _AuthoritativeEscrowStatus,
     ExchangeStatus as _AuthoritativeExchangeStatus,
-    UnifiedTransitionValidator,
-    
-    # Import all other status enums for completeness
-    UnifiedTransactionStatus,
-    UnifiedTransactionType,
-    CashoutStatus,
-    UserStatus,
-    TransactionType,
-    DisputeStatus,
-    JobStatus,
-    OperationFailureType,
-    WalletHoldStatus,
-    FundMovementType
+    UnifiedTransitionValidator
 )
 
 logger = logging.getLogger(__name__)
@@ -182,8 +170,8 @@ class StatusTransitionValidator:
             from utils.status_flows import ExchangeStatus
             
             try:
-                current_enum = ExchangeStatus(current_status) 
-                new_enum = ExchangeStatus(new_status)
+                ExchangeStatus(current_status) 
+                ExchangeStatus(new_status)
                 
                 # For backward compatibility, allow most transitions 
                 # (the new system has more sophisticated validation)
@@ -243,8 +231,8 @@ class StatusTransitionValidator:
             logger.error(f"Error in legacy escrow validation: {e}")
             # Fall back to permissive validation for backward compatibility
             try:
-                current_enum = _AuthoritativeEscrowStatus(current_status)
-                new_enum = _AuthoritativeEscrowStatus(new_status)
+                _AuthoritativeEscrowStatus(current_status)
+                _AuthoritativeEscrowStatus(new_status)
                 logger.info(f"Legacy escrow validation fallback: {current_status} -> {new_status} (allowed for compatibility)")
                 return True
             except ValueError:

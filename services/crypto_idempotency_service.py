@@ -6,13 +6,11 @@ Prevents double-processing of address generation, transactions, and wallet opera
 
 import logging
 import hashlib
-import json
 from typing import Optional, Dict, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 
 from services.atomic_lock_manager import atomic_lock_manager, LockOperationType
-from utils.helpers import generate_transaction_id
 
 logger = logging.getLogger(__name__)
 

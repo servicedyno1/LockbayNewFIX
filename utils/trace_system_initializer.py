@@ -3,13 +3,11 @@ Trace System Initializer
 Comprehensive initialization and setup for the complete trace correlation system
 """
 
-import logging
-import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 
 # Import all trace correlation modules
-from utils.trace_correlation import trace_manager, setup_trace_logging
+from utils.trace_correlation import trace_manager
 from utils.trace_logging_integration import setup_trace_logging, get_trace_logger
 from utils.telegram_trace_integration import setup_telegram_trace_integration
 from utils.financial_trace_integration import setup_financial_trace_integration

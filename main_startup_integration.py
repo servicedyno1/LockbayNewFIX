@@ -3,7 +3,6 @@ Email Queue Initialization Integration
 Add this to main.py or production_start.py to initialize the background email queue
 """
 
-import asyncio
 import logging
 from services.background_email_queue import background_email_queue
 

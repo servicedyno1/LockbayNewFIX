@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from database import SessionLocal
-from models import ExpectedPayment, User
+from models import ExpectedPayment
 
 logger = logging.getLogger(__name__)
 

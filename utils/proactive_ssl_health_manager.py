@@ -12,14 +12,12 @@ import ssl
 import socket
 import certifi
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple, Callable
+from typing import Dict, List, Optional, Any, Callable
 from collections import deque, defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 import statistics
-import psutil
-import weakref
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
 import urllib.parse
 from sqlalchemy import text
 
@@ -390,7 +388,7 @@ class ProactiveSSLHealthManager:
                 session.execute(text("SELECT 1"))
             
             return True
-        except Exception as e:
+        except Exception:
             return False
     
     async def _remediate_refresh_engine(self) -> bool:
@@ -421,7 +419,7 @@ class ProactiveSSLHealthManager:
                 for session in dynamic_pool._warmed_sessions:
                     try:
                         session.close()
-                    except Exception as e:
+                    except Exception:
                         pass
                 dynamic_pool._warmed_sessions.clear()
             
@@ -495,7 +493,7 @@ class ProactiveSSLHealthManager:
                 session.execute(text("SELECT 1"))
             
             return (time.time() - start_time) * 1000  # Return in milliseconds
-        except Exception as e:
+        except Exception:
             return -1.0  # Negative indicates test failed
     
     async def _check_database_certificate(self) -> Optional[SSLCertificateInfo]:
@@ -516,7 +514,7 @@ class ProactiveSSLHealthManager:
             with socket.create_connection((host, port), timeout=10) as sock:
                 with context.wrap_socket(sock, server_hostname=host) as ssock:
                     cert_der = ssock.getpeercert(binary_form=True)
-                    cert = ssl.DER_cert_to_PEM_cert(cert_der)
+                    ssl.DER_cert_to_PEM_cert(cert_der)
                     cert_info = ssock.getpeercert()
                     
                     # Parse certificate information
@@ -767,7 +765,7 @@ class ProactiveSSLHealthManager:
             # Trigger connection refresh to establish fresh SSL sessions
             await self._remediate_refresh_engine()
             return True
-        except Exception as e:
+        except Exception:
             return False
     
     async def _optimize_connection_pooling(self) -> bool:
@@ -788,7 +786,7 @@ class ProactiveSSLHealthManager:
                 return True
             
             return False
-        except Exception as e:
+        except Exception:
             return False
     
     async def _get_current_error_rate(self) -> float:
@@ -828,7 +826,7 @@ class ProactiveSSLHealthManager:
         try:
             from utils.dynamic_database_pool_manager import dynamic_pool
             return len(dynamic_pool.active_connections)
-        except Exception as e:
+        except Exception:
             return 0
     
     def get_comprehensive_ssl_report(self) -> Dict[str, Any]:

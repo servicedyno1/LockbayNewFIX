@@ -7,7 +7,7 @@ import logging
 from decimal import Decimal
 from telegram import Update
 from telegram.constants import ParseMode
-from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import ContextTypes, CallbackQueryHandler
 from models import User
 from database import SessionLocal
 from utils.callback_utils import safe_answer_callback_query
@@ -32,9 +32,7 @@ from handlers.escrow import (
     handle_show_qr,
     handle_back_to_payment,
     handle_wallet_payment_confirmation,
-    handle_escrow_crypto_selection,
     handle_escrow_crypto_switching,
-    handle_create_secure_trade_callback,
     clean_seller_identifier,
     format_trade_review_message
 )

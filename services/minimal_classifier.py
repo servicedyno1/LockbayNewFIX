@@ -290,9 +290,9 @@ class MinimalClassifier:
         }
         
         if classification["is_retryable"]:
-            logger.info(f"🔄 MINIMAL_CLASSIFIER: TECHNICAL_TRANSIENT → 1 retry in 10min", extra=log_data)
+            logger.info("🔄 MINIMAL_CLASSIFIER: TECHNICAL_TRANSIENT → 1 retry in 10min", extra=log_data)
         else:
-            logger.info(f"👨‍💼 MINIMAL_CLASSIFIER: ADMIN_REVIEW_REQUIRED → No automatic retry", extra=log_data)
+            logger.info("👨‍💼 MINIMAL_CLASSIFIER: ADMIN_REVIEW_REQUIRED → No automatic retry", extra=log_data)
 
 
 # Convenience functions for backward compatibility

@@ -35,7 +35,7 @@ async def handle_health_check(update: Update, context: ContextTypes.DEFAULT_TYPE
         emoji = status_emoji.get(overall_status, "❓")
 
         # COMPACT HEALTH CHECK - 70% less verbose display
-        summary = health_data["summary"]
+        health_data["summary"]
         db_status = "✅ OK"
         app_status = "✅ OK"
 
@@ -122,7 +122,7 @@ async def handle_system_info(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         # Get performance metrics using shared service
         cpu_reading = await get_cpu_usage()
-        memory_info = await get_memory_usage()
+        await get_memory_usage()
         
         # Extract values for display
         cpu_percent = cpu_reading.cpu_percent  # System CPU

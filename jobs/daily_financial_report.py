@@ -13,7 +13,6 @@ from services.service_cost_aggregator import ServiceCostAggregator
 from services.balance_guard import monitor_all_balances
 from config import Config
 from sqlalchemy import and_, func, desc
-import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -449,7 +448,6 @@ async def generate_system_health_metrics(session, start_date, end_date):
     """Generate system health and uptime metrics"""
     try:
         # Check for recent errors in escrow/cashout processing
-        recent_errors = 0
         
         # Check for stuck escrows (created more than 24 hours ago, still pending)
         day_ago = end_date - timedelta(hours=24)

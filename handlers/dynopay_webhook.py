@@ -3,15 +3,14 @@
 import asyncio
 import logging
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from decimal import Decimal
 from datetime import timedelta, datetime, timezone
 from fastapi import Request
-from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
-from database import SessionLocal, async_managed_session
+from database import async_managed_session
 from models import Escrow, Transaction, TransactionType, EscrowStatus, User, UnifiedTransaction, UnifiedTransactionType, UnifiedTransactionStatus
 from services.crypto import CryptoServiceAtomic
 from services.unified_transaction_service import create_unified_transaction_service
@@ -19,12 +18,10 @@ from services.dual_write_adapter import DualWriteMode
 from services.webhook_idempotency_service import (
     webhook_idempotency_service,
     WebhookEventInfo,
-    WebhookProvider,
-    ProcessingResult
+    WebhookProvider
 )
 from services.consolidated_notification_service import NotificationPriority
 from utils.universal_id_generator import UniversalIDGenerator
-from utils.atomic_transactions import atomic_transaction
 from utils.financial_audit_logger import (
     financial_audit_logger,
     FinancialEventType,
@@ -32,8 +29,7 @@ from utils.financial_audit_logger import (
     FinancialContext
 )
 from utils.webhook_prefetch import (
-    prefetch_webhook_context,
-    WebhookPrefetchData
+    prefetch_webhook_context
 )
 from services.admin_trade_notifications import admin_trade_notifications
 
@@ -218,7 +214,7 @@ class DynoPayWebhookHandler:
                     logger.warning(f"Failed to parse timestamp '{created_at}': {e}")
                     webhook_timestamp = None
             else:
-                logger.warning(f"⚠️ DynoPay webhook missing created_at timestamp, using server time")
+                logger.warning("⚠️ DynoPay webhook missing created_at timestamp, using server time")
                 webhook_timestamp = datetime.now(timezone.utc)
             
             logger.info(f"🔄 DYNOPAY_WEBHOOK: Received webhook - Reference: {reference_id}, Amount: {paid_amount} {paid_currency}, TxID: {transaction_id}")
@@ -414,7 +410,6 @@ class DynoPayWebhookHandler:
                 # Send appropriate user notifications based on transaction type
                 try:
                     from services.wallet_notification_service import WalletNotificationService
-                    from services.consolidated_notification_service import consolidated_notification_service
                     
                     # CRITICAL FIX: Define explicit allowlists for different notification types
                     wallet_funding_types = [
@@ -504,7 +499,7 @@ class DynoPayWebhookHandler:
                     # ESCROW NOTIFICATIONS: Handled by EnhancedPaymentToleranceService after payment processing
                     # This ensures buyer gets ONE accurate notification after tolerance check completes
                     elif transaction_type in escrow_payment_types:
-                        logger.info(f"📋 UNIFIED_DYNOPAY: Escrow payment detected - notifications will be sent after tolerance processing")
+                        logger.info("📋 UNIFIED_DYNOPAY: Escrow payment detected - notifications will be sent after tolerance processing")
                     else:
                         logger.info(f"📋 UNIFIED_DYNOPAY: No user notification configured for transaction type {transaction_type}")
                     
@@ -557,7 +552,7 @@ class DynoPayWebhookHandler:
                 usd_amount = Decimal('0')
             
             # Extract webhook data
-            meta_data = webhook_data.get('meta_data', {})
+            webhook_data.get('meta_data', {})
             paid_amount = webhook_data.get('paid_amount') or webhook_data.get('amount')
             paid_currency = webhook_data.get('paid_currency') or webhook_data.get('currency')
             
@@ -727,7 +722,6 @@ class DynoPayWebhookHandler:
                         escrow_id_value = escrow.id
                         escrow_status = escrow.status if not hasattr(escrow.status, 'value') else escrow.status.value
                         escrow_buyer_id = escrow.buyer_id
-                        escrow_seller_id = escrow.seller_id
                         escrow_total_amount = escrow.total_amount
                         escrow_escrow_id = escrow.escrow_id
                         escrow_payment_confirmed_at = escrow.payment_confirmed_at
@@ -742,17 +736,19 @@ class DynoPayWebhookHandler:
                                 # Calculate USD amount from the webhook data
                                 dynopay_base_amt_cancel = webhook_data.get('base_amount')
                                 dynopay_base_curr_cancel = webhook_data.get('base_currency', 'USD')
+                                cancel_crypto_amount = webhook_data.get('amount') or webhook_data.get('paid_amount') or webhook_data.get('amount_received')
+                                cancel_paid_currency = webhook_data.get('paid_currency') or webhook_data.get('currency')
                                 
                                 if dynopay_base_amt_cancel and dynopay_base_curr_cancel == 'USD':
                                     refund_usd_amount = Decimal(str(dynopay_base_amt_cancel))
-                                elif crypto_amount and paid_currency:
+                                elif cancel_crypto_amount and cancel_paid_currency:
                                     # Fallback: convert crypto to USD
-                                    rate = await DynoPayWebhookHandler._get_cached_exchange_rate(paid_currency)
+                                    rate = await DynoPayWebhookHandler._get_cached_exchange_rate(cancel_paid_currency)
                                     if rate:
-                                        refund_usd_amount = Decimal(str(crypto_amount)) * rate
+                                        refund_usd_amount = Decimal(str(cancel_crypto_amount)) * rate
                                     else:
                                         refund_usd_amount = Decimal("0")
-                                        logger.error(f"❌ CANCELLED_REFUND: Cannot determine USD value for {crypto_amount} {paid_currency}")
+                                        logger.error(f"❌ CANCELLED_REFUND: Cannot determine USD value for {cancel_crypto_amount} {cancel_paid_currency}")
                                 else:
                                     refund_usd_amount = Decimal("0")
                                 
@@ -912,7 +908,7 @@ class DynoPayWebhookHandler:
                                     )
                                 
                                     # CRITICAL: Extract and log holding verification results
-                                    holding_verification = processing_result.fund_breakdown.get('holding_verification', {}) if processing_result.fund_breakdown is not None else {}
+                                    processing_result.fund_breakdown.get('holding_verification', {}) if processing_result.fund_breakdown is not None else {}
                                     holding_verified = processing_result.fund_breakdown.get('holding_verified', False) if processing_result.fund_breakdown is not None else False
                                     holding_auto_recovered = processing_result.fund_breakdown.get('holding_auto_recovered', False) if processing_result.fund_breakdown is not None else False
                                 
@@ -964,7 +960,7 @@ class DynoPayWebhookHandler:
                                                 if overpayment_credited > 0:
                                                     logger.info(f"💰 DynoPay overpayment handled: ${overpayment_credited:.2f}")
                                                 else:
-                                                    logger.error(f"❌ OVERPAYMENT_BUG: overpayment_handled=True but amount=0!")
+                                                    logger.error("❌ OVERPAYMENT_BUG: overpayment_handled=True but amount=0!")
                                         
                                             # NOTIFICATION DATA: Extract ALL data needed for notifications while still in session
                                             # This ensures buyer notification can be sent even if fresh escrow fetch fails
@@ -1003,7 +999,7 @@ class DynoPayWebhookHandler:
                                             logger.info(f"📋 NOTIFICATION_DATA_DEBUG: seller_id={notification_data['seller_id']}, buyer_referral_code={notification_data['buyer_referral_code']}")
                                         
                                             if processing_result.underpayment_handled:
-                                                logger.info(f"⚠️ DynoPay underpayment within tolerance")
+                                                logger.info("⚠️ DynoPay underpayment within tolerance")
                                         
                                             logger.info(f"✅ DynoPay deposit processed successfully: {reference_id}")
                                         
@@ -1299,29 +1295,21 @@ To: {seller_identifier}{referral_section}
     async def _notify_payment_confirmed(escrow: Escrow, transaction: Transaction, session: AsyncSession) -> None:
         """Send notifications when payment is confirmed"""
         try:
-            from utils.notification_helpers import send_telegram_message
             
             # CRITICAL FIX: Eagerly load all escrow and buyer/seller attributes INSIDE session context
             # This prevents "greenlet_spawn has not been called" errors when accessing relationships
             escrow_buyer_id = escrow.buyer_id
             escrow_seller_id = escrow.seller_id
-            escrow_total_amount_value = escrow.total_amount
-            escrow_utid = escrow.utid
             escrow_escrow_id = escrow.escrow_id
-            escrow_currency = escrow.currency
             
             # Load buyer attributes (relationship access - must happen in session)
-            buyer_telegram_id = escrow.buyer.telegram_id
-            buyer_email = escrow.buyer.email if escrow.buyer else None
-            buyer_email_verified = getattr(escrow.buyer, 'email_verified', False) if escrow.buyer else False
+            getattr(escrow.buyer, 'email_verified', False) if escrow.buyer else False
             buyer_first_name = escrow.buyer.first_name if escrow.buyer else None
             
             # Load seller attributes if seller exists (relationship access - must happen in session)
             seller_telegram_id = None
-            seller_first_name = None
             if escrow_seller_id is not None and escrow.seller is not None:  # type: ignore[arg-type]
                 seller_telegram_id = escrow.seller.telegram_id
-                seller_first_name = escrow.seller.first_name
             
             # Extract transaction values
             transaction_amount = transaction.amount
@@ -1849,7 +1837,6 @@ To: {seller_identifier}{referral_section}
         """Schedule automatic retry attempt for failed payments"""
         try:
             # TYPE SAFETY: Extract escrow Column values as scalar types
-            escrow_buyer_id = escrow.buyer_id
             escrow_escrow_id = escrow.escrow_id
             escrow_total_amount = escrow.total_amount
             

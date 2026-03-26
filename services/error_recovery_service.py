@@ -24,7 +24,6 @@ from utils.unified_transaction_state_validator import (
     StateTransitionError
 )
 from database import SessionLocal
-from utils.wallet_manager import get_or_create_wallet, get_user_wallet
 
 logger = logging.getLogger(__name__)
 

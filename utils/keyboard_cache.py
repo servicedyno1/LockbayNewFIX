@@ -3,7 +3,7 @@ Keyboard caching system to prevent redundant UI recreation
 """
 from functools import lru_cache
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict
 import hashlib
 import json
 import logging

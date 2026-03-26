@@ -3,8 +3,7 @@ Base provider classes and utilities for the UTE provider system
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List, Union
-from decimal import Decimal
+from typing import Dict, Any, Optional, Union
 from enum import Enum
 from dataclasses import dataclass
 import logging

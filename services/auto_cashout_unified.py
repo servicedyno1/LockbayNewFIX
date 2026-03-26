@@ -20,30 +20,23 @@ Key Features:
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy.orm import Session
-from database import async_managed_session, SyncSessionLocal
+from database import async_managed_session
 
 from models import (
-    User, Escrow, Cashout, Transaction, TransactionType, SavedAddress, SavedBankAccount, 
-    CashoutStatus, WalletHolds, WalletHoldStatus, Wallet, UnifiedTransaction, 
-    UnifiedTransactionStatus, UnifiedTransactionType, UnifiedTransactionPriority,
-    CashoutProcessingMode, CashoutType
+    User, Escrow, Transaction, TransactionType, SavedAddress, SavedBankAccount, 
+    Wallet, CashoutType
 )
 
 # Import the new simplified payment architecture
 from services.core.payment_processor import PaymentProcessor
 from services.core.payment_data_structures import (
-    PayoutRequest, PaymentDestination, PaymentResult, TransactionStatus,
-    PaymentError, PaymentProvider
+    PayoutRequest, PaymentDestination, PaymentResult
 )
-from services.core.unified_error_handler import unified_error_handler
-from services.core.state_manager import state_manager
 
-from config import Config
-from utils.helpers import generate_utid
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +160,7 @@ class UnifiedAutoCashoutService:
                 f"for user {user_id} ({cashout_type})"
             )
             
-            async with async_managed_session() as session:
+            async with async_managed_session():
                 # Create payment destination from cashout details
                 destination = self._create_payment_destination(cashout_type, destination_info, currency)
                 

@@ -32,7 +32,6 @@ from datetime import datetime
 from dataclasses import dataclass, asdict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, desc
-from sqlalchemy.orm import selectinload, joinedload
 
 from models import User, SupportTicket, SupportMessage
 

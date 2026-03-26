@@ -4,7 +4,7 @@ Creates the proper bot menu that users see in Telegram interface
 """
 
 import logging
-from telegram import Bot, BotCommand, BotCommandScopeChat, BotCommandScopeDefault
+from telegram import Bot, BotCommand, BotCommandScopeChat
 from telegram.ext import Application
 from typing import List, Optional
 
@@ -54,7 +54,7 @@ class BotCommandsManager:
             logger.info(f"✅ Bot commands menu configured with {len(cls.COMMANDS)} commands")
             
             # Log the commands for verification
-            command_list = [f"/{cmd.command} - {cmd.description}" for cmd in cls.COMMANDS]
+            [f"/{cmd.command} - {cmd.description}" for cmd in cls.COMMANDS]
             logger.info(f"📋 Commands available: {', '.join([cmd.command for cmd in cls.COMMANDS])}")
             
             return True

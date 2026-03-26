@@ -6,12 +6,10 @@ Integrates the completion time trends monitor with existing monitoring infrastru
 import logging
 import asyncio
 from typing import Dict, Any, Optional
-from datetime import datetime, timedelta
 
 from utils.completion_time_trends_monitor import (
     completion_time_monitor, 
-    OperationType, 
-    CompletionTimeTrendsMonitor
+    OperationType
 )
 
 logger = logging.getLogger(__name__)

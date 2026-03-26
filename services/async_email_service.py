@@ -3,13 +3,12 @@ Async Email Service for High-Performance Email Operations
 Optimized email service for onboarding flow to meet <60s completion targets
 """
 
-import asyncio
 import logging
 import time
 from typing import Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 from services.email import EmailService
-from utils.background_task_runner import BackgroundTaskRunner, run_background_task, run_io_task
+from utils.background_task_runner import run_io_task
 
 logger = logging.getLogger(__name__)
 

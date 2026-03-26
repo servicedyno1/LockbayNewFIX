@@ -1,0 +1,21 @@
+{
+  "test_results": "PASS",
+  "total_tests": 11,
+  "passed": 11,
+  "failed": 0,
+  "test_details": [
+    {"name": "Backend health endpoint", "status": "PASS", "detail": "GET /api/health returns {status: ok}"},
+    {"name": "Webhook health endpoint", "status": "PASS", "detail": "bot_ready=True, health_score=100"},
+    {"name": "F821 (undefined names) clean", "status": "PASS", "detail": "ruff check --select F821: All checks passed!"},
+    {"name": "F811 (redefined unused) clean", "status": "PASS", "detail": "ruff check --select F811: All checks passed!"},
+    {"name": "E722 (bare except) clean", "status": "PASS", "detail": "ruff check --select E722: All checks passed!"},
+    {"name": "Full lint sweep clean", "status": "PASS", "detail": "ruff check --select F,E722 --ignore E712,F401,F403: All checks passed!"},
+    {"name": "FastForex circuit breaker intact", "status": "PASS", "detail": "_FASTFOREX_FAILURE_THRESHOLD=3, _FASTFOREX_CIRCUIT_COOLDOWN=1800"},
+    {"name": "Fincra auth circuit breaker intact", "status": "PASS", "detail": "_FINCRA_AUTH_FAILURE_THRESHOLD=3, _FINCRA_AUTH_CIRCUIT_COOLDOWN=1800"},
+    {"name": "Kraken circuit breaker intact", "status": "PASS", "detail": "_KRAKEN_FAILURE_THRESHOLD=5, _KRAKEN_CIRCUIT_COOLDOWN=300"},
+    {"name": "Pool guards intact on bg jobs", "status": "PASS", "detail": "is_pool_healthy checks in reconciliation, retry, workflow"},
+    {"name": "DB pool config correct", "status": "PASS", "detail": "sync: pool_size=10/max_overflow=15, async: pool_size=12/max_overflow=20, pool_recycle=600"}
+  ],
+  "pass_percentage": "100%",
+  "should_call_test_agent_after_fix": "false"
+}

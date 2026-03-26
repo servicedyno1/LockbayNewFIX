@@ -20,11 +20,9 @@ from utils.financial_audit_logger import (
 )
 
 # Import new audit trail services
-from services.balance_audit_service import balance_audit_service, BalanceChangeContext
 from services.transaction_safety_service import (
-    transaction_safety_service, TransactionContext, BalanceOperation
+    transaction_safety_service
 )
-from utils.balance_validator import balance_validator
 
 logger = logging.getLogger(__name__)
 

@@ -12,21 +12,18 @@ This framework provides:
 """
 
 import logging
-import json
 from abc import ABC, abstractmethod
 from datetime import datetime
-from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Any, Type, Union, Callable
+from typing import Dict, List, Optional, Set, Any, Type, Callable
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError
-from sqlalchemy import text, event
+from sqlalchemy import text
 
 from database import SessionLocal
-from utils.optimistic_locking import OptimisticLockManager, OptimisticLockingError
 from utils.database_locking import DatabaseLockingService
 from models import Base
 

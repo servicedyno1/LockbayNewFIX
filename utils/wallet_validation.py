@@ -2,7 +2,7 @@
 
 import logging
 from decimal import Decimal
-from typing import Optional, Tuple, Dict, Any, Union, cast
+from typing import Optional, Tuple, Dict, Any, cast
 from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import SessionLocal

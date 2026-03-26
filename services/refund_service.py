@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, select, update
+from sqlalchemy import and_, update
 
 from models import Escrow, Transaction, Wallet, RefundType, EscrowRefundOperation
 from services.idempotency import IdempotencyService
@@ -120,8 +120,6 @@ class RefundService:
                     tx_currency = str(tx.currency) if tx.currency is not None else "USD"
                     if tx_currency and tx_currency != "USD":
                         # Import conversion service
-                        from services.fastforex_service import FastForexService
-                        import asyncio
                         
                         try:
                             # Convert crypto amount to USD using cached exchange rates
@@ -588,7 +586,6 @@ class RefundService:
         """Generate appropriate refund description based on cancellation reason and fee status"""
         
         # These cancellation reasons ALWAYS refund the full amount including platform fee
-        always_full_refund_reasons = ["seller_declined", "admin_cancelled", "expired"]
 
         if cancellation_reason == "buyer_cancelled":
             if includes_platform_fee:
@@ -640,12 +637,12 @@ class RefundService:
                     if isinstance(escrow_data, dict):
                         escrow_id = escrow_data.get("escrow_id")
                         internal_id = escrow_data.get("internal_id") or escrow_data.get("id")
-                        buyer_id = escrow_data.get("buyer_id")
+                        escrow_data.get("buyer_id")
                     else:
                         # Handle object type (legacy support)
                         escrow_id = getattr(escrow_data, 'escrow_id', None)
                         internal_id = getattr(escrow_data, 'internal_id', getattr(escrow_data, 'id', None))
-                        buyer_id = getattr(escrow_data, 'buyer_id', None)
+                        getattr(escrow_data, 'buyer_id', None)
                     
                     if not internal_id:
                         logger.error(f"⚠️ REFUND_ERROR: Missing internal_id in expired escrow data (escrow_id: {escrow_id})")

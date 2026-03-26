@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional, Callable
 from functools import wraps
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ContextTypes, filters
+from telegram.ext import ContextTypes, ConversationHandler
 from utils.navigation import safe_navigation_fallback
 
 logger = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ def create_blocking_aware_handler(handler_func: Callable) -> Callable:
                 
                 if db_user and db_user.is_blocked:
                     logger.critical(f"🚫🚫🚫 BLOCKED_CALLBACK_REJECTED: User {user_id} ({user.username}) attempted callback")
-                    logger.critical(f"🚫🚫🚫 BLOCKING_ENFORCEMENT: Sending suspension message and blocking handler execution")
+                    logger.critical("🚫🚫🚫 BLOCKING_ENFORCEMENT: Sending suspension message and blocking handler execution")
                     try:
                         if update.callback_query:
                             await update.callback_query.answer("❌ Account suspended.", show_alert=True)
@@ -132,7 +132,7 @@ def create_blocking_aware_handler(handler_func: Callable) -> Callable:
                     raise BlockedUserException(f"User {user_id} is blocked")
                 else:
                     logger.debug(f"✅ User {user_id} is NOT blocked, allowing {handler_func.__name__} to execute")
-        except BlockedUserException as e:
+        except BlockedUserException:
             # CRITICAL: Re-raise to prevent handler execution - this MUST not be caught again
             logger.critical(f"🚫🚫🚫 BLOCKING_ENFORCEMENT: Re-raising BlockedUserException, {handler_func.__name__} will NOT execute")
             raise
@@ -199,7 +199,7 @@ def create_blocking_aware_command_handler(handler_func: Callable) -> Callable:
                 
                 if db_user and db_user.is_blocked:
                     logger.critical(f"🚫🚫🚫 BLOCKED_COMMAND_REJECTED: User {user_id} ({user.username}) attempted: {command_text}")
-                    logger.critical(f"🚫🚫🚫 BLOCKING_ENFORCEMENT: Sending suspension message and blocking handler execution")
+                    logger.critical("🚫🚫🚫 BLOCKING_ENFORCEMENT: Sending suspension message and blocking handler execution")
                     try:
                         await update.message.reply_text("❌ Your account has been suspended and you cannot access this service.")
                     except Exception as e:
@@ -210,7 +210,7 @@ def create_blocking_aware_command_handler(handler_func: Callable) -> Callable:
                     raise BlockedUserException(f"User {user_id} is blocked from using {command_text}")
                 else:
                     logger.debug(f"✅ User {user_id} is NOT blocked, allowing {handler_func.__name__} to execute")
-        except BlockedUserException as e:
+        except BlockedUserException:
             # CRITICAL: Re-raise to prevent handler execution - this MUST not be caught again
             logger.critical(f"🚫🚫🚫 BLOCKING_ENFORCEMENT: Re-raising BlockedUserException, {handler_func.__name__} will NOT execute")
             raise

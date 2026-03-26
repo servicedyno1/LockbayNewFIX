@@ -7,17 +7,16 @@ job coordination, saga patterns, and TTL cleanup for the LockBay system
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any, Callable
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass, asdict
 import uuid
 
 # Import all the advanced state management components
-from services.leader_election import distributed_job_coordinator, LeaderElection
+from services.leader_election import distributed_job_coordinator
 from services.job_idempotency_service import job_idempotency_service, claim_and_execute_job
 from services.saga_coordinator import saga_coordinator, execute_escrow_creation_saga, execute_cashout_processing_saga
 from services.ttl_cleanup_service import ttl_cleanup_service
 from services.state_manager import state_manager
-from config import Config
 
 logger = logging.getLogger(__name__)
 

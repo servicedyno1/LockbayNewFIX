@@ -1,7 +1,7 @@
 # Lockbay Telegram Bot - PRD
 
 ## Original Problem Statement
-Analyze and setup the Lockbay Telegram bot codebase. Update .env with all required environment variables. Ensure the current pod URL is used for the Telegram webhook. Then fix all 7 bugs identified from Railway deployment log analysis that caused the bot to become unresponsive.
+Analyze and setup the Lockbay Telegram bot codebase. Update .env with all required environment variables. Ensure the current pod URL is used for the Telegram webhook. Fix all 7 bugs identified from Railway deployment logs. Fix all pre-existing code quality issues.
 
 ## Architecture
 - **Backend**: FastAPI webhook server (Python) running on port 8001 via uvicorn
@@ -14,101 +14,76 @@ Analyze and setup the Lockbay Telegram bot codebase. Update .env with all requir
 - **Email**: Brevo (Sendinblue)
 - **SMS**: Twilio
 
-## User Personas
-- **Buyers**: Create escrows, fund via crypto/bank, track trades
-- **Sellers**: Accept trades, mark delivered, receive payments
-- **Admins**: Monitor trades, manage disputes, process refunds
-
-## Core Requirements (Static)
-- Telegram bot webhook processing
-- Escrow creation, funding, delivery, release flow
-- Multi-currency support (USD, NGN, crypto)
-- Payment webhook processing (DynoPay, Fincra, BlockBee)
-- Admin dashboard via Telegram commands
-- Email notifications via Brevo
-- Rating system, referral system
-
 ## What's Been Implemented
 
 ### Session 1 (2026-03-26) - Environment Setup
-- [x] Root `.env` created with all 80+ environment variables
-- [x] Backend `.env` updated with key variables + webhook URLs
+- [x] Root `.env` created with 80+ environment variables
 - [x] Telegram webhook registered with pod URL
-- [x] All Python dependencies installed
-- [x] Backend and frontend running successfully
 
-### Session 2 (2026-03-26) - Railway Log Analysis & Bug Fixes
-Analyzed 500+ error logs from Railway deployment. Fixed all 7 identified bugs:
+### Session 2 (2026-03-26) - Railway Bug Fixes (7 bugs)
+- [x] DB pool exhaustion: pool_size 3→10, async 5→12
+- [x] /start cascade failure: timeout + graceful degradation
+- [x] asyncpg connection_lost: pool_recycle 1800→600
+- [x] Fincra auth circuit breaker (3 failures → 30min cooldown)
+- [x] FastForex circuit breaker (5s timeout + 30min cooldown)
+- [x] Telegram TimedOut handling
+- [x] Kraken circuit breaker (5 failures → 5min cooldown)
+- [x] Pool guards on background jobs
+- [x] Connection leak killer: dedicated engine
 
-#### Bug #1 (CRITICAL): Database Connection Pool Exhaustion - FIXED
-- **File**: `database.py`
-- **Fix**: Increased sync pool_size 3→10, max_overflow 5→15. Async pool_size 5→12, max_overflow 10→20
-- **Fix**: Reduced pool_recycle 1800→600 (Railway proxy compatibility)
-- **Fix**: Reduced pool_timeout 30→10 (fail fast)
-- **Fix**: Added `is_pool_healthy()` function for pool utilization monitoring
+### Session 3 (2026-03-26) - Pre-existing Lint Fixes (~3000 issues)
+- [x] F401: 2089 unused imports removed
+- [x] F541: 608 empty f-strings fixed
+- [x] F841: 383 unused variables cleaned
+- [x] F811: 251 duplicate imports/definitions resolved
+- [x] F821: ~112 undefined names fixed (actual runtime bugs)
+- [x] E722: 21 bare excepts → except Exception
+- [x] F601: 3 duplicate dict keys removed
+- [x] F823: 10 referenced-before-assignment fixes
+- [x] F402: 1 import shadow fixed
 
-#### Bug #2 (CRITICAL): /start Handler Cascade Failure - FIXED
-- **Files**: `handlers/start.py`, `handlers/onboarding_router.py`
-- **Fix**: Added `asyncio.wait_for(timeout=15)` on DB operations in start handler
-- **Fix**: Added `asyncio.timeout(15)` on entire existing user flow
-- **Fix**: Added graceful "service busy" message when DB is exhausted
-- **Fix**: Added `_send_service_busy_message()` helper
-
-#### Bug #3 (HIGH): asyncpg connection_lost() - FIXED
-- **File**: `database.py`
-- **Fix**: pool_recycle reduced to 600s (Railway proxy kills idle conns at ~30min)
-- **Fix**: keepalives_idle reduced to 15s (was 30s)
-- **Fix**: statement_timeout reduced to 30s, idle_in_transaction to 120s
-
-#### Bug #4 (HIGH): Fincra Auth Failure Circuit Breaker - FIXED
-- **File**: `services/fincra_service.py`
-- **Fix**: Added circuit breaker (3 failures → 30 min cooldown)
-- **Fix**: Stops wasting connections on repeated 401 auth failures
-- **Fix**: Auth failure count resets on success
-
-#### Bug #5 (HIGH): FastForex Subscription Expired Circuit Breaker - FIXED
-- **File**: `services/fastforex_service.py`
-- **Fix**: Added circuit breaker (3 failures → 30 min cooldown)
-- **Fix**: Added 5s aggressive timeout on all FastForex legacy calls
-- **Fix**: Applied to _make_request, _fetch_fastforex_single_rate, and get_crypto_to_usd_rate
-
-#### Bug #6 (MEDIUM): Telegram TimedOut Handling - FIXED
-- **File**: `handlers/onboarding_router.py`
-- **Fix**: Added TimedOut detection in safe_reply_text (no retry on timeout)
-- **Fix**: DB timeout causes graceful error message instead of hanging
-
-#### Bug #7 (MEDIUM): Kraken API Failures Circuit Breaker - FIXED
-- **File**: `services/kraken_service.py`
-- **Fix**: Added circuit breaker (5 failures → 5 min cooldown)
-- **Fix**: Failure count resets on success
-
-#### Background Job Pool Guards - ADDED
-- **Files**: `jobs/core/reconciliation.py`, `jobs/core/retry_engine.py`, `jobs/core/workflow_runner.py`
-- **Fix**: Background jobs skip execution when pool utilization >75-80%
-- **Fix**: Preserves connections for user-facing handlers
-
-#### Connection Leak Killer - FIXED
-- **File**: `jobs/consolidated_scheduler.py`
-- **Fix**: Uses dedicated fresh engine instead of competing for the main pool
+Key F821 fixes (runtime bugs):
+- handlers/admin_transactions.py: Missing `timezone` import
+- handlers/missing_handlers.py: Missing `safe_edit_message_text`, `telegram`, `InlineKeyboardButton/Markup` imports
+- handlers/refund_command_registry.py: Missing `InlineKeyboardButton` import
+- handlers/dynopay_webhook.py: `crypto_amount`/`paid_currency` undefined in cancel handler
+- handlers/fincra_payment.py: `AmountValidationError`/`SecureAmountParser` undefined
+- handlers/start.py: `start_onboarding` undefined → routed to `onboarding_router`
+- handlers/dispute_chat.py: `dispute.id` → `dispute_id`
+- handlers/wallet_direct.py: Missing `get_kraken_withdrawal_service` import
+- handlers/admin.py: `monthly_revenue_query` undefined variable removed
+- services/payment_routing_security.py: Missing `datetime`, `DirectExchange` imports
+- services/receipt_generation_service.py: Missing `or_` import
+- services/wallet_notification_service.py: Missing `EmailService` import
+- services/security.py: Missing `CryptoServiceAtomic` import
+- services/wallet_service_enhancements.py: Missing 14+ imports (full lazy-loading)
+- services/notification_delivery_tracker.py: Missing `SessionLocal` import
+- services/kraken_address_verification_service.py: `production_cache_service` → `delete_cached`
+- services/overpayment_service.py: `tolerance` undefined in f-string
+- utils/conversation_protection.py: Missing `ConversationHandler` import
+- utils/exchange_prefetch.py: Missing `timezone` import
+- utils/startup_reliability_checker.py: `engine` → `sync_engine`
+- utils/status_update_facade.py: Missing `WalletHoldStatus` import
+- utils/trace_system_initializer.py: Missing `List` import
+- jobs/consolidated_scheduler.py: Dead code removed
+- jobs/core/reconciliation.py: `kraken_service` → `kraken_adapter`
+- jobs/exchange_monitor.py: Multiple undefined service references (lazy-loaded)
+- jobs/scheduler.py: `minutes_overdue` undefined
 
 ## Testing Results
 - Iteration 6: 100% (9/9 tests) - Environment setup
-- Iteration 7: 100% (22/22 tests) - All bug fixes verified
+- Iteration 7: 100% (22/22 tests) - Bug fixes
+- Iteration 8: 100% (11/11 tests) - Lint fixes + regression
 
 ## Prioritized Backlog
 ### P0 (Critical) - None
-
 ### P1 (High)
-- Renew FastForex subscription or fully deprecate in favor of Tatum
-- Fix Fincra API credentials (authentication failing on LIVE mode)
-- Fund Kraken/Fincra accounts for live operations
-
+- Fix Fincra API credentials (auth failing on LIVE mode)
+- Renew FastForex subscription
 ### P2 (Medium)
-- Add connection pool utilization metrics endpoint
-- Add alerting when pool utilization stays >70% for >5 minutes
 - Web-based admin monitoring dashboard
+- Connection pool utilization metrics endpoint
 
 ## Next Tasks
 1. Fix Fincra API credentials or switch to test mode
 2. Test bot interaction end-to-end via Telegram
-3. Verify payment webhook processing under load

@@ -4,7 +4,7 @@ Fixes race condition where context.user_data["escrow_data"] is missing due to ra
 """
 
 import logging
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Any, Tuple
 from telegram.ext import ContextTypes
 from database import async_managed_session
 from sqlalchemy import select

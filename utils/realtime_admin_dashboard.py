@@ -4,18 +4,14 @@ Provides live monitoring interface for admins to see user activities and system 
 """
 
 import logging
-import json
-from typing import Dict, Any, Optional
+from typing import Optional
 from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.unified_activity_monitor import unified_monitor, get_dashboard_data
-from utils.admin_security import is_admin_secure
 from config import Config
-import json
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +37,8 @@ class RealTimeAdminDashboard:
             """Admin monitoring dashboard HTML interface"""
             try:
                 # Check for token in URL parameter first (for easy access)
-                token_param = request.query_params.get("token")
-                auth_header = request.headers.get("authorization")
+                request.query_params.get("token")
+                request.headers.get("authorization")
                 
                 # SECURITY FIX: Disable public admin access - require environment flag
                 from config import Config

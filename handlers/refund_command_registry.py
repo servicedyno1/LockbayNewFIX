@@ -13,8 +13,9 @@ from telegram.ext import (
     filters
 )
 
-from handlers.refund_dashboard import user_refund_dashboard, REFUND_MAIN_MENU, REFUND_HISTORY, REFUND_DETAILS, REFUND_LOOKUP, REFUND_FILTER
+from handlers.refund_dashboard import user_refund_dashboard, REFUND_MAIN_MENU, REFUND_HISTORY, REFUND_DETAILS, REFUND_LOOKUP
 from handlers.enhanced_admin_refund_dashboard import enhanced_admin_refund_dashboard
+from telegram import InlineKeyboardButton
 from utils.admin_security import is_admin_secure
 from utils.callback_utils import safe_answer_callback_query
 
@@ -316,7 +317,7 @@ Type your refund ID or tap Cancel to return to the main menu."""
                 InlineKeyboardButton("❌ Cancel", callback_data="refund_main_menu")
             ]]
             
-            from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+            from telegram import InlineKeyboardMarkup
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             if update.callback_query:
@@ -365,7 +366,7 @@ Type your refund ID or tap Cancel to return to the main menu."""
     async def _show_refund_help(update, context):
         """Show refund help information"""
         try:
-            help_text = f"""❓ **Refund Help & Support**
+            help_text = """❓ **Refund Help & Support**
 
 **What is a refund?**
 A refund returns money to your wallet when a transaction cannot be completed or needs to be reversed.
@@ -408,7 +409,7 @@ Our support team is available 24/7 to help with any refund-related issues."""
                 InlineKeyboardButton("⬅️ Back", callback_data="refund_main_menu")
             ]]
             
-            from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+            from telegram import InlineKeyboardMarkup
             reply_markup = InlineKeyboardMarkup(keyboard)
             
             from utils.callback_utils import safe_edit_message_text
@@ -596,11 +597,10 @@ def refund_status_handler(update, context):
     return RefundNotificationHandlers.handle_refund_status(update, context)
 
 # Create the conversation handler as a module-level variable for lazy loader
-from telegram.ext import ConversationHandler, CommandHandler, CallbackQueryHandler
 
 def _create_refund_conversation_handler():
     """Create the refund conversation handler"""
-    from handlers.refund_dashboard import user_refund_dashboard, REFUND_MAIN_MENU, REFUND_HISTORY, REFUND_DETAILS, REFUND_LOOKUP, REFUND_FILTER
+    from handlers.refund_dashboard import user_refund_dashboard, REFUND_MAIN_MENU
     
     return ConversationHandler(
         entry_points=[

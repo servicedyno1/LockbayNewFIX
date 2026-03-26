@@ -4,29 +4,24 @@ Provides live chat between users and admins with dual Telegram + Email notificat
 """
 
 import logging
-from typing import Optional, Dict, List
+from typing import Dict
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import desc, func, or_, and_
+from sqlalchemy import desc
 
 from database import SyncSessionLocal, async_managed_session
 from models import User, SupportTicket, SupportMessage
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 from utils.support_prefetch import (
-    prefetch_support_context,
-    get_cached_support_data,
-    cache_support_data,
     invalidate_support_cache,
     get_or_prefetch_support_context
 )
-from utils.helpers import get_user_display_name
-from utils.admin_security import is_admin_secure, is_admin_silent
+from utils.admin_security import is_admin_silent
 from utils.admin import get_admin_user_ids
 from services.email import EmailService
 from utils.comprehensive_audit_logger import (
-    ComprehensiveAuditLogger, AuditEventType, AuditLevel, RelatedIDs, PayloadMetadata
+    ComprehensiveAuditLogger, AuditEventType, RelatedIDs, PayloadMetadata
 )
 from utils.handler_decorators import audit_handler
 
@@ -227,7 +222,7 @@ async def show_support_chat_interface(update: Update, context: ContextTypes.DEFA
             admin_name = admin_first_name or "Admin"
             chat_text += f"👨‍💼 Assigned to: {admin_name}\n"
         else:
-            chat_text += f"⏳ Status: Waiting for admin response\n"
+            chat_text += "⏳ Status: Waiting for admin response\n"
             
         chat_text += f"🕐 Created: {ticket.created_at.strftime('%b %d, %H:%M')}\n\n"
 
@@ -445,7 +440,7 @@ async def open_support_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             )
             await show_support_chat_interface(update, context, ticket, db_user_obj, support_data)
 
-    except (ValueError, IndexError) as e:
+    except (ValueError, IndexError):
         logger.error(f"Invalid support chat callback data: {query.data}")
         await safe_answer_callback_query(query, "❌ Invalid request")
 
@@ -629,7 +624,7 @@ LockBay Support System
             else:
                 logger.error(f"❌ Failed to send new ticket email to {admin_email}")
                 logger.error(f"   Ticket ID: {ticket.ticket_id}")
-                logger.error(f"   🔧 Check BREVO_API_KEY configuration in production secrets")
+                logger.error("   🔧 Check BREVO_API_KEY configuration in production secrets")
             
         except Exception as e:
             logger.error(f"Failed to send new ticket email: {e}")
@@ -816,7 +811,7 @@ async def user_support_ticket_details(update: Update, context: ContextTypes.DEFA
             admin_name = ticket.assigned_admin.first_name or "Admin"
             details_text += f"👨‍💼 Assigned to: {admin_name}\n"
         else:
-            details_text += f"⏳ Status: Waiting for admin response\n"
+            details_text += "⏳ Status: Waiting for admin response\n"
             
         if ticket.resolved_at:
             details_text += f"✅ Resolved: {ticket.resolved_at.strftime('%b %d, %H:%M')}\n"
@@ -946,7 +941,7 @@ async def user_support_close_ticket(update: Update, context: ContextTypes.DEFAUL
         try:
             admin_ids = get_admin_user_ids()
             for admin_id in admin_ids:
-                admin_message = f"📋 Ticket Closed by User\n\n"
+                admin_message = "📋 Ticket Closed by User\n\n"
                 admin_message += f"🎫 Ticket: {ticket.ticket_id}\n"
                 admin_message += f"👤 User: {db_user.first_name or 'Unknown'}\n"
                 admin_message += f"🕐 Closed: {datetime.utcnow().strftime('%b %d, %H:%M')}\n"

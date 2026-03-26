@@ -5,7 +5,7 @@ Minimal service stubs required by admin tests without production coupling.
 """
 
 from typing import Dict, Any, List, Optional
-from models import AdminUser, AdminRole, AdminPermission
+from models import AdminUser, AdminPermission
 
 
 class AdminService:

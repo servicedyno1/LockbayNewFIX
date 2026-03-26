@@ -4,13 +4,12 @@ Maintains exact same UI while using database state tracking
 """
 
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
-from models import User, EscrowMessage, DisputeMessage, Escrow, Dispute
+from models import User
 from database import SessionLocal
-from utils.callback_utils import safe_answer_callback_query, safe_edit_message_text
+from utils.callback_utils import safe_answer_callback_query
 from utils.conversation_state_helper import set_conversation_state_db_sync
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 

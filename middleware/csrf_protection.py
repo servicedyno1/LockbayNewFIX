@@ -6,7 +6,7 @@ Provides Cross-Site Request Forgery protection for webhook endpoints
 import logging
 import hmac
 import hashlib
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 from datetime import datetime, timedelta, timezone
 
 from utils.secure_crypto import SecureCrypto

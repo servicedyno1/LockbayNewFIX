@@ -10,9 +10,8 @@ Features:
 """
 
 import logging
-import asyncio
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from database import async_managed_session
 from services.unified_retry_service import UnifiedRetryService
 
@@ -167,7 +166,6 @@ class RetryEngine:
                 persistent_webhook_queue, 
                 WebhookEventStatus
             )
-            from utils.financial_audit_logger import financial_audit_logger, FinancialEventType
             
             # Dequeue webhook events for processing with batch limit
             webhook_batch_size = min(self.batch_size // 3, 5)  # Conservative batch for webhooks
@@ -316,7 +314,7 @@ class RetryEngine:
             base_delay = 60  # 1 minute base delay
             delay = base_delay * (2 ** event.retry_count)  # Exponential backoff
             max_delay = 3600  # 1 hour maximum delay
-            scheduled_at = datetime.utcnow().timestamp() + min(delay, max_delay)
+            datetime.utcnow().timestamp() + min(delay, max_delay)
             
             # Mark for retry
             from webhook_queue.webhook_inbox.persistent_webhook_queue import persistent_webhook_queue
@@ -349,7 +347,6 @@ class RetryEngine:
     async def _log_webhook_audit(self, event, processing_duration: float, idempotency_key: str):
         """Log webhook processing for financial audit compliance"""
         try:
-            from utils.financial_audit_logger import financial_audit_logger, FinancialEventType
             
             # Use existing FinancialEventType enum
             # Note: We can add WEBHOOK_PROCESSED to the enum later if needed
@@ -363,13 +360,6 @@ class RetryEngine:
     async def _send_webhook_failure_alert(self, event, error_msg: str = ""):
         """Send admin alert for permanent webhook failure"""
         try:
-            from services.consolidated_notification_service import consolidated_notification_service
-            from services.consolidated_notification_service import (
-                NotificationRequest, 
-                NotificationCategory,
-                NotificationPriority,
-                NotificationChannel
-            )
             
             # Send admin notification (simplified - actual implementation may vary)
             logger.error(f"🚨 WEBHOOK_FAILURE_ALERT: {event.provider}/{event.endpoint} failed permanently")

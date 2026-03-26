@@ -5,12 +5,10 @@ Implements file-based logging with rotation and monitoring capabilities
 
 import logging
 import logging.handlers
-import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 class PersistentLogger:
     """Enhanced logging system with file persistence and monitoring"""

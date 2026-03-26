@@ -73,7 +73,7 @@ with dev_engine.connect() as conn:
     admin_list = conn.execute(text("SELECT username FROM users WHERE is_admin = true")).fetchall()
     tickets = conn.execute(text("SELECT COUNT(*) FROM support_tickets")).scalar()
     
-    print(f"\n📊 Final Status:")
+    print("\n📊 Final Status:")
     print(f"   Total users: {total}")
     print(f"   Admins: {admins}")
     for admin in admin_list:

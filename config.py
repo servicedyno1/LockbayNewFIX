@@ -3,7 +3,7 @@
 import os
 import logging
 from decimal import Decimal
-from typing import Union, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -79,7 +79,7 @@ class Config:
     @staticmethod
     def log_environment_config():
         """Log current environment configuration for debugging"""
-        logger.info(f"🔧 Bot Environment Configuration:")
+        logger.info("🔧 Bot Environment Configuration:")
         logger.info(f"   Environment: {Config.CURRENT_ENVIRONMENT.upper()}")
         logger.info(f"   Is Production: {Config.IS_PRODUCTION}")
         logger.info(f"   Bot Username: @{Config.BOT_USERNAME}")
@@ -87,19 +87,19 @@ class Config:
         # Log production detection method for debugging
         if Config.IS_PRODUCTION:
             if os.getenv("ENVIRONMENT") == "production":
-                logger.info(f"   Production detected via: ENVIRONMENT=production")
+                logger.info("   Production detected via: ENVIRONMENT=production")
             elif os.getenv("REPLIT_ENVIRONMENT") == "production":
-                logger.info(f"   Production detected via: REPLIT_ENVIRONMENT=production")
+                logger.info("   Production detected via: REPLIT_ENVIRONMENT=production")
             elif os.getenv("REPLIT_DEPLOYMENT") == "1":
-                logger.info(f"   Production detected via: REPLIT_DEPLOYMENT=1")
+                logger.info("   Production detected via: REPLIT_DEPLOYMENT=1")
             elif bool(os.getenv("REPLIT_DOMAINS")) and not os.getenv("REPLIT_DEV_DOMAIN"):
-                logger.info(f"   Production detected via: REPLIT_DOMAINS without REPLIT_DEV_DOMAIN")
+                logger.info("   Production detected via: REPLIT_DOMAINS without REPLIT_DEV_DOMAIN")
             elif os.getenv("REPLIT_DEPLOYMENT_TYPE"):
                 logger.info(f"   Production detected via: REPLIT_DEPLOYMENT_TYPE={os.getenv('REPLIT_DEPLOYMENT_TYPE')}")
             elif os.getenv("RAILWAY_PUBLIC_DOMAIN"):
-                logger.info(f"   Production detected via: RAILWAY_PUBLIC_DOMAIN")
+                logger.info("   Production detected via: RAILWAY_PUBLIC_DOMAIN")
         else:
-            logger.info(f"   Running in development mode")
+            logger.info("   Running in development mode")
         
         # Log token source (without revealing the actual token)
         if Config.IS_PRODUCTION:
@@ -116,9 +116,9 @@ class Config:
         elif Config.DATABASE_SOURCE == "NOT CONFIGURED":
             logger.error(f"   ❌ Database: {Config.DATABASE_SOURCE}")
             if Config.IS_PRODUCTION:
-                logger.error(f"   🚨 PRODUCTION DATABASE NOT CONFIGURED - Check DATABASE_URL in Replit secrets!")
+                logger.error("   🚨 PRODUCTION DATABASE NOT CONFIGURED - Check DATABASE_URL in Replit secrets!")
             else:
-                logger.error(f"   🚨 DEVELOPMENT DATABASE NOT CONFIGURED - Check DATABASE_URL!")
+                logger.error("   🚨 DEVELOPMENT DATABASE NOT CONFIGURED - Check DATABASE_URL!")
         else:
             logger.warning(f"   ⚠️  Database: {Config.DATABASE_SOURCE}")
         
@@ -134,7 +134,7 @@ class Config:
         if env_factors:
             logger.info(f"   Production indicators: {', '.join(env_factors)}")
         else:
-            logger.info(f"   No production indicators found - using development mode")
+            logger.info("   No production indicators found - using development mode")
     
     @staticmethod
     def validate_bot_configuration():
@@ -1076,7 +1076,7 @@ Available tokens:
         try:
             from utils.performance_telemetry import telemetry
             telemetry.record_cache_hit('maintenance_mode')
-        except:
+        except Exception:
             pass
     
     @staticmethod
@@ -1084,7 +1084,7 @@ Available tokens:
         try:
             from utils.performance_telemetry import telemetry
             telemetry.record_cache_miss('maintenance_mode')
-        except:
+        except Exception:
             pass
     
     @staticmethod
@@ -1666,12 +1666,12 @@ Available tokens:
         # Warn about ephemeral dev domains (but don't fail - REPLIT_DOMAINS should be persistent)
         if ".repl.co" in ADMIN_ACTION_BASE_URL:
             logger.warning(f"⚠️  Warning: Using .repl.co domain: {ADMIN_ACTION_BASE_URL}")
-            logger.warning(f"   Note: Replit deployment domains (.replit.app) are persistent, .repl.co domains are not")
+            logger.warning("   Note: Replit deployment domains (.replit.app) are persistent, .repl.co domains are not")
     
     # Development warning for ephemeral domains
     if REPLIT_DEV_DOMAIN and REPLIT_DEV_DOMAIN in ADMIN_ACTION_BASE_URL:
         logger.warning(f"⚠️  Development mode: Using ephemeral domain: {ADMIN_ACTION_BASE_URL}")
-        logger.warning(f"   Email action buttons will break after restart in production!")
+        logger.warning("   Email action buttons will break after restart in production!")
     
     # ===== PUBLIC PROFILE BASE URL (for customer-facing branded links) =====
     # This URL is used for public profile pages and referral landing pages
@@ -1806,10 +1806,10 @@ Available tokens:
                 logger.info("✅ Database: Railway PostgreSQL (production-optimized, persistent compute)")
             elif Config.DATABASE_SOURCE == "Neon PostgreSQL (FALLBACK)":
                 warnings.append(
-                    f"⚠️ DATABASE FALLBACK ACTIVE: Using Neon instead of Railway!\n"
-                    f"   → Railway provides better performance (no cold starts)\n"
-                    f"   → Check that RAILWAY_DATABASE_URL is set in production secrets\n"
-                    f"   → Expected ~60% performance degradation with Neon serverless"
+                    "⚠️ DATABASE FALLBACK ACTIVE: Using Neon instead of Railway!\n"
+                    "   → Railway provides better performance (no cold starts)\n"
+                    "   → Check that RAILWAY_DATABASE_URL is set in production secrets\n"
+                    "   → Expected ~60% performance degradation with Neon serverless"
                 )
             else:
                 issues.append(

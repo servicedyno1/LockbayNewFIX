@@ -140,8 +140,8 @@ class AdvancedDebouncer:
                 del self._user_click_patterns[user_id]
         
         # Clean up stuck processing callbacks
-        processing_cutoff = current_time - self.processing_timeout
-        stuck_callbacks = {
+        current_time - self.processing_timeout
+        {
             query_id for query_id in self._processing_callbacks
             # Note: We can't easily get timestamp for query_id, so we'll rely on periodic cleanup
         }
@@ -201,7 +201,6 @@ async def safe_debounced_answer_callback(query, text: Optional[str] = None, show
     if not query:
         return
     
-    user_id = query.from_user.id if query.from_user else 0
     query_id = query.id
     
     try:

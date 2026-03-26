@@ -367,7 +367,6 @@ class ExchangeService:
                 # )
                 
                 # Temporary fallback - check balance without holding
-                from services.crypto import CryptoServiceAtomic
                 import asyncio
                 balance = asyncio.run(CryptoServiceAtomic.get_user_balance_atomic(user_id, "USD"))
                 if balance < usd_amount_to_hold:
@@ -542,7 +541,6 @@ class ExchangeService:
         wallet_payment_preference = kwargs.get("payment_method") == "wallet"
         
         # NGN to crypto orders where user has wallet balance might use wallet payment
-        ngn_to_crypto_order = order_type == "ngn_to_crypto"
         
         # Crypto to NGN orders from wallet balance definitely need funds held
         crypto_from_wallet = order_type == "crypto_to_ngn" and source_currency == "USD"

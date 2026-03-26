@@ -6,16 +6,15 @@ Machine learning-based pattern recognition for transaction anomaly detection
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 from dataclasses import dataclass
 from decimal import Decimal
 import statistics
-import math
 from collections import defaultdict
 
 from sqlalchemy import func, and_
 from database import SessionLocal
-from models import User, Transaction, Cashout, SecurityAlert
+from models import Transaction
 from services.adaptive_security_service import AdaptiveSecurityService
 
 logger = logging.getLogger(__name__)
@@ -291,12 +290,10 @@ class BehavioralAnomalyDetection:
             
             # Determine severity level
             anomaly_score = pattern.overall_anomaly_score
-            severity = "low"
             confidence = self.confidence_levels["low"]
             
             for level, threshold in self.anomaly_thresholds.items():
                 if anomaly_score >= threshold:
-                    severity = level
                     confidence = self.confidence_levels[level]
             
             # Build risk factors list
@@ -375,7 +372,7 @@ class BehavioralAnomalyDetection:
             baseline = await self.build_user_baseline(user_id)
             
             # Recent pattern analysis
-            recent_pattern = await self.analyze_transaction_pattern(user_id, Decimal("100.00"))  # Sample amount
+            await self.analyze_transaction_pattern(user_id, Decimal("100.00"))  # Sample amount
             
             return {
                 "user_id": user_id,

@@ -5,10 +5,9 @@ Helper functions to integrate database configuration across all services
 """
 
 import logging
-from typing import Any, Optional, Union
-from decimal import Decimal
+from typing import Any, Optional
 from functools import lru_cache
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from services.comprehensive_config_service import ComprehensiveConfigService
 
@@ -29,7 +28,7 @@ def get_cached_config(cache_key: Optional[str] = None) -> dict:
     """Get cached configuration to avoid database calls"""
     # Cache key changes every 15 minutes to ensure fresh data
     cache_timestamp = datetime.now().replace(second=0, microsecond=0)
-    cache_key = f"config_{cache_timestamp.strftime('%Y%m%d_%H%M')}"
+    f"config_{cache_timestamp.strftime('%Y%m%d_%H%M')}"
     
     config_service = get_config_service()
     return config_service.get_current_config()

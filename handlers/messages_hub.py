@@ -4,19 +4,17 @@ Exchange-style design with polished UX for trades, disputes, and notifications
 """
 
 import logging
-from typing import Optional, Dict, List
+from typing import Dict
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import desc, func, or_, and_
 
 from database import SessionLocal
 from models import (
     User, Escrow, EscrowMessage, Dispute, DisputeMessage,
-    EscrowStatus, DisputeStatus, Rating, ExchangeOrder
+    EscrowStatus, ExchangeOrder
 )
-import os
 from utils.callback_utils import safe_edit_message_text, safe_answer_callback_query
 from utils.helpers import get_user_display_name
 from utils.admin_security import is_admin_secure, is_admin_silent
@@ -24,9 +22,9 @@ from utils.universal_session_manager import (
     universal_session_manager, SessionType, OperationStatus
 )
 from utils.comprehensive_audit_logger import (
-    ComprehensiveAuditLogger, AuditEventType, AuditLevel, RelatedIDs, PayloadMetadata
+    ComprehensiveAuditLogger, AuditEventType, RelatedIDs, PayloadMetadata
 )
-from utils.handler_decorators import audit_handler, audit_conversation_handler
+from utils.handler_decorators import audit_conversation_handler
 # DATABASE-BACKED STATE CHECKING
 from handlers.wallet_direct import has_active_cashout_db_by_telegram
 # ONBOARDING PROTECTION
@@ -254,7 +252,7 @@ async def show_trades_messages_hub(update: Update, context: ContextTypes.DEFAULT
         #     DisputeMessage.created_at >= recent_cutoff
         # ).count()
         
-        total_unread = unread_trade_msgs + unread_dispute_msgs
+        unread_trade_msgs + unread_dispute_msgs
         
         # Get recent activity for unified view - FIXED: Include pending invitations
         # Get recent escrow trades using typed contact fields
@@ -292,7 +290,7 @@ async def show_trades_messages_hub(update: Update, context: ContextTypes.DEFAULT
         
         # Sort combined list by updated_at and take top 5 (handle None values safely)
         all_recent_trades.sort(key=lambda x: x['updated_at'] or datetime.min, reverse=True)
-        recent_trades = all_recent_trades[:5]
+        all_recent_trades[:5]
         
         # === COMPREHENSIVE TRADE OVERVIEW ===
         # Count escrow vs exchange breakdown using typed contact fields
@@ -470,7 +468,7 @@ You need an active trade to send messages.
 
 Showing your 5 most recent trades:"""
             else:
-                message = f"""💬 Send Message
+                message = """💬 Send Message
 
 💬 Select a trade to chat with:
 
@@ -616,12 +614,11 @@ async def show_active_trades(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await safe_answer_callback_query(query, "🔥")
     
     # Get page number from callback data
-    page = 0
     if query and query.data.startswith("view_active_trades_page_"):
         try:
-            page = int(query.data.split("_")[-1])
+            int(query.data.split("_")[-1])
         except (ValueError, IndexError):
-            page = 0
+            pass
     
     session = SessionLocal()
     try:
@@ -718,7 +715,6 @@ Ready to start trading?"""
                 
                 if trade_type == 'escrow':
                     # Handle escrow trades
-                    user_role = "Buyer" if trade.buyer_id == db_user.id else "Seller"
                     amount = float(trade.amount) if trade.amount else 0
                     
                     # Get counterparty name (with typed contact fields support)
@@ -879,7 +875,7 @@ Select a trade to start messaging:
                 ).count()
                 
                 # Status indicator
-                status_emoji = {
+                {
                     'active': '🔵',
                     'completed': '🟢',
                     'payment_pending': '🟡',
@@ -1077,11 +1073,9 @@ async def open_trade_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             # Regular user or admin participant sees counterpart
             if db_user.id == trade.buyer_id:
                 counterpart_id = trade.seller_id
-                user_role = "👤 Buyer"
                 counterpart_role = "🛍️ Seller"
             else:
                 counterpart_id = trade.buyer_id
-                user_role = "🛍️ Seller"
                 counterpart_role = "👤 Buyer"
             
             # Get counterpart details
@@ -1184,7 +1178,7 @@ async def open_trade_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         
         if recent_messages:
             import html
-            message += f"\n\nRecent messages:"
+            message += "\n\nRecent messages:"
             
             # Telegram has 4096 char limit - reserve space for header and footer
             TELEGRAM_LIMIT = 4096
@@ -1734,7 +1728,6 @@ async def handle_message_input(update: Update, context: ContextTypes.DEFAULT_TYP
         # Import here to avoid circular imports
         from handlers.escrow import start_secure_trade
         # Simulate a menu_create callback to restart escrow conversation
-        from telegram import CallbackQuery
         
         # Create a synthetic callback to restart escrow flow
         synthetic_query = type('Query', (), {
@@ -1808,10 +1801,10 @@ async def handle_message_input(update: Update, context: ContextTypes.DEFAULT_TYP
     chat_session = None
     if context.user_data and 'active_chat' in context.user_data:
         chat_session = context.user_data['active_chat']
-        logger.info(f"💾 Found chat session in context.user_data")
+        logger.info("💾 Found chat session in context.user_data")
     elif user.id in active_chat_sessions:
         chat_session = active_chat_sessions[user.id]
-        logger.info(f"💾 Found chat session in global dict")
+        logger.info("💾 Found chat session in global dict")
     
     logger.info(f"🔍 Chat session for user {user.id}: {chat_session}")
     
@@ -2095,7 +2088,7 @@ async def handle_message_input(update: Update, context: ContextTypes.DEFAULT_TYP
                     try:
                         sender_role = "Buyer" if trade.buyer_id == db_user.id else "Seller"
                         trade_display = trade.escrow_id[-6:] if trade.escrow_id else str(trade.id)
-                        admin_text = f"⚖️ New Dispute Message\n\n"
+                        admin_text = "⚖️ New Dispute Message\n\n"
                         admin_text += f"Trade: #{trade_display}\n"
                         admin_text += f"From: {sender_role} (@{db_user.username or db_user.first_name or 'User'})\n"
                         admin_text += f"Message: {message.text[:200]}{'...' if len(message.text) > 200 else ''}"
@@ -2278,7 +2271,7 @@ async def handle_dispute_trade(update: Update, context: ContextTypes.DEFAULT_TYP
             return
         
         # Show dispute reason selection
-        message = f"⚖️ Report Issue with Trade\n\n"
+        message = "⚖️ Report Issue with Trade\n\n"
         message += f"Trade ID: #{trade.escrow_id[:12]}\n"
         message += f"Amount: ${float(trade.amount):.2f}\n"
         message += f"Status: {trade.status.replace('_', ' ').title()}\n\n"
@@ -2466,7 +2459,7 @@ Status: Under Review
                 channels=[NotificationChannel.EMAIL]  # EMAIL ONLY - no Telegram redundancy
             )
             
-            initiator_result = await notification_service.send_notification(initiator_request)
+            await notification_service.send_notification(initiator_request)
             logger.info(f"✅ Dispute initiator email sent to user {new_dispute.initiator_id}")
             
             # RESPONDENT (seller) - Compact Telegram with button + Email
@@ -2514,7 +2507,7 @@ Status: Under Review
                 channels=[NotificationChannel.EMAIL]  # Email for permanent record
             )
             
-            respondent_email_result = await notification_service.send_notification(respondent_email_request)
+            await notification_service.send_notification(respondent_email_request)
             logger.info(f"✅ Dispute respondent email sent to user {new_dispute.respondent_id}")
             
         except Exception as notification_error:
@@ -2525,7 +2518,7 @@ Status: Under Review
         session.commit()
         
         # Success message with immediate chat access
-        message = f"✅ Dispute Created\n\n"
+        message = "✅ Dispute Created\n\n"
         message += f"#{new_dispute.id} • #{trade.escrow_id[:12]}\n\n"
         message += "📧 Admin notified\n"
         message += "💬 Start chatting to explain your issue"
@@ -2703,7 +2696,7 @@ Status: Under Review
                 channels=[NotificationChannel.EMAIL]  # EMAIL ONLY - no Telegram redundancy
             )
             
-            initiator_result = await notification_service.send_notification(initiator_request)
+            await notification_service.send_notification(initiator_request)
             logger.info(f"✅ Dispute initiator email sent to user {new_dispute.initiator_id}")
             
             # RESPONDENT (seller) - Compact Telegram with button + Email
@@ -2751,7 +2744,7 @@ Status: Under Review
                 channels=[NotificationChannel.EMAIL]  # Email for permanent record
             )
             
-            respondent_email_result = await notification_service.send_notification(respondent_email_request)
+            await notification_service.send_notification(respondent_email_request)
             logger.info(f"✅ Dispute respondent email sent to user {new_dispute.respondent_id}")
             
         except Exception as notification_error:
@@ -2766,7 +2759,7 @@ Status: Under Review
         context.user_data.pop('awaiting_dispute_description', None)
         
         # Success message with immediate chat access
-        message_text = f"✅ Dispute Created\n\n"
+        message_text = "✅ Dispute Created\n\n"
         message_text += f"#{new_dispute.id} • #{trade.escrow_id[:12]}\n\n"
         message_text += "📧 Admin notified\n"
         message_text += "💬 Start chatting to explain your issue"

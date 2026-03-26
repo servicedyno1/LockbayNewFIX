@@ -11,8 +11,6 @@ from services.crypto import CryptoServiceAtomic
 from services.consolidated_notification_service import consolidated_notification_service
 from datetime import datetime
 from utils.universal_id_generator import UniversalIDGenerator
-from utils.helpers import generate_utid
-from utils.atomic_transactions import atomic_transaction
 
 logger = logging.getLogger(__name__)
 
@@ -212,7 +210,6 @@ class OverpaymentService:
             
             # CRITICAL FIX: Use async_managed_session for proper async session handling
             from database import async_managed_session
-            from sqlalchemy import select
             
             async with async_managed_session() as session:
                 # Credit user wallet with markup-adjusted amount (platform profit protection)
@@ -368,7 +365,7 @@ class OverpaymentService:
                     )
                     return True  # Return success - this is not an error, just a duplicate call
                 
-                logger.info(f"✅ Idempotency check passed: No existing overpayment found, proceeding with credit")
+                logger.info("✅ Idempotency check passed: No existing overpayment found, proceeding with credit")
                 
                 # Credit user wallet with overpayment amount (pass async session for atomicity)
                 # overpayment_usd is already quantized Decimal, pass directly (no float conversion)
@@ -812,6 +809,7 @@ class OverpaymentService:
         order_id: int
     ):
         """Send notifications to user about underpayment within tolerance"""
+        from services.consolidated_notification_service import consolidated_notification_service
         try:
             session = SessionLocal()
             user = session.query(User).filter(User.id == user_id).first()
@@ -858,7 +856,7 @@ class OverpaymentService:
                         <li><strong>Amount Short:</strong> {underpayment_crypto} {crypto_currency} (${underpayment_usd:.2f})</li>
                         <li><strong>Wallet Credit:</strong> ${received_usd:.2f}</li>
                     </ul>
-                    <p>✅ <strong>Payment accepted</strong> as the shortage was within our ${tolerance} USD tolerance.</p>
+                    <p>✅ <strong>Payment accepted</strong> as the shortage was within our tolerance.</p>
                     <p>Your wallet has been credited with the received amount.</p>
                     """
                     

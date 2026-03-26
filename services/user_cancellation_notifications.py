@@ -87,7 +87,7 @@ class UserCancellationNotificationService:
             amount = escrow_data.get('amount', 0)
             currency = escrow_data.get('currency', 'USD')
             seller_info = escrow_data.get('seller_info', 'Unknown Seller')
-            cancellation_reason = escrow_data.get('cancellation_reason', 'Trade cancelled')
+            escrow_data.get('cancellation_reason', 'Trade cancelled')
             cancelled_at = escrow_data.get('cancelled_at', datetime.utcnow())
             
             # Format using centralized helpers

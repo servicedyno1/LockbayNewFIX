@@ -4,14 +4,13 @@ Version-based concurrency control to prevent race conditions in database operati
 """
 
 import logging
-from typing import Any, Optional, Dict, Type, Union, List
+from typing import Any, Optional, Dict, Type, List
 from datetime import datetime
 from contextlib import contextmanager
 from functools import wraps
-from sqlalchemy import Column, Integer, DateTime, func, update, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import Column, Integer, DateTime, func, update
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.declarative import DeclarativeMeta
 from models import Base
 
 logger = logging.getLogger(__name__)
