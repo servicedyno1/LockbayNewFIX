@@ -1,39 +1,55 @@
-# Lockbay Telegram Escrow Bot - PRD
+# Lockbay Telegram Bot - PRD
 
 ## Original Problem Statement
-1. Analyze and set up the Lockbay Telegram Bot codebase with all environment variables
-2. Update webhook URLs to use current pod URL
-3. Fix critical wallet deposit bug: User @whyterosecyb deposited ~$250 USD in LTC but only $10 was credited
-4. Fix cashout error: User 722865886 (Hack) couldn't cash out $225 USDT-TRC20
+Analyze and setup the Lockbay Telegram bot codebase. Update the backend .env with all required environment variables. Ensure the current pod URL is used for the Telegram webhook.
 
 ## Architecture
-- **Backend**: Python FastAPI (webhook_server.py) running on port 8001 via supervisor
-- **Bot**: python-telegram-bot v20+ library in webhook mode
-- **Database**: PostgreSQL (Railway: yamabiko.proxy.rlwy.net:44505)
-- **Queue**: SQLite-backed webhook queue (Redis fallback)
-- **Scheduler**: APScheduler (ConsolidatedScheduler)
-- **External Services**: DynoPay, Fincra, BlockBee, Kraken, Twilio, Brevo, FastForex/Tatum
+- **Backend**: FastAPI webhook server (Python) running on port 8001 via uvicorn
+- **Bot Framework**: python-telegram-bot v22.x
+- **Database**: PostgreSQL (Railway hosted)
+- **Webhook Server**: FastAPI app at `/app/webhook_server.py` bootstrapped by `/app/backend/server.py`
+- **Scheduler**: APScheduler for background jobs
+- **Payment Providers**: Fincra, DynoPay, BlockBee, Kraken
+- **Email**: Brevo (Sendinblue)
+- **SMS**: Twilio
 
-## What's Been Implemented
+## User Personas
+- **Buyers**: Create escrows, fund via crypto/bank, track trades
+- **Sellers**: Accept trades, mark delivered, receive payments
+- **Admins**: Monitor trades, manage disputes, process refunds
 
-### Session 1 (2026-03-17): Environment Setup
-- Created `/app/.env` with 78 environment variables
-- Updated WEBHOOK_URL and DYNOPAY_WEBHOOK_URL to pod URL
+## Core Requirements (Static)
+- Telegram bot webhook processing
+- Escrow creation, funding, delivery, release flow
+- Multi-currency support (USD, NGN, crypto)
+- Payment webhook processing (DynoPay, Fincra, BlockBee)
+- Admin dashboard via Telegram commands
+- Email notifications via Brevo
+- Rating system, referral system
 
-### Session 2 (2026-03-17): Wallet Deposit Bug Fix
-- **Root Cause**: crypto.py hardcoded `amount=10.0` for DynoPay invoice; webhook handler used invoice `base_amount` ($10) instead of `crypto_amount × exchange_rate`
-- **Fix**: Webhook now computes actual USD from received crypto × rate
-- **Impact**: User 5309762918 balance corrected from $10→$250.11
+## What's Been Implemented (2026-03-26)
+- [x] Root `.env` created with all 80+ environment variables
+- [x] Backend `.env` updated with key variables + webhook URLs
+- [x] Telegram webhook registered: `https://ab23a3bd-4fc8-44a5-810a-a8a0fd5615f9.preview.emergentagent.com/api/webhook`
+- [x] DynoPay webhook URL set: `.../api/webhook/dynopay`
+- [x] All Python dependencies installed from requirements.txt
+- [x] Frontend dependencies installed
+- [x] Backend running and health checks passing (100% tests)
+- [x] Bot fully initialized with all handlers registered
 
-### Session 3 (2026-03-17): Cashout Error Fix
-- **Root Cause**: `handle_wallet_cashout` at line 9124 tried `query.data = f"quick_cashout_all:{balance}"` — but `CallbackQuery.data` is **read-only** in python-telegram-bot v20+
-- **Error**: `Attribute 'data' of class 'CallbackQuery' can't be set!`
-- **Fix**: Inlined the logic from `handle_quick_cashout_all` directly into `handle_wallet_cashout`, bypassing the need to modify `query.data`. Now calls `show_cashout_method_selection`/`show_crypto_address_selection`/`show_saved_bank_accounts` directly based on user's last cashout method.
-- **Testing**: 5/5 tests passed (100%)
+## Prioritized Backlog
+### P0 (Critical)
+- None - setup complete
 
-## Backlog / Next Tasks
-- P0: Deploy fixes to Railway production
-- P1: Fix milestone streak tracking error (`'>' not supported between 'int' and 'NoneType'`)
-- P1: Fix Fincra authentication (Invalid credentials error in logs)
-- P2: Handle Kraken API temporary lockout gracefully
-- P2: Add monitoring for cashout flow errors
+### P1 (High)
+- Fund Kraken/Fincra accounts for live operations (balance alerts firing)
+- Test end-to-end bot flow via Telegram
+
+### P2 (Medium)
+- Web-based admin monitoring dashboard
+- Slug URL routing fix (lockbay-setup.preview.emergentagent.com)
+
+## Next Tasks
+1. Test bot interaction via Telegram
+2. Verify payment webhook processing end-to-end
+3. Review and optimize production configuration
