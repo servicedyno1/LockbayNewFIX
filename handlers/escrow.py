@@ -616,7 +616,7 @@ async def handle_seller_input(update: TelegramUpdate, context: ContextTypes.DEFA
 
     try:
         # SAFETY FIX: Detect crypto addresses to prevent stale state validation errors
-        # Crypto addresses are 26-42 chars (Bitcoin: 26-35, Ethereum: 42, others: 26-44)
+        # Crypto addresses are 26-62 chars (Bitcoin legacy: 26-35, Bech32: 39-62, Ethereum: 42, others: 26-44)
         def looks_like_crypto_address(text: str) -> bool:
             """Detect if text looks like a crypto address to prevent validation errors"""
             if not text or len(text) < 26:
@@ -624,7 +624,13 @@ async def handle_seller_input(update: TelegramUpdate, context: ContextTypes.DEFA
             # Ethereum/ERC20 addresses start with 0x
             if text.startswith('0x') and len(text) == 42 and all(c in '0123456789abcdefABCDEF' for c in text[2:]):
                 return True
-            # Bitcoin/Litecoin/Dogecoin addresses are alphanumeric, 26-44 chars
+            # Bitcoin Bech32 addresses (bc1...) are 39-62 chars
+            if text.startswith('bc1') and 39 <= len(text) <= 62:
+                return True
+            # Litecoin Bech32 addresses (ltc1...) are 39+ chars
+            if text.startswith('ltc1') and len(text) >= 39:
+                return True
+            # Bitcoin/Litecoin/Dogecoin legacy addresses are alphanumeric, 26-44 chars
             if 26 <= len(text) <= 44 and text.replace('_', '').replace('-', '').isalnum():
                 # Check if it has characteristics of crypto addresses (mix of letters and numbers)
                 has_letters = any(c.isalpha() for c in text)

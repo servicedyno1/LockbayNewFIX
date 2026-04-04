@@ -5,6 +5,7 @@ RESTORED: Full functionality from wallet_legacy_archived.py
 
 import logging
 import asyncio
+import re
 import base58
 import hashlib
 from decimal import Decimal, ROUND_HALF_UP
@@ -4075,10 +4076,10 @@ def get_address_example(currency: str) -> str:
 def get_address_validation_tips(currency: str) -> str:
     """Get validation tips for a currency address"""
     tips = {
-        "BTC": "• Starts with 1, 3, or bc1\n• Length: 26-35 characters",
+        "BTC": "• Starts with 1, 3, or bc1\n• Legacy: 26-35 chars, Bech32: 39-62 chars",
         "ETH": "• Starts with 0x\n• Length: 42 characters\n• Hexadecimal format",
         "USDT-ERC20": "• Starts with 0x\n• Length: 42 characters\n• Same format as ETH",
-        "LTC": "• Starts with L or M\n• Length: 26-35 characters", 
+        "LTC": "• Starts with L, M, or ltc1\n• Legacy: 26-35 chars, Bech32: 39+ chars", 
         "DOGE": "• Starts with D\n• Length: 34 characters",
         "BCH": "• Starts with 1 or 3\n• Length: 26-35 characters",
         "TRX": "• Starts with T\n• Length: 34 characters",
@@ -4142,17 +4143,22 @@ def validate_crypto_address(address: str, currency: str) -> tuple[bool, str]:
     
     address = address.strip()
     
-    # Bitcoin (BTC) - Base58Check validation
+    # Bitcoin (BTC) - Base58Check and Bech32 validation
     if currency == "BTC":
-        if not (26 <= len(address) <= 35):
-            return False, "BTC address must be 26-35 characters"
-        if not (address.startswith(('1', '3')) or address.startswith('bc1')):
-            return False, "BTC address must start with 1, 3, or bc1"
-        
-        # Cryptographic checksum validation (skip for bech32 addresses)
-        if not address.startswith('bc1'):
+        if address.startswith('bc1'):
+            # Bech32/Bech32m addresses (SegWit/Taproot): 39-62 characters
+            if not (39 <= len(address) <= 62):
+                return False, "BTC Bech32 address must be 39-62 characters"
+            if not re.match(r'^bc1[02-9ac-hj-np-z]{37,61}$', address):
+                return False, "Invalid BTC Bech32 address format"
+        elif address.startswith(('1', '3')):
+            # Legacy/P2SH addresses: 26-35 characters
+            if not (26 <= len(address) <= 35):
+                return False, "BTC legacy address must be 26-35 characters"
             if not validate_base58check(address):
                 return False, "Invalid BTC address checksum"
+        else:
+            return False, "BTC address must start with 1, 3, or bc1"
             
     # Ethereum (ETH) and USDT-ERC20 - EIP-55 checksum validation
     elif currency in ["ETH", "USDT-ERC20"]:

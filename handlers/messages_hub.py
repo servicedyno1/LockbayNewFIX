@@ -1521,9 +1521,12 @@ async def handle_message_input(update: Update, context: ContextTypes.DEFAULT_TYP
                 text_input.startswith('0x') and len(text_input) == 42 and
                 all(c in '0123456789abcdefABCDEF' for c in text_input[2:])
             ) or (
-                # BTC address patterns
+                # BTC legacy address patterns (26-35 chars)
                 len(text_input) >= 26 and len(text_input) <= 35 and
-                (text_input.startswith('1') or text_input.startswith('3') or text_input.startswith('bc1'))
+                (text_input.startswith('1') or text_input.startswith('3'))
+            ) or (
+                # BTC Bech32 address patterns (39-62 chars)
+                text_input.startswith('bc1') and len(text_input) >= 39 and len(text_input) <= 62
             )
             
             if is_crypto_address:

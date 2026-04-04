@@ -46,8 +46,8 @@ class QRCodeService:
         if currency:
             currency_upper = currency.upper()
             if currency_upper == "BTC":
-                # Bitcoin addresses: 26-35 characters, alphanumeric
-                return 26 <= len(address) <= 35 and bool(
+                # Bitcoin addresses: Legacy 26-35 chars, Bech32 39-62 chars
+                return bool(
                     re.match(
                         r"^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$",
                         address,
