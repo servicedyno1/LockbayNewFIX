@@ -1,51 +1,25 @@
-# LockBay - Telegram Escrow Bot PRD
+# Railway App - Dispute Resolution Token Expiry Fix
 
-## Original Problem Statement
-User requested setup and analysis of existing LockBay codebase, then reported a bug: BTC Bech32 addresses (bc1...) being rejected during cashout with "BTC address must be 26-35 characters" error.
+## Problem Statement
+Dispute resolution email action tokens were expiring after only 2 hours, making them unusable by the time admin reviewed them. User wants at least 1 week.
 
-## Architecture
-- **Backend**: FastAPI (Python) serving as Telegram bot webhook server on port 8001
-- **Frontend**: React status page on port 3000
-- **Database**: PostgreSQL (Railway-hosted)
-- **Bot Framework**: python-telegram-bot v22.7
-- **Messaging**: Telegram Bot API (webhook mode)
+## Root Cause
+- `TOKEN_VALIDITY_HOURS = 2` hardcoded in two classes:
+  - `AdminEmailActionService` (line 24) — cashout tokens
+  - `AdminDisputeEmailService` (line 1663) — dispute tokens
+- Email HTML templates had mismatched messaging (some said 24h, some said 2h)
 
-## What's Been Implemented (Existing)
-- Full Telegram escrow bot with webhook-based architecture
-- PostgreSQL database with 57+ tables
-- Wallet system (crypto funding, bank deposits, cashouts)
-- Escrow creation, payment, release, dispute flows
-- Admin dashboard, broadcast, analytics
-- Rating system, referral system
-- DynoPay and Fincra payment integrations
-- BlockBee crypto payment integration
+## Fix Applied (Jan 2026)
+- Changed `TOKEN_VALIDITY_HOURS` from `2` to `168` (7 days) in both classes
+- Updated all email HTML templates to consistently say "7 days"
+- File changed: `/app/services/admin_email_actions.py`
 
-## Setup Completed (Jan 2026)
-- Fixed missing Python dependencies (orjson, python-telegram-bot, etc.)
-- Installed frontend node_modules
-- Fixed .env URL configuration (REACT_APP_BACKEND_URL, WEBHOOK_URL, DYNOPAY_WEBHOOK_URL)
-- All services running: backend, frontend, mongodb
+## Deployment Notes
+- Code change needs to be deployed to Railway to take effect
+- After deployment, a new dispute message in dispute #12 will trigger new token generation with 7-day expiry
+- Alternatively, database `admin_action_tokens` table can be updated directly to extend `expires_at` for existing tokens
 
-## Bug Fix: BTC Bech32 Address Validation (Jan 2026)
-- **Root Cause**: `validate_crypto_address()` in `wallet_direct.py` enforced 26-35 char limit for ALL BTC addresses, but Bech32 (bc1q...) addresses are 42 chars and Taproot (bc1p...) are 62 chars
-- **Files Fixed**:
-  - `handlers/wallet_direct.py` - Main validation function, validation tips text
-  - `handlers/messages_hub.py` - Crypto address detection logic
-  - `handlers/escrow.py` - Crypto address detection in escrow flow
-  - `services/qr_generator.py` - QR code address validation
-- **Also fixed**: LTC Bech32 (ltc1...) address support in validation
-
-## Current Status
-- Backend: RUNNING
-- Frontend: RUNNING
-- Database: Connected
-- Bot: Initialized with webhook registered
-- BTC Bech32 validation: FIXED
-
-## Prioritized Backlog
-- P1: Brevo API key not configured (email notifications disabled)
-- P2: Redis not configured (using fallback)
-
-## Next Tasks
-- User to test BTC cashout with Bech32 addresses
-- User to specify additional features/changes
+## Backlog
+- P0: Deploy code change to Railway
+- P1: For immediate use of dispute 12, either trigger new tokens via dispute message or update DB directly
+- P2: Consider making TOKEN_VALIDITY_HOURS configurable via environment variable instead of hardcoded

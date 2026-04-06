@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 class AdminEmailActionService:
     """Service for handling admin actions from email buttons"""
     
-    # Token validity: 2 hours (reduced from 24 for security)
-    TOKEN_VALIDITY_HOURS = 2
+    # Token validity: 7 days (168 hours) - extended for admin review workflow
+    TOKEN_VALIDITY_HOURS = 168
     
     @classmethod
     def generate_admin_token(cls, cashout_id: str, action: str, admin_email: str, admin_user_id: Optional[int] = None) -> str:
@@ -41,7 +41,7 @@ class AdminEmailActionService:
             # Generate cryptographically secure token
             token = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
             
-            # Calculate expiration time (2 hours for security)
+            # Calculate expiration time (7 days for admin review workflow)
             expires_at = datetime.utcnow() + timedelta(hours=cls.TOKEN_VALIDITY_HOURS)
             
             session = SessionLocal()
@@ -248,7 +248,7 @@ class AdminEmailActionService:
             # Generate cryptographically secure token
             token = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
             
-            # Calculate expiration time (2 hours for security)
+            # Calculate expiration time (7 days for admin review workflow)
             expires_at = datetime.utcnow() + timedelta(hours=cls.TOKEN_VALIDITY_HOURS)
             
             session = SessionLocal()
@@ -1659,8 +1659,8 @@ Manual intervention required. Check system logs and user account state.
 class AdminDisputeEmailService:
     """Service for handling dispute resolution via email actions"""
     
-    # Token validity: 2 hours (reduced from 24 for security)
-    TOKEN_VALIDITY_HOURS = 2
+    # Token validity: 7 days (168 hours) - extended for admin review workflow
+    TOKEN_VALIDITY_HOURS = 168
     
     # LEGACY HMAC token methods removed - now using database-backed tokens exclusively
     # See AdminEmailActionService.generate_dispute_token() and atomic_consume_admin_token()
@@ -1901,7 +1901,7 @@ class AdminDisputeEmailService:
                         </div>
                         
                         <div style="margin-top: 30px; padding: 15px; background: #e9ecef; border-radius: 6px;">
-                            <p><small><strong>Security Notice:</strong> These action links are valid for 24 hours and can only be used once. 
+                            <p><small><strong>Security Notice:</strong> These action links are valid for 7 days and can only be used once. 
                             Do not forward this email to unauthorized personnel.</small></p>
                         </div>
                     </div>
@@ -3196,7 +3196,7 @@ class AdminDisputeEmailService:
                     </div>
                     
                     <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0; font-size: 14px; color: #6c757d;">
-                        <p><strong>Security:</strong> These links are secured with HMAC tokens and expire in 24 hours.</p>
+                        <p><strong>Security:</strong> These links are secured with HMAC tokens and expire in 7 days.</p>
                         <p><strong>AI Analysis:</strong> Recommendations are based on message analysis, evidence quality, and historical dispute patterns.</p>
                         <p><strong>Audit Trail:</strong> All actions are logged for compliance and review purposes.</p>
                     </div>
@@ -3446,7 +3446,7 @@ async def send_crypto_cashout_error_email(
                         <li>Click "Retry Withdrawal" to process the cashout</li>
                         <li>If unable to resolve, click "Cancel & Refund" to return funds to user</li>
                     </ul>
-                    <p><strong>Security:</strong> These action links expire in 24 hours and are secured with HMAC tokens.</p>
+                    <p><strong>Security:</strong> These action links expire in 7 days and are secured with HMAC tokens.</p>
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666;">
@@ -3475,7 +3475,7 @@ async def send_crypto_cashout_error_email(
         - Cancel: {cancel_url}
         
         Please resolve the Kraken configuration issue and retry, or cancel to refund the user.
-        Action links expire in 24 hours.
+        Action links expire in 7 days.
         """
         
         # Send email to admin
@@ -3583,7 +3583,7 @@ async def send_ngn_cashout_bank_config_email(
                         <li>Click "Configure & Retry" to process the cashout</li>
                         <li>If unable to configure, click "Cancel & Refund" to return funds to user</li>
                     </ul>
-                    <p><strong>Security:</strong> These action links expire in 2 hours and are secured with tokens.</p>
+                    <p><strong>Security:</strong> These action links expire in 7 days and are secured with tokens.</p>
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666;">
@@ -3692,7 +3692,7 @@ async def send_ngn_cashout_rate_service_email(
                         <li>Click "Retry with Rate Service" once service is restored</li>
                         <li>If service is down long-term, click "Cancel & Refund"</li>
                     </ul>
-                    <p><strong>Security:</strong> These action links expire in 2 hours and are secured with tokens.</p>
+                    <p><strong>Security:</strong> These action links expire in 7 days and are secured with tokens.</p>
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666;">
@@ -3803,7 +3803,7 @@ async def send_ngn_cashout_funding_email(
                         <li>Click "Fund & Retry" to process the cashout</li>
                         <li>If unable to fund, click "Cancel & Refund" to return funds to user</li>
                     </ul>
-                    <p><strong>Security:</strong> These action links expire in 2 hours and are secured with tokens.</p>
+                    <p><strong>Security:</strong> These action links expire in 7 days and are secured with tokens.</p>
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666;">
@@ -3917,7 +3917,7 @@ async def send_ngn_cashout_error_email(
                         <li>Click "Resolve & Retry" to process the cashout</li>
                         <li>If unable to resolve, click "Cancel & Refund" to return funds to user</li>
                     </ul>
-                    <p><strong>Security:</strong> These action links expire in 2 hours and are secured with tokens.</p>
+                    <p><strong>Security:</strong> These action links expire in 7 days and are secured with tokens.</p>
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666;">
