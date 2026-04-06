@@ -398,3 +398,7 @@ webhook_queue/webhook_inbox/webhook_events.db-e
 # Environment files
 *.env
 *.env.*
+-e 
+# Environment files
+*.env
+*.env.*
