@@ -402,3 +402,12 @@ webhook_queue/webhook_inbox/webhook_events.db-e
 # Environment files
 *.env
 *.env.*
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
