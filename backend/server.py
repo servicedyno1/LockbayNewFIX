@@ -514,18 +514,23 @@ async def _start_background_systems(application):
     logger.info("Background systems initialized")
 
 
-# Patch the lifespan to include bot initialization
+# Patch the lifespan to include bot initialization (non-blocking)
 from contextlib import asynccontextmanager
 
 _original_lifespan = app.router.lifespan_context
 
 @asynccontextmanager
 async def _patched_lifespan(app_instance):
-    """Initialize bot before the webhook server starts accepting requests."""
-    try:
-        await initialize_bot()
-    except Exception as e:
-        logger.error(f"Bot initialization failed (server will continue): {e}")
+    """Initialize bot only when not in Emergent preview (bot blocks event loop)."""
+    # Skip heavy bot initialization in preview environments to keep server responsive
+    is_preview = 'preview.emergentagent.com' in os.environ.get('WEBHOOK_URL', '')
+    if is_preview:
+        logger.info("Emergent preview detected - skipping Telegram bot initialization (server-only mode)")
+    else:
+        try:
+            await initialize_bot()
+        except Exception as e:
+            logger.error(f"Bot initialization failed (server will continue): {e}")
     async with _original_lifespan(app_instance) as state:
         yield state
 
