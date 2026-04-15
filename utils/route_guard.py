@@ -390,8 +390,25 @@ class RouteGuard:
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → wallet (active cashout/OTP verification)")
                 return 'wallet'
             
+            # SECOND-D PRIORITY: Active escrow creation flow (MUST CHECK BEFORE SUPPORT)
+            # CRITICAL FIX: Escrow flow states must not be hijacked by stale support sessions
+            # Users stuck at seller_input/amount_input etc. had their messages swallowed by support chat
+            _escrow_flow_states = ('seller_input', 'amount_input', 'description_input', 'delivery_time', 'fee_split_option', 'trade_review')
+            if db_state in _escrow_flow_states:
+                # Auto-clear stale support session if present
+                if RouteGuard.is_support_chat_active(user_id):
+                    logger.warning(f"⚠️ SUPPORT_OVERRIDE: user {user_id} in escrow flow '{db_state}' while support session active - routing to escrow, clearing stale support session")
+                    try:
+                        from handlers.support_chat import active_support_sessions
+                        if user_id in active_support_sessions:
+                            del active_support_sessions[user_id]
+                    except Exception:
+                        pass
+                logger.info(f"🎯 ROUTE DECISION: user {user_id} → escrow (active escrow flow state: {db_state})")
+                return 'escrow'
+            
             # THIRD PRIORITY: Active support chat sessions
-            # Now checked AFTER wallet/cashout operations to prevent stale sessions from hijacking critical flows
+            # Now checked AFTER wallet/cashout/escrow operations to prevent stale sessions from hijacking critical flows
             if RouteGuard.is_support_chat_active(user_id):
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → support (active support chat session)")
                 return 'support'

@@ -14,47 +14,40 @@ LockBay is a comprehensive Telegram-based escrow trading platform that enables s
 - **SMS**: Twilio for trade invitations
 - **Caching**: Redis (optional, with fallback)
 
-## Key Services
-- Escrow creation, payment, delivery, release, and cancellation
-- Wallet funding (crypto + NGN), cashout (crypto + bank transfer)
-- Quick exchange (crypto-to-crypto, NGN-to-crypto)
-- Dispute resolution with admin panel
-- Rating system for traders
-- Referral program
-- Admin dashboard (Telegram-based)
-- Webhook processing for payment confirmations
-
 ## Environment Setup (Jan 2026)
-### What was done:
-1. Installed missing Python dependencies (`orjson`, `python-telegram-bot`, full `requirements.txt`)
-2. Installed frontend npm packages (`yarn install`)
-3. Fixed `telegram` package conflict (bare `telegram` vs `python-telegram-bot`)
-4. Fixed `load_dotenv(override=True)` → `override=False` to prevent env var overwriting in production
-5. Made bot initialization non-blocking in preview environment (bot's background jobs were overwhelming the event loop)
-6. Updated `.env` files with correct preview domain URLs
-7. Verified backend health endpoint, database connection, and frontend rendering
+- Installed missing Python dependencies, fixed package conflicts
+- Fixed `load_dotenv(override=True)` → `override=False`
+- Made bot initialization non-blocking in preview environment
+- Updated `.env` files with correct URLs
 
-### Current State:
-- Backend: Running on port 8001, health endpoint responsive
-- Frontend: Running on port 3000, status page shows all systems operational
-- Database: Connected to Railway PostgreSQL (57+ tables)
-- Telegram Bot: Initialization skipped in preview (requires production webhook URL)
-- Redis: Not connected (fallback active)
+## Bug Fix: Escrow Creation Intermittent Failures (Apr 15, 2026)
 
-## Configuration Files
-- `/app/backend/.env`: Backend environment variables (DB, Telegram token, webhook URLs)
-- `/app/frontend/.env`: Frontend REACT_APP_BACKEND_URL
-- `/app/config.py`: Main configuration class with extensive settings
-- `/app/backend/server.py`: Bridge server bootstrapping bot + webhook FastAPI app
+### Root Causes Found (via Railway production log analysis)
 
-## Deployment Notes
-- Backend uses `load_dotenv(override=False)` to allow K8s env vars to take precedence
-- Preview environment skips Telegram bot init to keep server responsive
-- `payment-config-14.preview.emergentagent.com` routes frontend only; UUID domain handles API routing
+**Bug 1 (CRITICAL) - Support chat hijacks escrow flow:**
+- Stale support chat sessions in `active_support_sessions` in-memory dict intercept ALL text messages
+- Route guard checks support chat (priority 3) BEFORE escrow states (priority 5)
+- Users stuck at `seller_input` have messages silently swallowed by support handler
+- **Fix**: Added escrow flow states check (priority 2D) BEFORE support chat in `route_guard.py`
+
+**Bug 2 (CRITICAL) - Delivery time clears state, restarting flow:**
+- After entering delivery time, `escrow_direct.py` calls `clear_user_state()` instead of mapping to next state
+- Handler returns `EscrowStates.FEE_SPLIT_OPTION` but routing code ignores it
+- Empty state causes `start_secure_trade` to fire again, resetting to `seller_input`
+- **Fix**: Added proper state mapping for delivery_time handler (like amount/description handlers)
+
+**Bug 3 (MODERATE) - Seller input always transitions to `amount_input`:**
+- Routing code unconditionally sets state to `amount_input` after seller input
+- Doesn't check if handler returned `SELLER_INPUT` (validation error) vs `AMOUNT_INPUT` (success)
+- **Fix**: Added proper state mapping checking actual return value
+
+### Files Changed
+- `/app/utils/route_guard.py` - Added escrow flow priority before support chat
+- `/app/handlers/escrow_direct.py` - Fixed delivery_time and seller_input state mapping
 
 ## Backlog
-- P0: None (system operational)
-- P1: The Telegram bot background jobs need optimization to not block the event loop (use async DB queries)
-- P2: Consider making bot initialization timeout configurable
-- P2: Redis setup for state management in production
-- P3: Frontend could be enhanced beyond status page
+- P0: Deploy fixes to Railway production
+- P1: Optimize background jobs to not block event loop (use async DB queries in APScheduler)
+- P2: Clean up stale support sessions periodically
+- P2: Deduplicate start_secure_trade handler registration
+- P3: Add monitoring for route_guard decisions to track future routing conflicts

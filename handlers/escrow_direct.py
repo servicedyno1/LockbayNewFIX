@@ -324,10 +324,19 @@ async def route_text_message_to_escrow_flow(update: Update, context: ContextType
             # Route to seller input handler - let it handle state transition
             logger.info(f"📝 ROUTING: Directing to seller input handler for user {user_id}")
             result = await handle_seller_input(update, context)
-            # Update state to amount_input after successful seller input processing
-            if result:  # If handler processed successfully
-                await set_user_state(user_id, "amount_input")
-                logger.info(f"✅ ROUTING: Updated state to amount_input for user {user_id}")
+            # Map returned state to database state properly
+            if result:
+                from handlers.escrow import EscrowStates
+                state_map = {
+                    EscrowStates.SELLER_INPUT: "seller_input",  # Validation error, stay in same state
+                    EscrowStates.AMOUNT_INPUT: "amount_input",  # Normal flow, move to amount
+                }
+                new_state = state_map.get(result)
+                if new_state:
+                    await set_user_state(user_id, new_state)
+                    logger.info(f"✅ ROUTING: Updated state to {new_state} for user {user_id}")
+                elif result == -1:  # CONV_END
+                    await clear_user_state(user_id)
             return True
             
         elif db_state == "amount_input":
@@ -370,10 +379,22 @@ async def route_text_message_to_escrow_flow(update: Update, context: ContextType
             # Route to delivery time input handler - let it handle state transition
             logger.info(f"⏰ ROUTING: Directing to delivery time input handler for user {user_id}")
             result = await handle_delivery_time_input(update, context)
-            # Clear state after successful delivery time processing (flow complete)
-            if result:  # If handler processed successfully
-                await clear_user_state(user_id)
-                logger.info(f"✅ ROUTING: Cleared state for user {user_id} - escrow flow complete")
+            # Map returned state to database state (like amount_input and description_input handlers)
+            if result:
+                from handlers.escrow import EscrowStates
+                state_map = {
+                    EscrowStates.DELIVERY_TIME: "delivery_time",  # Validation error, stay in same state
+                    EscrowStates.FEE_SPLIT_OPTION: "fee_split_option",  # Normal flow, move to fee split
+                    EscrowStates.AMOUNT_INPUT: "amount_input",  # Missing amount, go back
+                    EscrowStates.TRADE_REVIEW: "trade_review",  # Editing from trade review
+                }
+                new_state = state_map.get(result)
+                if new_state:
+                    await set_user_state(user_id, new_state)
+                    logger.info(f"✅ ROUTING: Updated state to {new_state} for user {user_id}")
+                elif result == -1:  # CONV_END
+                    await clear_user_state(user_id)
+                    logger.info(f"✅ ROUTING: Cleared state for user {user_id} - escrow cancelled")
             return True
             
         else:
