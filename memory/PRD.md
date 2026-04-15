@@ -1,25 +1,60 @@
-# Railway App - Dispute Resolution Token Expiry Fix
+# LockBay - Telegram Escrow Bot
 
-## Problem Statement
-Dispute resolution email action tokens were expiring after only 2 hours, making them unusable by the time admin reviewed them. User wants at least 1 week.
+## Application Overview
+LockBay is a comprehensive Telegram-based escrow trading platform that enables secure peer-to-peer transactions via a Telegram bot. The platform handles cryptocurrency and fiat (NGN) payments, wallet management, dispute resolution, and more.
 
-## Root Cause
-- `TOKEN_VALIDITY_HOURS = 2` hardcoded in two classes:
-  - `AdminEmailActionService` (line 24) — cashout tokens
-  - `AdminDisputeEmailService` (line 1663) — dispute tokens
-- Email HTML templates had mismatched messaging (some said 24h, some said 2h)
+## Architecture
+- **Backend**: FastAPI (Python) serving as both a webhook server for Telegram and REST API
+- **Database**: PostgreSQL (Neon/Railway hosted) with SQLAlchemy ORM - 57+ tables
+- **Frontend**: React status/landing page (minimal - bot is primary interface)
+- **Bot Framework**: python-telegram-bot v22.7 (webhook mode)
+- **Background Jobs**: APScheduler (consolidated scheduler with 5 core jobs)
+- **Payment Providers**: BlockBee, DynoPay, Fincra, Kraken
+- **Email**: Brevo (SendinBlue) for notifications and OTP
+- **SMS**: Twilio for trade invitations
+- **Caching**: Redis (optional, with fallback)
 
-## Fix Applied (Jan 2026)
-- Changed `TOKEN_VALIDITY_HOURS` from `2` to `168` (7 days) in both classes
-- Updated all email HTML templates to consistently say "7 days"
-- File changed: `/app/services/admin_email_actions.py`
+## Key Services
+- Escrow creation, payment, delivery, release, and cancellation
+- Wallet funding (crypto + NGN), cashout (crypto + bank transfer)
+- Quick exchange (crypto-to-crypto, NGN-to-crypto)
+- Dispute resolution with admin panel
+- Rating system for traders
+- Referral program
+- Admin dashboard (Telegram-based)
+- Webhook processing for payment confirmations
+
+## Environment Setup (Jan 2026)
+### What was done:
+1. Installed missing Python dependencies (`orjson`, `python-telegram-bot`, full `requirements.txt`)
+2. Installed frontend npm packages (`yarn install`)
+3. Fixed `telegram` package conflict (bare `telegram` vs `python-telegram-bot`)
+4. Fixed `load_dotenv(override=True)` → `override=False` to prevent env var overwriting in production
+5. Made bot initialization non-blocking in preview environment (bot's background jobs were overwhelming the event loop)
+6. Updated `.env` files with correct preview domain URLs
+7. Verified backend health endpoint, database connection, and frontend rendering
+
+### Current State:
+- Backend: Running on port 8001, health endpoint responsive
+- Frontend: Running on port 3000, status page shows all systems operational
+- Database: Connected to Railway PostgreSQL (57+ tables)
+- Telegram Bot: Initialization skipped in preview (requires production webhook URL)
+- Redis: Not connected (fallback active)
+
+## Configuration Files
+- `/app/backend/.env`: Backend environment variables (DB, Telegram token, webhook URLs)
+- `/app/frontend/.env`: Frontend REACT_APP_BACKEND_URL
+- `/app/config.py`: Main configuration class with extensive settings
+- `/app/backend/server.py`: Bridge server bootstrapping bot + webhook FastAPI app
 
 ## Deployment Notes
-- Code change needs to be deployed to Railway to take effect
-- After deployment, a new dispute message in dispute #12 will trigger new token generation with 7-day expiry
-- Alternatively, database `admin_action_tokens` table can be updated directly to extend `expires_at` for existing tokens
+- Backend uses `load_dotenv(override=False)` to allow K8s env vars to take precedence
+- Preview environment skips Telegram bot init to keep server responsive
+- `payment-config-14.preview.emergentagent.com` routes frontend only; UUID domain handles API routing
 
 ## Backlog
-- P0: Deploy code change to Railway
-- P1: For immediate use of dispute 12, either trigger new tokens via dispute message or update DB directly
-- P2: Consider making TOKEN_VALIDITY_HOURS configurable via environment variable instead of hardcoded
+- P0: None (system operational)
+- P1: The Telegram bot background jobs need optimization to not block the event loop (use async DB queries)
+- P2: Consider making bot initialization timeout configurable
+- P2: Redis setup for state management in production
+- P3: Frontend could be enhanced beyond status page

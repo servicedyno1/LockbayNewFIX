@@ -17,7 +17,7 @@ os.chdir(_project_root)
 # Load .env from BOTH backend dir and project root (backend first, root overrides)
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
-load_dotenv(os.path.join(_project_root, '.env'), override=True)
+load_dotenv(os.path.join(_project_root, '.env'), override=False)
 
 # Force webhook mode and port
 os.environ["USE_WEBHOOK"] = "true"
