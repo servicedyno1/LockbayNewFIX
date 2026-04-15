@@ -48,6 +48,5 @@ LockBay is a comprehensive Telegram-based escrow trading platform that enables s
 ## Backlog
 - P0: Deploy fixes to Railway production
 - P1: Optimize background jobs to not block event loop (use async DB queries in APScheduler)
-- P2: Clean up stale support sessions periodically
 - P2: Deduplicate start_secure_trade handler registration
 - P3: Add monitoring for route_guard decisions to track future routing conflicts

@@ -452,6 +452,19 @@ class ConsolidatedScheduler:
         logger.info("   • Exchange confirmations → Core Reconciliation")  
         logger.info("   • Financial audit → Core Reporting")
 
+        # ===== STALE SUPPORT SESSION CLEANUP =====
+        # Prevents stale support chat sessions from hijacking escrow/wallet flows
+        self.scheduler.add_job(
+            self._cleanup_stale_support_sessions,
+            'interval',
+            minutes=10,
+            id='stale_support_session_cleanup',
+            name='🧹 Stale Support Session Cleanup',
+            misfire_grace_time=120,
+            replace_existing=True
+        )
+        logger.info("🧹 SUPPORT_CLEANUP: Stale session cleanup job registered (every 10 min, 30 min TTL)")
+
         # ===== JOB OPTIMIZATION SUMMARY =====
         jobs = self.scheduler.get_jobs()
         logger.info(f"🎯 CONSOLIDATION COMPLETE: Reduced from 29+ jobs to {len(jobs)} jobs ({100 - (len(jobs)/29)*100:.0f}% reduction)")
@@ -474,6 +487,17 @@ class ConsolidatedScheduler:
         """Stop the consolidated scheduler"""
         self.scheduler.shutdown()
         logger.info("📴 Consolidated job scheduler stopped")
+
+    @staticmethod
+    def _cleanup_stale_support_sessions():
+        """Periodic job to clean up stale support chat sessions"""
+        try:
+            from handlers.support_chat import cleanup_stale_support_sessions
+            cleaned = cleanup_stale_support_sessions()
+            if cleaned > 0:
+                logger.info(f"🧹 SCHEDULER: Cleaned {cleaned} stale support sessions")
+        except Exception as e:
+            logger.error(f"❌ SCHEDULER: Support session cleanup failed: {e}")
 
 
 # Global instance for backward compatibility

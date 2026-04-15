@@ -35,7 +35,37 @@ SUPPORT_CHAT_VIEW = 1
 SUPPORT_MESSAGE_INPUT = 2
 
 # Active support chat sessions - tracking user conversation states
+# Stores user_id -> (ticket_id, timestamp) for stale session detection
 active_support_sessions: Dict[int, int] = {}  # user_id -> ticket_id
+_support_session_timestamps: Dict[int, float] = {}  # user_id -> epoch timestamp
+SUPPORT_SESSION_TTL_SECONDS = 1800  # 30 minutes
+
+
+def _record_support_session(user_id: int, ticket_id: int):
+    """Record a support session with timestamp for staleness detection"""
+    import time
+    active_support_sessions[user_id] = ticket_id
+    _support_session_timestamps[user_id] = time.time()
+
+
+def cleanup_stale_support_sessions(max_age_seconds: int = SUPPORT_SESSION_TTL_SECONDS) -> int:
+    """
+    Remove support sessions older than max_age_seconds.
+    Called periodically by the scheduler to prevent stale sessions from hijacking other flows.
+    Returns the number of sessions cleaned up.
+    """
+    import time
+    current_time = time.time()
+    stale_users = [
+        uid for uid, ts in _support_session_timestamps.items()
+        if current_time - ts > max_age_seconds
+    ]
+    for uid in stale_users:
+        active_support_sessions.pop(uid, None)
+        _support_session_timestamps.pop(uid, None)
+    if stale_users:
+        logger.info(f"🧹 SUPPORT_CLEANUP: Removed {len(stale_users)} stale support sessions (>{max_age_seconds}s old): {stale_users}")
+    return len(stale_users)
 
 
 @audit_handler(AuditEventType.COMMUNICATION, "support_chat_start")
@@ -128,7 +158,7 @@ async def start_support_chat(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 await notify_admins_new_ticket(context, ticket, db_user_obj)
 
             # Track active session - get actual ticket ID value
-            active_support_sessions[user.id] = ticket.id if hasattr(ticket, 'id') and ticket.id is not None else 0
+            _record_support_session(user.id, ticket.id if hasattr(ticket, 'id') and ticket.id is not None else 0)
             
             # Log support chat session start with communication metadata
             session_metadata = PayloadMetadata(
@@ -309,7 +339,7 @@ async def handle_support_message_input(update: Update, context: ContextTypes.DEF
                     # Check if ticket has recent activity OR if user recently interacted with support interface
                     if (active_ticket.last_message_at and active_ticket.last_message_at > recent_cutoff):
                         # Restore active session ONLY if recent activity
-                        active_support_sessions[user.id] = active_ticket.id
+                        _record_support_session(user.id, active_ticket.id)
                         ticket_id = active_ticket.id
                         logger.info(f"🔄 Restored support session for user {user.id}, ticket {active_ticket.ticket_id} (recent activity)")
                     else:
@@ -423,7 +453,7 @@ async def open_support_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             await safe_answer_callback_query(query, "💬")
 
             # Track active session
-            active_support_sessions[user.id] = ticket.id
+            _record_support_session(user.id, ticket.id)
 
             # OPTIMIZATION: Prefetch support data for display
             support_data = await get_or_prefetch_support_context(
@@ -936,6 +966,7 @@ async def user_support_close_ticket(update: Update, context: ContextTypes.DEFAUL
         # Remove from active sessions
         if user.id in active_support_sessions:
             del active_support_sessions[user.id]
+        _support_session_timestamps.pop(user.id, None)
 
         # Notify admins about ticket closure via Telegram
         try:

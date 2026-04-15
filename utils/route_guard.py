@@ -360,9 +360,9 @@ class RouteGuard:
                 if RouteGuard.is_support_chat_active(user_id):
                     logger.warning(f"⚠️ SUPPORT_OVERRIDE: user {user_id} sent crypto address while support session active - routing to wallet, clearing stale support session")
                     try:
-                        from handlers.support_chat import active_support_sessions
-                        if user_id in active_support_sessions:
-                            del active_support_sessions[user_id]
+                        from handlers.support_chat import active_support_sessions, _support_session_timestamps
+                        active_support_sessions.pop(user_id, None)
+                        _support_session_timestamps.pop(user_id, None)
                     except Exception:
                         pass
                 logger.info(f"🎯 SMART ROUTE: user {user_id} sent crypto address → wallet (for cashout)")
@@ -382,9 +382,9 @@ class RouteGuard:
                 if RouteGuard.is_support_chat_active(user_id):
                     logger.warning(f"⚠️ SUPPORT_OVERRIDE: user {user_id} has active cashout while support session active - routing to wallet, clearing stale support session")
                     try:
-                        from handlers.support_chat import active_support_sessions
-                        if user_id in active_support_sessions:
-                            del active_support_sessions[user_id]
+                        from handlers.support_chat import active_support_sessions, _support_session_timestamps
+                        active_support_sessions.pop(user_id, None)
+                        _support_session_timestamps.pop(user_id, None)
                     except Exception:
                         pass
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → wallet (active cashout/OTP verification)")
@@ -399,9 +399,9 @@ class RouteGuard:
                 if RouteGuard.is_support_chat_active(user_id):
                     logger.warning(f"⚠️ SUPPORT_OVERRIDE: user {user_id} in escrow flow '{db_state}' while support session active - routing to escrow, clearing stale support session")
                     try:
-                        from handlers.support_chat import active_support_sessions
-                        if user_id in active_support_sessions:
-                            del active_support_sessions[user_id]
+                        from handlers.support_chat import active_support_sessions, _support_session_timestamps
+                        active_support_sessions.pop(user_id, None)
+                        _support_session_timestamps.pop(user_id, None)
                     except Exception:
                         pass
                 logger.info(f"🎯 ROUTE DECISION: user {user_id} → escrow (active escrow flow state: {db_state})")
