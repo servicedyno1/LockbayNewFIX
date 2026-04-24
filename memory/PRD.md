@@ -1,4 +1,4 @@
-# LockbayNewFIX — Production Analysis PRD
+# LockbayNewFIX — Production Analysis & Fixes PRD
 
 ## Date: 2026-04-24
 
@@ -7,50 +7,40 @@
 - **Database**: PostgreSQL on Railway (roundhouse.proxy.rlwy.net:24637)
 - **Payment Providers**: DynoPay (crypto), Fincra (NGN fiat), Kraken (exchange)
 - **Deployment**: Railway, service ID 96ee768e-3f4d-49c8-be75-dea30777e890
-- **Environment**: production (889fd56a-720a-4020-884c-034784992666)
+- **Repo**: servicedyno/LockbayNewFIX (main branch)
 
-## Core Requirements
-- Crypto escrow trades (BTC, ETH, USDT, etc.)
-- Wallet deposits via DynoPay
-- Admin-approved crypto cashouts
-- NGN bank payouts via Fincra
-- Balance guard monitoring
+## What's Been Implemented
 
-## What's Been Implemented (Analysis Session)
+### Session 1: Database Fixes (Apr 24, 2026)
+- Created missing `balance_alert_state` table
+- Fixed `unified_transactions` status mismatch (pending→completed)
+- Cleaned expired `pending_cashouts`
 
-### Database Fixes (Apr 24, 2026)
-- Created missing `balance_alert_state` table (62nd table)
-- Fixed unified_transaction status mismatch (pending→completed for CO042326X6MC)
-- Cleaned expired pending_cashout records
-
-### Issues Identified
-1. **DynoPay wallet webhook not arriving** — escrow webhooks work, wallet deposit webhooks never received
-2. **Fincra API key unauthorized** — needs rotation
-3. **BalanceGuard operations_blocked** — fincra_NGN and kraken_USD both blocked
-4. **Pending cashout validation gap** — cashout queued with $0 balance
+### Session 2: Code Fixes (Apr 24, 2026)
+- **handlers/dynopay_webhook.py** — 3 bugs fixed:
+  1. Added idempotency service to wallet deposit handler (prevents duplicate processing)
+  2. Added FOR UPDATE row locking on wallet balance and transaction duplicate check
+  3. Added admin_trade_notifications.notify_wallet_funded() call after deposit credit
+- Deleted duplicate transaction record (TX042426F9UK) from production DB
 
 ## Prioritized Backlog
 
-### P0
-- Investigate DynoPay wallet webhook delivery (ref: WALLET-20260424-014548-5982160502)
-- Fix Fincra API key
+### P0 (Deploy Required)
+- Push code to main branch to deploy fixes to Railway
+- Fix Fincra API key (env var rotation needed)
 
-### P1  
+### P1
+- Add unique constraint on transactions.blockchain_tx_hash
 - Add balance validation to pending_cashout creation
-- Ensure unified_transaction status syncs with cashout status
+- Verify wallet deposit webhook delivery from DynoPay for user 5982160502 (BTC)
 
 ### P2
 - Balance audit log population (currently empty)
-- Wallet balance snapshots
 - Internal wallets configuration
+- Webhook signature verification fix (all DynoPay webhooks fail signature check)
 
-## User Personas
-- Bot users (Telegram): Create escrows, deposit crypto, cashout
-- Admin (Telegram ID 1531772316): Approve cashouts, manage disputes
-
-## Key Credentials/Config
+## Key Config
 - Railway Project: c23ac3d9-51c5-4242-8776-eed4e3801abe
-- LockbayNewFIX Service: 96ee768e-3f4d-49c8-be75-dea30777e890
 - Production DB: roundhouse.proxy.rlwy.net:24637
 - DynoPay API: dyno.up.railway.app/api
-- Webhook endpoints: /webhook/dynopay/escrow, /webhook/dynopay/wallet
+- Admin Telegram ID: 1531772316

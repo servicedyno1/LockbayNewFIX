@@ -1881,29 +1881,23 @@ To: {seller_identifier}{referral_section}
         
         CRYPTO→USD CONVERSION FIX: Converts crypto amounts to USD before crediting wallet,
         mirroring the escrow fix from unified_payment_processor.py lines 80-92.
+        
+        IDEMPOTENCY FIX: Uses webhook_idempotency_service to prevent duplicate processing
+        when DynoPay sends multiple webhooks for the same transaction.
         """
         try:
             # Extract webhook data
             meta_data = webhook_data.get('meta_data', {})
             reference_id = meta_data.get('refId') or webhook_data.get('customer_reference')
-            # DynoPay field mapping (same as escrow handler):
-            # - 'amount' = crypto amount (e.g., 0.01331 ETH)
-            # - 'base_amount' = USD value (e.g., 10) - authoritative payment value
-            # - 'currency' = crypto currency (ETH, BTC, etc.)
-            # - 'base_currency' = fiat currency (USD)
             crypto_amount = webhook_data.get('amount') or webhook_data.get('paid_amount')
             paid_currency = webhook_data.get('paid_currency') or webhook_data.get('currency')
             transaction_id = webhook_data.get('id') or webhook_data.get('payment_id') or webhook_data.get('txId')
             
-            # WALLET DEPOSIT FIX: For open-ended wallet deposits, base_amount is just the
-            # invoice minimum ($10 hardcoded), NOT the actual value of crypto received.
-            # We MUST compute USD from (crypto_amount × exchange_rate) to credit the real value.
             dynopay_base_amount = webhook_data.get('base_amount')
             dynopay_base_currency = webhook_data.get('base_currency', 'USD')
             dynopay_exchange_rate = webhook_data.get('exchange_rate')
             
             # For wallet deposits: always use crypto_amount × exchange_rate for accurate USD value
-            # base_amount is the invoice amount (hardcoded minimum), not actual received value
             if crypto_amount and dynopay_exchange_rate:
                 try:
                     actual_usd_value = float(crypto_amount) * float(dynopay_exchange_rate)
@@ -1937,13 +1931,11 @@ To: {seller_identifier}{referral_section}
             created_at = webhook_data.get('created_at')
             if created_at:
                 try:
-                    # Convert ISO string to datetime with UTC timezone
                     webhook_timestamp = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
                     if webhook_timestamp.tzinfo is None:
                         webhook_timestamp = webhook_timestamp.replace(tzinfo=timezone.utc)
                     logger.info(f"🔒 TIMESTAMP_EXTRACTED: Wallet webhook timestamp: {webhook_timestamp.isoformat()}")
                     
-                    # Validate timestamp to prevent replay attacks
                     from services.webhook_idempotency_service import WebhookIdempotencyService
                     is_valid, error_msg = WebhookIdempotencyService.validate_webhook_timestamp(webhook_timestamp)
                     if not is_valid:
@@ -1954,7 +1946,6 @@ To: {seller_identifier}{referral_section}
                     webhook_timestamp = None
             else:
                 logger.warning(f"⚠️ TIMESTAMP_MISSING: No created_at field in wallet webhook for {transaction_id}")
-                # FALLBACK: Use current server time for audit trail integrity
                 webhook_timestamp = datetime.now(timezone.utc)
                 logger.info(f"🔧 TIMESTAMP_FALLBACK: Using server time {webhook_timestamp.isoformat()} for audit trail")
             
@@ -1971,55 +1962,114 @@ To: {seller_identifier}{referral_section}
             
             logger.info(f"💰 WALLET_DEPOSIT: Processing deposit for user {user_id}, {paid_amount} {paid_currency}, txid: {transaction_id}")
             
-            # WALLET DEPOSIT USD CONVERSION:
-            # At this point, paid_amount is already the correct USD value when computed from
-            # crypto_amount × exchange_rate above. Use it directly.
+            # ============================================================
+            # IDEMPOTENCY FIX: Use the same idempotency service as escrow handler
+            # to prevent duplicate processing from multiple DynoPay webhooks
+            # ============================================================
+            webhook_info = WebhookEventInfo(
+                provider=WebhookProvider.DYNOPAY,
+                event_id=f"wallet_{transaction_id}",
+                event_type="wallet_deposit",
+                txid=transaction_id,
+                reference_id=reference_id,
+                amount=Decimal(str(paid_amount)) if paid_amount else None,
+                currency=paid_currency,
+                user_id=user_id,
+                metadata={
+                    'meta_data': meta_data,
+                    'webhook_source': 'dynopay_wallet_deposit',
+                    'timestamp': webhook_timestamp.isoformat() if webhook_timestamp else None
+                },
+                webhook_payload=json.dumps(webhook_data)
+            )
+
+            # Define the actual processing function for idempotency wrapper
+            async def _process_wallet_deposit(webhook_info_inner, webhook_data_inner=webhook_data):
+                return await DynoPayWebhookHandler._execute_wallet_deposit(
+                    webhook_data=webhook_data_inner,
+                    user_id=user_id,
+                    paid_amount=paid_amount,
+                    paid_currency=paid_currency,
+                    crypto_amount=crypto_amount,
+                    dynopay_exchange_rate=dynopay_exchange_rate,
+                    transaction_id=transaction_id,
+                    reference_id=reference_id,
+                    webhook_timestamp=webhook_timestamp
+                )
+
+            result = await webhook_idempotency_service.process_webhook_with_idempotency(
+                webhook_info=webhook_info,
+                processing_function=_process_wallet_deposit
+            )
+
+            if result.success:
+                logger.info(f"✅ WALLET_IDEMPOTENT: Webhook processed successfully - Event ID: wallet_{transaction_id}, Duration: {result.processing_duration_ms}ms")
+                return result.result_data or {"status": "success", "message": "Wallet deposit processed"}
+            else:
+                logger.error(f"❌ WALLET_IDEMPOTENT_FAILED: Event ID: wallet_{transaction_id}, Error: {result.error_message}")
+                return {"status": "error", "message": result.error_message or "Processing failed"}
+
+        except Exception as e:
+            logger.error(f"❌ WALLET_DEPOSIT_ERROR: {e}", exc_info=True)
+
+    @staticmethod
+    async def _execute_wallet_deposit(
+        webhook_data: Dict[str, Any],
+        user_id: int,
+        paid_amount,
+        paid_currency: str,
+        crypto_amount,
+        dynopay_exchange_rate,
+        transaction_id: str,
+        reference_id: str,
+        webhook_timestamp
+    ) -> Dict[str, Any]:
+        """Execute the actual wallet deposit logic — called by idempotency service."""
+        try:
             from services.fastforex_service import FastForexService
             forex_service = FastForexService()
-            
+
             if dynopay_exchange_rate and crypto_amount:
-                # USD was already computed from crypto × rate in the amount extraction above
                 usd_amount = Decimal(str(paid_amount or 0))
                 logger.info(f"💱 WALLET_USD_FROM_RATE: ${usd_amount:.2f} (crypto: {crypto_amount} {paid_currency} × rate: {dynopay_exchange_rate})")
             elif paid_currency == 'USD':
                 usd_amount = Decimal(str(paid_amount or 0))
                 logger.info(f"💱 WALLET_USD: Direct USD deposit: ${usd_amount:.2f}")
             else:
-                # Fallback: Convert crypto to USD using our own rate service
                 crypto_rate = await forex_service.get_crypto_to_usd_rate(paid_currency)
                 if crypto_rate is None:
                     logger.error(f"❌ WALLET_RATE_UNAVAILABLE: No rate available for {paid_currency}")
                     return {"status": "retry", "message": f"Exchange rate unavailable for {paid_currency}"}
-                
                 usd_amount = Decimal(str(crypto_amount or 0)) * Decimal(str(crypto_rate))
                 logger.info(f"💱 WALLET_USD_CONVERSION_FALLBACK: Converted {crypto_amount} {paid_currency} to ${usd_amount:.2f} USD (rate: ${crypto_rate:.2f})")
-            
-            # Use async session to credit wallet
+
             from models import Wallet, CryptoDeposit, CryptoDepositStatus
-            
+
             async with async_managed_session() as session:
-                
-                # Check for duplicate transaction
-                stmt_tx = select(Transaction).where(Transaction.blockchain_tx_hash == transaction_id)
+
+                # Race-condition-safe duplicate check using FOR UPDATE lock
+                stmt_tx = select(Transaction).where(
+                    Transaction.blockchain_tx_hash == transaction_id
+                ).with_for_update(skip_locked=True)
                 result_tx = await session.execute(stmt_tx)
                 existing_tx = result_tx.scalar_one_or_none()
-                
+
                 if existing_tx:
-                    logger.warning(f"⚠️ WALLET_DUPLICATE: Transaction {transaction_id} already processed")
+                    logger.warning(f"⚠️ WALLET_DUPLICATE: Transaction {transaction_id} already processed (caught inside lock)")
                     return {
                         "status": "already_processed",
                         "transaction_id": existing_tx.transaction_id,
                         "reason": "duplicate_tx_hash"
                     }
-                
-                # Get or create user's USD wallet
+
+                # Get or create user's USD wallet with row-level lock
                 stmt_wallet = select(Wallet).where(
                     Wallet.user_id == user_id,
                     Wallet.currency == 'USD'
-                )
+                ).with_for_update()
                 result_wallet = await session.execute(stmt_wallet)
                 wallet = result_wallet.scalar_one_or_none()
-                
+
                 if not wallet:
                     wallet = Wallet(
                         user_id=user_id,
@@ -2029,18 +2079,16 @@ To: {seller_identifier}{referral_section}
                     session.add(wallet)
                     await session.flush()
                     logger.info(f"✅ WALLET_CREATED: Created USD wallet for user {user_id}")
-                
-                # Credit wallet balance
+
+                # Credit wallet balance (with row lock held — no race condition)
                 old_balance = wallet.available_balance
                 wallet.available_balance += Decimal(str(usd_amount))  # type: ignore[assignment]
                 logger.info(f"💰 WALLET_CREDIT: user={user_id}, old=${old_balance}, new=${wallet.available_balance}, added=${usd_amount:.2f}")
-                
-                # Get current timestamp using async query
+
                 now_stmt = select(func.now())
                 now_result = await session.execute(now_stmt)
                 current_time = now_result.scalar()
-                
-                # Create transaction record
+
                 transaction = Transaction(
                     transaction_id=UniversalIDGenerator.generate_transaction_id(),
                     user_id=user_id,
@@ -2053,15 +2101,14 @@ To: {seller_identifier}{referral_section}
                     confirmed_at=current_time
                 )
                 session.add(transaction)
-                
-                # Create or update crypto deposit record
+
                 stmt_deposit = select(CryptoDeposit).where(
                     CryptoDeposit.txid == transaction_id,
                     CryptoDeposit.provider == 'dynopay'
                 )
                 result_deposit = await session.execute(stmt_deposit)
                 deposit = result_deposit.scalar_one_or_none()
-                
+
                 if not deposit:
                     deposit = CryptoDeposit(
                         provider='dynopay',
@@ -2073,23 +2120,22 @@ To: {seller_identifier}{referral_section}
                         amount_fiat=Decimal(str(usd_amount)),
                         status=CryptoDepositStatus.CREDITED.value,
                         confirmations=1,
-                        address_in='dynopay_wallet_deposit',  # FIX: Add required address_in field
+                        address_in='dynopay_wallet_deposit',
                         address_out=None
                     )
                     session.add(deposit)
                 else:
                     deposit.status = CryptoDepositStatus.CREDITED.value  # type: ignore[assignment]
                     deposit.amount_fiat = Decimal(str(usd_amount))  # type: ignore[assignment]
-                
-                # Extract transaction_id before session closes
+
                 transaction_id_value = transaction.transaction_id
-                
+
                 logger.info(f"✅ WALLET_DEPOSIT_SUCCESS: {reference_id}, user {user_id}, ${usd_amount:.2f} credited")
-            
-            # Send notification to user
+
+            # Send notification to user (ONCE — idempotency service prevents duplicate calls)
             try:
                 from services.wallet_notification_service import WalletNotificationService
-                
+
                 notification_sent = await WalletNotificationService.send_crypto_deposit_confirmation(
                     user_id=user_id,
                     amount_crypto=Decimal(str(paid_amount)),
@@ -2097,16 +2143,46 @@ To: {seller_identifier}{referral_section}
                     amount_usd=Decimal(str(usd_amount)),
                     txid_in=transaction_id
                 )
-                
+
                 if notification_sent:
                     logger.info(f"✅ WALLET_NOTIFICATION: Sent deposit confirmation to user {user_id}")
                 else:
                     logger.warning(f"⚠️ WALLET_NOTIFICATION: Failed to send deposit confirmation to user {user_id}")
-                    
+
             except Exception as notif_error:
                 logger.error(f"❌ WALLET_NOTIFICATION_ERROR: {notif_error}")
-                # Don't fail the webhook if notification fails
-            
+
+            # FIX: Send admin notification for wallet deposit (was missing)
+            try:
+                from models import User
+                async with async_managed_session() as notify_session:
+                    notify_user_result = await notify_session.execute(
+                        select(User).where(User.id == user_id)
+                    )
+                    notify_user = notify_user_result.scalar_one_or_none()
+
+                    if notify_user:
+                        notification_result = await admin_trade_notifications.notify_wallet_funded({
+                            'user_id': notify_user.id,
+                            'telegram_id': notify_user.telegram_id,
+                            'username': notify_user.username,
+                            'first_name': getattr(notify_user, 'first_name', None) or notify_user.username,
+                            'last_name': getattr(notify_user, 'last_name', None) or '',
+                            'amount_crypto': float(paid_amount),
+                            'currency': paid_currency,
+                            'amount_usd': float(usd_amount),
+                            'txid': transaction_id,
+                            'funded_at': datetime.now(timezone.utc)
+                        })
+                        if notification_result:
+                            logger.info(f"✅ WALLET_ADMIN_NOTIFICATION: Admin notified about deposit for user {user_id}")
+                        else:
+                            logger.warning(f"⚠️ WALLET_ADMIN_NOTIFICATION: Failed to notify admin about deposit for user {user_id}")
+                    else:
+                        logger.warning(f"⚠️ WALLET_ADMIN_NOTIFICATION: User {user_id} not found for admin notification")
+            except Exception as admin_err:
+                logger.error(f"❌ WALLET_ADMIN_NOTIFICATION_ERROR: {admin_err}", exc_info=True)
+
             return {
                 "status": "success",
                 "user_id": user_id,
@@ -2115,7 +2191,7 @@ To: {seller_identifier}{referral_section}
                 "original_amount": str(Decimal(str(paid_amount or 0))),
                 "original_currency": paid_currency
             }
-                
+
         except Exception as e:
             logger.error(f"❌ WALLET_DEPOSIT_ERROR: {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
