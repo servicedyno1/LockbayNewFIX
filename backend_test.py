@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 
 # Test configuration
-BASE_URL = "https://analyze-setup-3.preview.emergentagent.com"
+BASE_URL = "https://analyze-setup-4.preview.emergentagent.com"
 TIMEOUT = 30
 
 class BackendTester:

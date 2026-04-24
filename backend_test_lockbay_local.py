@@ -6,7 +6,7 @@ Tests the backend functionality as specified in the review request
 Test Requirements:
 1. Backend health endpoint returns OK: GET /api/health should return {status: ok}
 2. Webhook health check is functional: GET /api/health/webhook should show bot_ready: true
-3. Telegram webhook is registered with correct URL (https://analyze-setup-3.preview.emergentagent.com/api/webhook)
+3. Telegram webhook is registered with correct URL (https://analyze-setup-4.preview.emergentagent.com/api/webhook)
 4. Backend environment variables are loaded correctly - WEBHOOK_URL, DATABASE_URL, TELEGRAM_BOT_TOKEN, BRAND=Lockbay
 5. DynoPay webhook endpoint exists: POST /api/webhook/dynopay/escrow
 6. Fincra webhook endpoint exists: POST /api/webhook/api/fincra/webhook
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 # Use local backend URL for testing since external URL has timeout issues
 LOCAL_BACKEND_URL = "http://localhost:8001"
-EXTERNAL_WEBHOOK_URL = "https://analyze-setup-3.preview.emergentagent.com/api/webhook"
+EXTERNAL_WEBHOOK_URL = "https://analyze-setup-4.preview.emergentagent.com/api/webhook"
 
 class LockbayBackendTester:
     def __init__(self, base_url=LOCAL_BACKEND_URL):
