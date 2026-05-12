@@ -83,6 +83,44 @@ class EscrowExpiryService:
                     
                     if escrow.payment_confirmed_at is None:
                         # Payment was NEVER confirmed - this is a CANCELLATION
+                        # CRITICAL FIX: Before cancelling, check whether ANY deposit webhook
+                        # was ever received for this escrow. If so, the issue is not "buyer
+                        # never paid" - it's a processing failure that needs admin attention,
+                        # not a silent cancel that strands the user's funds.
+                        has_pending_webhook = False
+                        try:
+                            from sqlalchemy import select as _sel, func as _func
+                            from models import WebhookEventLedger  # type: ignore
+                            wel_stmt = _sel(_func.count(WebhookEventLedger.id)).where(
+                                WebhookEventLedger.reference_id == escrow.escrow_id,
+                                WebhookEventLedger.status.in_(["failed", "processing", "pending"]),
+                            )
+                            wel_result = await session.execute(wel_stmt)
+                            has_pending_webhook = (wel_result.scalar() or 0) > 0
+                        except Exception as wel_err:
+                            # Best-effort guard - don't block the expiry path on lookup failures
+                            logger.warning(
+                                f"⚠️ AUTO_CANCEL_WEBHOOK_CHECK_FAILED for {escrow.escrow_id}: {wel_err}"
+                            )
+
+                        if has_pending_webhook:
+                            logger.error(
+                                f"🚨 AUTO_CANCEL_BLOCKED: Escrow {escrow.escrow_id} has unresolved "
+                                f"deposit webhook(s) - skipping silent cancel and flagging for admin "
+                                f"review (likely funds received but processing failed)."
+                            )
+                            try:
+                                update_flag_stmt = update(Escrow).where(Escrow.id == escrow.id).values(
+                                    admin_notes=(escrow.admin_notes or "") +
+                                    "\n[auto] AUTO_CANCEL_BLOCKED: deposit webhook present in "
+                                    "webhook_event_ledger - needs manual review."
+                                )
+                                await session.execute(update_flag_stmt)
+                            except Exception as _flag_err:
+                                logger.warning(f"⚠️ AUTO_CANCEL_FLAG_FAILED: {_flag_err}")
+                            # Skip the cancel for this escrow; admins will handle it.
+                            continue
+
                         new_status = EscrowStatus.CANCELLED.value
                         status_reason = "payment_timeout"
                         logger.info(f"🚫 AUTO_CANCEL: Escrow {escrow.escrow_id} - payment timeout (never paid)")

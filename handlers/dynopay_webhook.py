@@ -4,7 +4,7 @@ import asyncio
 import logging
 import json
 from typing import Dict, Any
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from datetime import timedelta, datetime, timezone
 from fastapi import Request
 from sqlalchemy import func, select
@@ -555,11 +555,36 @@ class DynoPayWebhookHandler:
             webhook_data.get('meta_data', {})
             paid_amount = webhook_data.get('paid_amount') or webhook_data.get('amount')
             paid_currency = webhook_data.get('paid_currency') or webhook_data.get('currency')
-            
+
+            # BUG FIX (ConversionSyntax @ line 590): payment.pending events arrive without a
+            # paid amount, so Decimal(str(None)) below previously raised
+            # decimal.InvalidOperation [ConversionSyntax] and crashed the whole handler.
+            # If we have no amount yet, short-circuit: acknowledge so DynoPay stops retrying,
+            # and wait for the follow-up payment.confirmed / payment.underpaid / payment.overpaid event.
+            try:
+                paid_amount_decimal = Decimal(str(paid_amount)) if paid_amount not in (None, "", "null") else None
+            except (InvalidOperation, ValueError, TypeError) as _amt_err:
+                logger.error(
+                    f"⚠️ DYNOPAY_WEBHOOK_AMOUNT_INVALID: Could not parse paid_amount={paid_amount!r} "
+                    f"for txid {transaction_id}: {_amt_err}. Acknowledging webhook to prevent retry storm."
+                )
+                paid_amount_decimal = None
+
+            if paid_amount_decimal is None or paid_amount_decimal <= 0:
+                logger.info(
+                    f"📋 DYNOPAY_WEBHOOK_AMOUNT_PENDING: No usable paid_amount yet for {transaction_id} "
+                    f"(event likely payment.pending). Acknowledging without DB writes."
+                )
+                return {
+                    "status": "ok",
+                    "message": "Acknowledged - awaiting amount-bearing event",
+                    "txid": transaction_id,
+                }
+
             # Variables to store result and notification data (populated in session, used after)
             result_to_return = None
             notification_data = None
-            
+
             # CRITICAL FIX: Wrap session with IntegrityError handling for commit-time constraint violations
             try:
                 async with async_managed_session() as session:
@@ -587,7 +612,7 @@ class DynoPayWebhookHandler:
                         and_(
                             Transaction.escrow_id == Escrow.id,
                             Transaction.transaction_type == TransactionType.DEPOSIT.value,
-                            Transaction.amount == Decimal(str(paid_amount)),
+                            Transaction.amount == paid_amount_decimal,
                             Transaction.currency == paid_currency
                         )
                     )

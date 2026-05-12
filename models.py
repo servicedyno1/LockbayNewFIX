@@ -126,9 +126,12 @@ class TransactionType(Enum):
     ESCROW_PAYMENT = "escrow_payment"
     ESCROW_RELEASE = "escrow_release"
     ESCROW_REFUND = "escrow_refund"
+    ESCROW_OVERPAYMENT = "escrow_overpayment"  # Surplus credit when buyer overpays an escrow
+    ESCROW_UNDERPAY_REFUND = "escrow_underpay_refund"  # Refund to buyer for an underpaid/cancelled escrow
     WALLET_TRANSFER = "wallet_transfer"
     WALLET_DEPOSIT = "wallet_deposit"  # For wallet creation transactions
     WALLET_PAYMENT = "wallet_payment"  # For wallet payment transactions
+    WALLET_CREDIT = "wallet_credit"   # Generic wallet credit (default in credit_user_wallet_atomic)
     CASHOUT = "cashout"
     CASHOUT_DEBIT = "cashout_debit"    # For cashout debit transactions
     CASHOUT_HOLD = "cashout_hold"      # For cashout hold transactions
@@ -137,6 +140,7 @@ class TransactionType(Enum):
     EXCHANGE_HOLD = "exchange_hold"    # For exchange hold transactions
     EXCHANGE_DEBIT = "exchange_debit"  # For exchange debit transactions
     EXCHANGE_HOLD_RELEASE = "exchange_hold_release"  # For releasing exchange holds
+    EXCHANGE_OVERPAYMENT = "exchange_overpayment"  # Surplus credit when buyer overpays an exchange
     REFUND = "refund"                  # For refund transactions
     FEE = "fee"
     ADMIN_ADJUSTMENT = "admin_adjustment"
@@ -739,11 +743,43 @@ class Transaction(Base):
     
     # Constraints and indexes
     __table_args__ = (
-        CheckConstraint(f"transaction_type IN ('{TransactionType.DEPOSIT.value}', '{TransactionType.WITHDRAWAL.value}', '{TransactionType.ESCROW_PAYMENT.value}', '{TransactionType.ESCROW_RELEASE.value}', '{TransactionType.ESCROW_REFUND.value}', '{TransactionType.WALLET_TRANSFER.value}', '{TransactionType.WALLET_DEPOSIT.value}', '{TransactionType.WALLET_PAYMENT.value}', '{TransactionType.CASHOUT.value}', '{TransactionType.CASHOUT_HOLD.value}', '{TransactionType.CASHOUT_HOLD_RELEASE.value}', '{TransactionType.FEE.value}', '{TransactionType.ADMIN_ADJUSTMENT.value}')", name='ck_transaction_type_valid'),
-        CheckConstraint(f"status IN ('{TransactionStatus.PENDING.value}', '{TransactionStatus.CONFIRMED.value}', '{TransactionStatus.COMPLETED.value}', '{TransactionStatus.FAILED.value}', '{TransactionStatus.CANCELLED.value}')", name='ck_transaction_status_valid'),
+        # All legal transaction_type values. MUST stay in sync with TransactionType enum AND
+        # with the production migration that extends ck_transaction_type_valid.
+        CheckConstraint(
+            "transaction_type IN ("
+            "'deposit','withdrawal',"
+            "'escrow_payment','escrow_release','escrow_refund','escrow_overpayment','escrow_underpay_refund',"
+            "'wallet_transfer','wallet_deposit','wallet_payment','wallet_credit',"
+            "'cashout','cashout_debit','cashout_hold','cashout_hold_release',"
+            "'frozen_balance_consume',"
+            "'exchange_hold','exchange_debit','exchange_hold_release','exchange_overpayment',"
+            "'refund','fee','admin_adjustment'"
+            ")",
+            name='ck_transaction_type_valid',
+        ),
+        CheckConstraint(
+            f"status IN ('{TransactionStatus.PENDING.value}', '{TransactionStatus.CONFIRMED.value}', '{TransactionStatus.COMPLETED.value}', '{TransactionStatus.FAILED.value}', '{TransactionStatus.CANCELLED.value}')",
+            name='ck_transaction_status_valid',
+        ),
         CheckConstraint('amount > 0', name='ck_transaction_amount_positive'),
-        # Relational integrity: Escrow-related transactions must have escrow_id
-        CheckConstraint(f"(transaction_type IN ('{TransactionType.ESCROW_PAYMENT.value}', '{TransactionType.ESCROW_RELEASE.value}', '{TransactionType.ESCROW_REFUND.value}') AND escrow_id IS NOT NULL) OR (transaction_type IN ('{TransactionType.CASHOUT.value}', '{TransactionType.CASHOUT_HOLD.value}', '{TransactionType.CASHOUT_HOLD_RELEASE.value}') AND cashout_id IS NOT NULL) OR (transaction_type IN ('{TransactionType.DEPOSIT.value}', '{TransactionType.WITHDRAWAL.value}', '{TransactionType.WALLET_TRANSFER.value}', '{TransactionType.WALLET_DEPOSIT.value}', '{TransactionType.WALLET_PAYMENT.value}', '{TransactionType.FEE.value}', '{TransactionType.ADMIN_ADJUSTMENT.value}'))", name='ck_transaction_entity_link_required'),
+        # Relational integrity:
+        #  - All escrow_* transaction types must have escrow_id
+        #  - All cashout_* transaction types must have cashout_id
+        #  - Everything else has no entity-link requirement
+        CheckConstraint(
+            "(transaction_type IN ("
+            "'escrow_payment','escrow_release','escrow_refund','escrow_overpayment','escrow_underpay_refund'"
+            ") AND escrow_id IS NOT NULL) OR "
+            "(transaction_type IN ("
+            "'cashout','cashout_debit','cashout_hold','cashout_hold_release'"
+            ") AND cashout_id IS NOT NULL) OR "
+            "(transaction_type IN ("
+            "'deposit','withdrawal','wallet_transfer','wallet_deposit','wallet_payment','wallet_credit',"
+            "'frozen_balance_consume','exchange_hold','exchange_debit','exchange_hold_release','exchange_overpayment',"
+            "'refund','fee','admin_adjustment'"
+            "))",
+            name='ck_transaction_entity_link_required',
+        ),
         Index('ix_transactions_user_type', 'user_id', 'transaction_type'),
         Index('ix_transactions_status_created', 'status', 'created_at'),
         Index('ix_transactions_external_tx', 'external_tx_id'),
