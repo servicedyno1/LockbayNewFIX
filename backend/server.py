@@ -522,8 +522,11 @@ _original_lifespan = app.router.lifespan_context
 @asynccontextmanager
 async def _patched_lifespan(app_instance):
     """Initialize bot only when not in Emergent preview (bot blocks event loop)."""
-    # Skip heavy bot initialization in preview environments to keep server responsive
-    is_preview = 'preview.emergentagent.com' in os.environ.get('WEBHOOK_URL', '')
+    # Skip heavy bot initialization in preview environments to keep server responsive.
+    # Detect the Emergent preview via APP_URL (set by supervisor) so the preview NEVER
+    # hijacks the production Telegram webhook or connects schedulers to the prod DB.
+    _preview_markers = os.environ.get('APP_URL', '') + os.environ.get('WEBHOOK_URL', '')
+    is_preview = 'preview.emergentagent.com' in _preview_markers
     if is_preview:
         logger.info("Emergent preview detected - skipping Telegram bot initialization (server-only mode)")
     else:
@@ -535,3 +538,60 @@ async def _patched_lifespan(app_instance):
         yield state
 
 app.router.lifespan_context = _patched_lifespan
+
+
+# ---------------------------------------------------------------------------
+# Emergent status/setup endpoint. The app's middleware strips the "/api" prefix,
+# so the frontend calls "/api/status" which is routed here as "/status".
+# Read-only: confirms credentials load and the production DB is reachable.
+# ---------------------------------------------------------------------------
+@app.get("/status")
+async def api_status():
+    """Setup/config confirmation for the Emergent dashboard."""
+    env = os.environ
+
+    # Database connectivity + table count (read-only)
+    db = {"connected": False, "tables": 0, "error": None}
+    try:
+        from sqlalchemy import text
+        from database import engine
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+            count = conn.execute(
+                text("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")
+            ).scalar()
+            db["connected"] = True
+            db["tables"] = int(count or 0)
+    except Exception as e:
+        db["error"] = str(e)[:200]
+
+    def has(key):
+        return bool(env.get(key, "").strip())
+
+    integrations = {
+        "brevo_email": has("BREVO_API_KEY"),
+        "tatum_crypto": has("TATUM_API_KEY"),
+        "kraken_exchange": has("KRAKEN_API_KEY"),
+        "fincra_ngn": has("FINCRA_SECRET_KEY"),
+        "twilio_sms": has("TWILIO_ACCOUNT_SID"),
+        "blockbee": has("BLOCKBEE_API_KEY"),
+        "dynopay": has("DYNOPAY_API_KEY"),
+    }
+
+    return {
+        "status": "ok",
+        "environment": env.get("ENVIRONMENT", "unknown"),
+        "brand": env.get("BRAND", "Lockbay"),
+        "bot_username": env.get("PRODUCTION_BOT_USERNAME") or env.get("BOT_USERNAME", ""),
+        "bot_token_configured": has("TELEGRAM_BOT_TOKEN") or has("BOT_TOKEN"),
+        "admin_configured": has("ADMIN_USER_IDS") or has("ADMIN_IDS"),
+        "database": db,
+        "integrations": integrations,
+        "mode": "preview-server-only" if is_preview_mode() else "full-bot",
+    }
+
+
+def is_preview_mode():
+    markers = os.environ.get("APP_URL", "") + os.environ.get("WEBHOOK_URL", "")
+    return "preview.emergentagent.com" in markers
+

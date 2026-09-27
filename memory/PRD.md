@@ -1,52 +1,31 @@
-# Lockbay Telegram Escrow Bot - PRD
+# Lockbay — Telegram Escrow Bot (Setup Record)
 
-## Original Problem Statement
-"Analyze /app and set up or the README file" — analyze the existing Lockbay codebase and bring services online in the Emergent preview environment.
+## What this project is
+Lockbay is a production Telegram escrow/crypto platform (Python + FastAPI webhook server + PostgreSQL).
+- Entry point (Railway/production): `python production_start.py` → `main.py` (webhook mode).
+- Emergent bridge: `backend/server.py` imports the FastAPI `app` from `webhook_server.py` and runs it on port 8001 under supervisor.
+- Frontend: `frontend/` React "configuration status" dashboard (port 3000).
 
-## Project Overview
-**Lockbay** is a production-grade Telegram-based escrow bot for secure cryptocurrency and NGN cashout transactions. Features automated fee calculation, dispute resolution, multi-currency wallets, real-time exchange rates, auto-cashout, and admin tooling.
+## Architecture in the Emergent preview
+- The preview is detected via `APP_URL` containing `preview.emergentagent.com`.
+- In preview, `backend/server.py` runs in **server-only mode**: it serves the FastAPI app and the status API but SKIPS full Telegram bot initialization, so it never hijacks the production Telegram webhook or runs schedulers against the production DB.
+- The real bot runs on the user's Railway deployment (`WEBHOOK_URL=https://lockbay1.up.railway.app/webhook`).
 
-## Architecture
-- **Telegram Bot**: `python-telegram-bot` 22.7, webhook-only mode
-- **Bridge**: `backend/server.py` boots the bot's FastAPI `webhook_server` on port 8001 for the Emergent preview; bot init is skipped in preview mode (server-only) to keep responses fast
-- **Database**: SQLAlchemy 2.0 async on Neon PostgreSQL (DATABASE_URL); Railway Postgres for DR backup
-- **Frontend**: Lightweight React 18 status page (`/app/frontend`) showing setup checklist & bot health
-- **Background**: APScheduler, Redis (optional fallback), webhook intake queue, email queue
+## Setup completed (2026-09-27)
+- Wrote `/app/.env` with all provided production credentials (DB, Telegram, Brevo, Tatum, Kraken, Fincra, BlockBee, DynoPay, Twilio, admin IDs, financial config).
+- Wrote `/app/frontend/.env` with `REACT_APP_BACKEND_URL` (preview URL) + `WDS_SOCKET_PORT=443`.
+- Installed Python deps into `/root/.venv` (pinned `SQLAlchemy==2.0.48` to keep the psycopg2 driver default; installed orjson, asyncpg, greenlet, pytz, etc.).
+- Ran `yarn install` in `frontend/`.
+- Fixed preview detection in `backend/server.py` to use `APP_URL` (not `WEBHOOK_URL`) so the preview stays server-only even though `WEBHOOK_URL` points to Railway.
+- Added `/status` endpoint (served as `/api/status` after the app's `/api` prefix-strip middleware) that read-only confirms DB connectivity, table count, bot token, admin IDs, and integrations.
+- Rewrote `frontend/src/App.js` into a dynamic configuration dashboard driven by `/api/status`.
 
-## What's Been Set Up (May 12, 2026)
-- Installed missing Python deps: `orjson`, `python-telegram-bot==22.7`, `sib-api-v3-sdk`, plus full `backend/requirements.txt` (SQLAlchemy, asyncpg, fastapi, telegram libs, etc.)
-- Removed conflicting `telegram==0.0.1` package (was shadowing `python-telegram-bot`)
-- Installed frontend yarn dependencies (`react-scripts`)
-- Backend running on `:8001` — `GET /api/health` returns `{"status":"ok","service":"LockBay Telegram Bot"}`
-- Frontend running on `:3000` — status page renders, fetches `/api/health` from `REACT_APP_BACKEND_URL`
-- Preview mode auto-detected → Telegram bot initialization skipped (server-only); set `WEBHOOK_URL` to a non-preview URL to enable the bot
+## Verified
+- `/api/status` → 200 JSON: DB **connected**, **62 tables**, bot token configured (@lockbaybot), admin configured, all 7 integrations detected, mode `preview-server-only`.
+- Headless-Chrome render confirms the dashboard populates ("Connected", "62 tables", "configured").
+- Backend logs: "Emergent preview detected - skipping Telegram bot initialization (server-only mode)".
 
-## Core Domain Features (Already in Codebase)
-- Escrow state machine with automated fees, disputes, refunds, auto-release
-- Multi-currency wallet (available_balance + trading_credit, Decimal precision)
-- Exchange engine with 5-tier rate caching, configurable markups
-- Dual payment processors (DynoPay primary, BlockBee fallback) with idempotency
-- Auto-cashout: crypto via Kraken, NGN via Fincra with PG advisory locks
-- 17-event admin notification system (Telegram + email)
-- Referral system, public profile slugs, support chat, dispute UI
-- Customer landing page (Nov 2025 brand: teal #3BB5C8 + navy #2C3E50)
-
-## Services Status
-| Service | State | Port | Notes |
-|---|---|---|---|
-| backend | RUNNING | 8001 | FastAPI webhook_server bridged via `backend/server.py` |
-| frontend | RUNNING | 3000 | React status dashboard |
-| mongodb | RUNNING | 27017 | Available; project uses Neon PostgreSQL |
-| code-server | STOPPED | — | Not required |
-
-## Next Action Items
-- (Optional) Restore full bot in preview by setting `WEBHOOK_URL` away from `preview.emergentagent.com` and providing a valid `TELEGRAM_BOT_TOKEN`
-- Add missing tests / iterate on any specific feature the user wants
-- Production deployment via Railway / Replit Reserved VM (see `RAILWAY_MIGRATION_GUIDE.md`)
-
-## Future / Backlog
-- Optional: surface bot KPIs (active escrows, GMV, dispute rate) on the React status page
-- Optional: add Telegram webhook smoke test endpoint to the React UI
-
-## Tech Stack
-Python 3.11, FastAPI, SQLAlchemy 2.0, python-telegram-bot 22.7, PostgreSQL (Neon), Redis (optional), APScheduler, React 18, Brevo, Twilio, Fincra, DynoPay, BlockBee, Kraken.
+## Notes / Backlog
+- Database in use = `DATABASE_URL` (Railway `roundhouse.proxy.rlwy.net`). PG* vars point to a separate Neon DB; `RAILWAY_BACKUP_DB_URL` is the backup.
+- Root `requirements.txt` pins `sqlalchemy>=2.0.41` (allows 2.1 which breaks with psycopg2). Consider pinning `<2.1` before the next clean Railway build.
+- Several provided values are LIVE production secrets — recommend rotating anything that has been shared in plaintext.
