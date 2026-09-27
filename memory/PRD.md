@@ -25,7 +25,14 @@ Lockbay is a production Telegram escrow/crypto platform (Python + FastAPI webhoo
 - Headless-Chrome render confirms the dashboard populates ("Connected", "62 tables", "configured").
 - Backend logs: "Emergent preview detected - skipping Telegram bot initialization (server-only mode)".
 
+## Railway deploy crash — diagnosed & fixed (2026-09-27)
+- Railway project = `zippy-radiance`, service = `LockbayNewFIX`, env = `production`. Latest deployment `efdfc379-b0e6-4a6d-94be-49ab23164683` = **CRASHED**.
+- Root cause (from runtime logs): `ModuleNotFoundError: No module named 'greenlet'` → `sqlalchemy.ext.asyncio` import at `database.py:14` fails → `production_start.py`/`main.py` bot startup crashes.
+- Why: `requirements.txt` had `sqlalchemy>=2.0.41` without the `[asyncio]` extra and no `greenlet`, so the Railway build never installed greenlet.
+- Fix: `requirements.txt` → `sqlalchemy[asyncio]>=2.0.41,<2.1` + `greenlet>=3.0.0`. The `<2.1` pin also keeps the `postgresql://` sync driver on psycopg2 (avoids the 2.1 psycopg-v3 default-driver break).
+- Verified: clean-venv `pip install` reproduction (greenlet 3.5.6, sqlalchemy 2.0.54, driver=psycopg2) + testing_agent app-level smoke (100% backend/frontend).
+- **Next step to go live:** push the updated `requirements.txt` to GitHub (`servicedyno1/LockbayNewFIX`) via "Save to Github" → Railway auto-redeploys. Redeploying the current crashed commit alone won't help; the fix must be pushed first.
+
 ## Notes / Backlog
 - Database in use = `DATABASE_URL` (Railway `roundhouse.proxy.rlwy.net`). PG* vars point to a separate Neon DB; `RAILWAY_BACKUP_DB_URL` is the backup.
-- Root `requirements.txt` pins `sqlalchemy>=2.0.41` (allows 2.1 which breaks with psycopg2). Consider pinning `<2.1` before the next clean Railway build.
 - Several provided values are LIVE production secrets — recommend rotating anything that has been shared in plaintext.
